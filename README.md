@@ -2,6 +2,8 @@
 
 Sistema web de ventas, inventario y catálogo online para **Pixel Store**, tienda de computadoras, laptops, componentes y accesorios tecnológicos en La Paz, Bolivia.
 
+![Pixel Store](public/images/logo/pixel-logo-horizontal.png)
+
 > **Todo el mundo tecnológico, pixel a pixel.**
 
 ---
