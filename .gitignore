@@ -18,7 +18,11 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/framework/lsp-*.php
 /vendor
+auth.json
+npm-debug.log
+yarn-error.log
 Homestead.json
 Homestead.yaml
 Thumbs.db
