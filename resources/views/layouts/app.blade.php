@@ -103,7 +103,7 @@
                         </p>
                     </div>
                 </div>
-                <form method="POST" action="{{ route('logout') }}" class="mt-3">
+                <form method="POST" action="{{ route('logout') }}" data-logout-form class="mt-3">
                     @csrf
                     <button type="submit" class="w-full text-left text-xs text-slate-400 hover:text-white transition">
                         Cerrar sesión
