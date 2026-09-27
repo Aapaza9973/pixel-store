@@ -32,6 +32,8 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('categorias', CategoriaController::class);
         Route::resource('productos', ProductoController::class);
+        Route::post('productos/{producto}/transferir-stock', [ProductoController::class, 'transferirStock'])
+            ->name('productos.transferir-stock');
         Route::resource('ubicaciones', UbicacionController::class)
             ->parameters(['ubicaciones' => 'ubicacion']);
     });

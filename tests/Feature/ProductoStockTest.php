@@ -296,4 +296,100 @@ class ProductoStockTest extends TestCase
         $this->assertSame(12, (int) $producto->fresh()->stock);
         $this->assertSame($totalUbicaciones, (int) $producto->fresh()->stock);
     }
+
+    public function test_transferir_stock_entre_ubicaciones_desde_ui(): void
+    {
+        $producto = $this->crearViaStore(10, $this->tienda->id);
+
+        $response = $this->actingAs($this->admin)->post(
+            route('admin.productos.transferir-stock', $producto),
+            [
+                'ubicacion_origen_id' => $this->tienda->id,
+                'ubicacion_destino_id' => $this->deposito->id,
+                'cantidad' => 4,
+            ]
+        );
+
+        $response->assertRedirect(route('admin.productos.show', $producto));
+        $response->assertSessionHas('success');
+
+        // El stock total no cambia; solo se reparte.
+        $this->assertSame(10, $producto->fresh()->stock);
+
+        $this->assertDatabaseHas('stock_ubicacion', [
+            'producto_id' => $producto->id,
+            'ubicacion_id' => $this->tienda->id,
+            'cantidad' => 6,
+        ]);
+
+        $this->assertDatabaseHas('stock_ubicacion', [
+            'producto_id' => $producto->id,
+            'ubicacion_id' => $this->deposito->id,
+            'cantidad' => 4,
+        ]);
+
+        $this->assertDatabaseHas('movimientos_stock', [
+            'producto_id' => $producto->id,
+            'ubicacion_id' => $this->tienda->id,
+            'tipo' => 'salida',
+            'cantidad' => -4,
+        ]);
+
+        $this->assertDatabaseHas('movimientos_stock', [
+            'producto_id' => $producto->id,
+            'ubicacion_id' => $this->deposito->id,
+            'tipo' => 'entrada',
+            'cantidad' => 4,
+        ]);
+    }
+
+    public function test_transferir_stock_rechaza_cantidad_mayor_a_origen(): void
+    {
+        $producto = $this->crearViaStore(3, $this->tienda->id);
+
+        $response = $this->actingAs($this->admin)->post(
+            route('admin.productos.transferir-stock', $producto),
+            [
+                'ubicacion_origen_id' => $this->tienda->id,
+                'ubicacion_destino_id' => $this->deposito->id,
+                'cantidad' => 5,
+            ]
+        );
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+
+        // Nada se movió: stock y ubicación de origen intactos, destino sin fila.
+        $this->assertSame(3, $producto->fresh()->stock);
+
+        $this->assertDatabaseHas('stock_ubicacion', [
+            'producto_id' => $producto->id,
+            'ubicacion_id' => $this->tienda->id,
+            'cantidad' => 3,
+        ]);
+
+        $this->assertDatabaseMissing('stock_ubicacion', [
+            'producto_id' => $producto->id,
+            'ubicacion_id' => $this->deposito->id,
+        ]);
+    }
+
+    public function test_show_muestra_desglose_por_ubicacion(): void
+    {
+        $producto = $this->crearViaStore(10, $this->tienda->id);
+
+        $this->actingAs($this->admin)->post(route('admin.productos.transferir-stock', $producto), [
+            'ubicacion_origen_id' => $this->tienda->id,
+            'ubicacion_destino_id' => $this->deposito->id,
+            'cantidad' => 4,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('admin.productos.show', $producto));
+
+        $response->assertOk();
+        $response->assertSee('Stock por ubicación');
+        $response->assertSee($this->tienda->nombre_completo);
+        $response->assertSee($this->deposito->nombre_completo);
+        $response->assertSee('Transferir stock');
+    }
 }

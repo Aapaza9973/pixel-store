@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\StockInsuficienteException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreProductoRequest;
+use App\Http\Requests\Admin\TransferirStockRequest;
 use App\Http\Requests\Admin\UpdateProductoRequest;
 use App\Models\AtributoTecnico;
 use App\Models\Categoria;
@@ -92,7 +94,7 @@ class ProductoController extends Controller
             'categorias' => Categoria::orderBy('nombre')->get(),
             'marcas' => Marca::orderBy('nombre')->get(),
             'atributosPorCategoria' => $this->atributosPorCategoria(),
-            'ubicaciones' => Ubicacion::orderBy('id')->get(),
+            'ubicaciones' => $this->ubicacionesActivas(),
             'ubicacionPorDefecto' => $this->ubicacionPorDefecto(),
         ]);
     }
@@ -130,9 +132,15 @@ class ProductoController extends Controller
 
     public function show(Producto $producto): View
     {
-        $producto->load(['categoria', 'marca', 'atributos.atributo', 'atributos.valorEnum']);
+        $producto->load([
+            'categoria', 'marca', 'atributos.atributo', 'atributos.valorEnum',
+            'stockUbicaciones.ubicacion',
+        ]);
 
-        return view('admin.productos.show', compact('producto'));
+        return view('admin.productos.show', [
+            'producto' => $producto,
+            'ubicaciones' => $this->ubicacionesActivas(),
+        ]);
     }
 
     public function edit(Producto $producto): View
@@ -145,8 +153,9 @@ class ProductoController extends Controller
             'marcas' => Marca::orderBy('nombre')->get(),
             'atributosPorCategoria' => $this->atributosPorCategoria(),
             'valoresActuales' => $this->valoresActuales($producto),
-            'ubicaciones' => Ubicacion::orderBy('id')->get(),
+            'ubicaciones' => $this->ubicacionesActivas(),
             'ubicacionPorDefecto' => $this->ubicacionPorDefecto(),
+            'ubicacionActual' => $producto->stockUbicaciones()->orderByDesc('cantidad')->value('ubicacion_id'),
         ]);
     }
 
@@ -183,6 +192,28 @@ class ProductoController extends Controller
             ->with('success', 'Producto actualizado exitosamente.');
     }
 
+    /**
+     * Transfiere stock entre dos ubicaciones usando InventoryService.
+     */
+    public function transferirStock(TransferirStockRequest $request, Producto $producto): RedirectResponse
+    {
+        try {
+            $this->inventory->transferir(
+                $producto,
+                $request->integer('ubicacion_origen_id'),
+                $request->integer('ubicacion_destino_id'),
+                $request->integer('cantidad'),
+                $request->user()->id
+            );
+        } catch (StockInsuficienteException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('admin.productos.show', $producto)
+            ->with('success', 'Stock transferido exitosamente.');
+    }
+
     public function destroy(Producto $producto): RedirectResponse
     {
         if (DB::table('detalle_ventas')->where('producto_id', $producto->id)->exists()) {
@@ -196,6 +227,21 @@ class ProductoController extends Controller
         return redirect()
             ->route('admin.productos.index')
             ->with('success', 'Producto eliminado exitosamente.');
+    }
+
+    /**
+     * Ubicaciones activas ordenadas (tienda primero) para selectores de stock.
+     */
+    private function ubicacionesActivas()
+    {
+        return Ubicacion::query()
+            ->where('activa', true)
+            ->orderByRaw("CASE WHEN tipo = 'tienda' THEN 0 ELSE 1 END")
+            ->orderBy('pasillo')
+            ->orderBy('estante')
+            ->orderBy('anaquel')
+            ->orderBy('nombre')
+            ->get();
     }
 
     /**
