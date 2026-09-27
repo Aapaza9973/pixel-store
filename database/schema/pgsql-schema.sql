@@ -139,7 +139,7 @@ CREATE TABLE productos (
 
 CREATE TABLE atributos_tecnicos (
     id              BIGSERIAL PRIMARY KEY,
-    nombre          VARCHAR(255) NOT NULL UNIQUE,
+    nombre          VARCHAR(255) NOT NULL,
     tipo_dato       enum_atributo_tipo_dato NOT NULL,
     unidad          VARCHAR(20) NULL,
     categoria_id    BIGINT NULL,
@@ -685,3 +685,12 @@ CREATE EXTENSION IF NOT EXISTS unaccent;
 CREATE INDEX productos_nombre_trgm_idx ON productos USING GIN (nombre gin_trgm_ops);
 CREATE INDEX productos_sku_trgm_idx    ON productos USING GIN (sku gin_trgm_ops);
 CREATE INDEX productos_desc_trgm_idx   ON productos USING GIN (descripcion gin_trgm_ops);
+
+-- =====================================================
+-- TABLA INTERNA DE MIGRACIONES DE LARAVEL
+-- =====================================================
+CREATE TABLE migrations (
+    id        SERIAL PRIMARY KEY,
+    migration VARCHAR(255) NOT NULL,
+    batch     INTEGER NOT NULL
+);

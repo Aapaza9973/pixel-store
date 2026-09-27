@@ -1,134 +1,122 @@
 @extends('layouts.app')
 
-@section('title', 'Editar producto')
-@section('subtitle', $producto->nombre)
+@section('title', 'Productos')
+@section('subtitle', 'Catálogo e inventario de productos')
 
 @section('content')
-<div class="max-w-4xl">
-    <form method="POST" action="{{ route('admin.productos.update', $producto) }}" class="space-y-6">
-        @csrf
-        @method('PUT')
+<div class="space-y-6">
 
-        {{-- Datos generales --}}
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
-            <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Información básica</h3>
+    <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold text-white tracking-tight">Listado de productos</h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="md:col-span-2">
-                    <label for="nombre" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Nombre <span class="text-red-400">*</span>
-                    </label>
-                    <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $producto->nombre) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('nombre') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
-                </div>
-
-                <div>
-                    <label for="sku" class="block text-sm font-medium text-slate-300 mb-1.5">SKU</label>
-                    <input type="text" name="sku" id="sku" value="{{ old('sku', $producto->sku) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('sku') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
-                </div>
-
-                <div>
-                    <label for="categoria_id" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Categoría <span class="text-red-400">*</span>
-                    </label>
-                    <select name="categoria_id" id="categoria_id"
-                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                        @foreach ($categorias as $cat)
-                            <option value="{{ $cat->id }}" {{ old('categoria_id', $producto->categoria_id) == $cat->id ? 'selected' : '' }}>
-                                {{ $cat->nombre }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('categoria_id') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
-                </div>
-
-                <div>
-                    <label for="marca_id" class="block text-sm font-medium text-slate-300 mb-1.5">Marca</label>
-                    <select name="marca_id" id="marca_id"
-                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                        <option value="">Sin marca</option>
-                        @foreach ($marcas as $marca)
-                            <option value="{{ $marca->id }}" {{ old('marca_id', $producto->marca_id) == $marca->id ? 'selected' : '' }}>
-                                {{ $marca->nombre }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label for="codigo_barras" class="block text-sm font-medium text-slate-300 mb-1.5">Código de barras</label>
-                    <input type="text" name="codigo_barras" id="codigo_barras" value="{{ old('codigo_barras', $producto->codigo_barras) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                </div>
-            </div>
-
-            <div>
-                <label for="descripcion" class="block text-sm font-medium text-slate-300 mb-1.5">Descripción</label>
-                <textarea name="descripcion" id="descripcion" rows="3"
-                          class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">{{ old('descripcion', $producto->descripcion) }}</textarea>
-            </div>
-        </div>
-
-        {{-- Precios y stock --}}
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
-            <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Precios y stock</h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <label for="precio_unitario" class="block text-sm font-medium text-slate-300 mb-1.5">Precio *</label>
-                    <input type="number" step="0.01" name="precio_unitario" id="precio_unitario" value="{{ old('precio_unitario', $producto->precio_unitario) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('precio_unitario') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
-                </div>
-
-                <div>
-                    <label for="costo" class="block text-sm font-medium text-slate-300 mb-1.5">Costo</label>
-                    <input type="number" step="0.01" name="costo" id="costo" value="{{ old('costo', $producto->costo) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                </div>
-
-                <div>
-                    <label for="stock" class="block text-sm font-medium text-slate-300 mb-1.5">Stock *</label>
-                    <input type="number" name="stock" id="stock" value="{{ old('stock', $producto->stock) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                </div>
-
-                <div>
-                    <label for="umbral_alerta" class="block text-sm font-medium text-slate-300 mb-1.5">Umbral alerta *</label>
-                    <input type="number" name="umbral_alerta" id="umbral_alerta" value="{{ old('umbral_alerta', $producto->umbral_alerta) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                </div>
-            </div>
-
-            <div class="flex items-center gap-6">
-                <label class="inline-flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" name="maneja_numero_serie" value="1" {{ old('maneja_numero_serie', $producto->maneja_numero_serie) ? 'checked' : '' }}
-                           class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500">
-                    <span class="text-sm text-slate-300">Maneja número de serie</span>
-                </label>
-
-                <label class="inline-flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" name="visible_catalogo" value="1" {{ old('visible_catalogo', $producto->visible_catalogo) ? 'checked' : '' }}
-                           class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500">
-                    <span class="text-sm text-slate-300">Visible en catálogo</span>
-                </label>
-            </div>
-        </div>
-
-        {{-- Botones --}}
-        <div class="flex items-center gap-3">
-            <button type="submit"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
-                Actualizar producto
-            </button>
-            <a href="{{ route('admin.productos.index') }}"
-               class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg transition">
-                Cancelar
+        @can('crear productos')
+            <a href="{{ route('admin.productos.create') }}"
+               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
+                Nuevo producto
             </a>
+        @endcan
+    </div>
+
+    <!-- Filtros Tarea 11 -->
+
+    <x-card>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-800 text-sm">
+                <thead>
+                    <tr class="text-left text-xs uppercase tracking-wider text-slate-500">
+                        <th class="px-3 py-3">Producto</th>
+                        <th class="px-3 py-3">SKU</th>
+                        <th class="px-3 py-3">Categoría</th>
+                        <th class="px-3 py-3">Marca</th>
+                        <th class="px-3 py-3 text-right">Precio</th>
+                        <th class="px-3 py-3 text-center">Stock</th>
+                        <th class="px-3 py-3 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    @forelse ($productos as $producto)
+                        <tr class="hover:bg-slate-800/40 transition">
+                            <td class="px-3 py-3">
+                                <div class="flex items-center gap-3">
+                                    @if ($producto->imagen_principal)
+                                        <img src="{{ asset('storage/'.$producto->imagen_principal) }}"
+                                             alt="{{ $producto->nombre }}"
+                                             class="w-10 h-10 object-cover rounded-lg border border-slate-800">
+                                    @else
+                                        <div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                            </svg>
+                                        </div>
+                                    @endif
+
+                                    <div class="min-w-0">
+                                        <p class="text-white font-medium truncate">{{ $producto->nombre }}</p>
+                                        @if (! $producto->visible_catalogo)
+                                            <span class="inline-flex mt-1 px-2 py-0.5 text-[10px] font-semibold uppercase rounded-full bg-slate-700/50 text-slate-400">
+                                                Oculto
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-3 py-3 text-slate-400">{{ $producto->sku ?? '—' }}</td>
+                            <td class="px-3 py-3 text-slate-300">{{ $producto->categoria->nombre ?? '—' }}</td>
+                            <td class="px-3 py-3 text-slate-300">{{ $producto->marca->nombre ?? 'Sin marca' }}</td>
+                            <td class="px-3 py-3 text-right text-emerald-400 font-medium">
+                                Bs {{ number_format($producto->precio_unitario, 2) }}
+                            </td>
+                            <td class="px-3 py-3 text-center">
+                                @if ($producto->tieneStockBajo())
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-500/10 text-red-400">
+                                        {{ $producto->stock }}
+                                    </span>
+                                @else
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400">
+                                        {{ $producto->stock }}
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-3 py-3">
+                                <div class="flex items-center justify-end gap-3">
+                                    @can('ver productos')
+                                        <a href="{{ route('admin.productos.show', $producto) }}"
+                                           class="text-xs text-slate-400 hover:text-white transition">Ver</a>
+                                    @endcan
+
+                                    @can('editar productos')
+                                        <a href="{{ route('admin.productos.edit', $producto) }}"
+                                           class="text-xs text-blue-400 hover:text-blue-300 transition">Editar</a>
+                                    @endcan
+
+                                    @can('eliminar productos')
+                                        <form method="POST" action="{{ route('admin.productos.destroy', $producto) }}"
+                                              onsubmit="return confirm('¿Está seguro de eliminar este producto?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-xs text-red-400 hover:text-red-300 transition">
+                                                Eliminar
+                                            </button>
+                                        </form>
+                                    @endcan
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-3 py-10 text-center text-sm text-slate-500">
+                                No hay productos registrados.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-    </form>
+
+        <div class="mt-4">
+            {{ $productos->links() }}
+        </div>
+    </x-card>
+
 </div>
 @endsection

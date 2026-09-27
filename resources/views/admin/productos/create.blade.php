@@ -4,8 +4,13 @@
 @section('subtitle', 'Registrar un nuevo producto en el catálogo')
 
 @section('content')
-<div class="max-w-4xl">
-    <form method="POST" action="{{ route('admin.productos.store') }}" class="space-y-6">
+<div class="max-w-4xl"
+     x-data="productoForm({
+         atributosPorCategoria: @js($atributosPorCategoria),
+         seleccionada: @js(old('categoria_id')),
+         valores: @js(old('atributos', []))
+     })">
+    <form method="POST" action="{{ route('admin.productos.store') }}" enctype="multipart/form-data" class="space-y-6">
         @csrf
 
         {{-- Datos generales --}}
@@ -33,7 +38,7 @@
                     <label for="categoria_id" class="block text-sm font-medium text-slate-300 mb-1.5">
                         Categoría <span class="text-red-400">*</span>
                     </label>
-                    <select name="categoria_id" id="categoria_id"
+                    <select name="categoria_id" id="categoria_id" x-model="categoriaSeleccionada"
                             class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
                         <option value="">Seleccione...</option>
                         @foreach ($categorias as $cat)
@@ -71,6 +76,13 @@
                 <textarea name="descripcion" id="descripcion" rows="3"
                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">{{ old('descripcion') }}</textarea>
             </div>
+
+            <div>
+                <label for="imagen" class="block text-sm font-medium text-slate-300 mb-1.5">Imagen principal</label>
+                <input type="file" name="imagen" id="imagen" accept="image/*"
+                       class="w-full text-sm text-slate-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700">
+                @error('imagen') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+            </div>
         </div>
 
         {{-- Precios y stock --}}
@@ -91,6 +103,7 @@
                     <label for="costo" class="block text-sm font-medium text-slate-300 mb-1.5">Costo</label>
                     <input type="number" step="0.01" name="costo" id="costo" value="{{ old('costo') }}"
                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                    @error('costo') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -108,6 +121,7 @@
                     </label>
                     <input type="number" name="umbral_alerta" id="umbral_alerta" value="{{ old('umbral_alerta', 5) }}"
                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                    @error('umbral_alerta') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
                 </div>
             </div>
 
@@ -125,6 +139,8 @@
                 </label>
             </div>
         </div>
+
+        @include('admin.productos.partials.atributos')
 
         {{-- Botones --}}
         <div class="flex items-center gap-3">

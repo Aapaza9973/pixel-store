@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoriaController;
+use App\Http\Controllers\Admin\ProductoController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -9,17 +12,15 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::post('/session/extend', function (Request $request) {
         $lifetime = (int) config('session.lifetime', 120);
         $request->session()->save();
 
         return response()->json([
-            'status'     => 'extended',
-            'lifetime'   => $lifetime,
+            'status' => 'extended',
+            'lifetime' => $lifetime,
             'expires_at' => now()->addMinutes($lifetime)->toIso8601String(),
             'csrf_token' => csrf_token(),
         ]);
@@ -27,8 +28,8 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
 
     // Admin
     Route::prefix('admin')->name('admin.')->group(function () {
-        Route::resource('categorias', \App\Http\Controllers\Admin\CategoriaController::class);
-        Route::resource('productos', \App\Http\Controllers\Admin\ProductoController::class);
+        Route::resource('categorias', CategoriaController::class);
+        Route::resource('productos', ProductoController::class);
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
