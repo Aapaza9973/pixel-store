@@ -181,6 +181,9 @@ CREATE TABLE ubicaciones (
     nombre      VARCHAR(255) NOT NULL,
     tipo        enum_ubicacion_tipo NOT NULL,
     direccion   VARCHAR(255) NULL,
+    pasillo     VARCHAR(50) NULL,
+    estante     VARCHAR(50) NULL,
+    anaquel     VARCHAR(50) NULL,
     activa      BOOLEAN NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMP NOT NULL DEFAULT now(),
     updated_at  TIMESTAMP NOT NULL DEFAULT now()

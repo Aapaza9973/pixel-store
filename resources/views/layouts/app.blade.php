@@ -85,9 +85,11 @@
                 @endcan
 
                 @can('ver ubicaciones')
-                    <x-nav-link :href="'#'" :active="request()->routeIs('ubicaciones.*')" icon="location">
-                        Ubicaciones
-                    </x-nav-link>
+                    @if (Route::has('admin.ubicaciones.index'))
+                        <x-nav-link :href="route('admin.ubicaciones.index')" :active="request()->routeIs('admin.ubicaciones.*')" icon="location">
+                            Ubicaciones
+                        </x-nav-link>
+                    @endif
                 @endcan
 
                 @can('ver usuarios')

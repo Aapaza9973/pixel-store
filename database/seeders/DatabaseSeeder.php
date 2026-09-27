@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,5 +22,9 @@ class DatabaseSeeder extends Seeder
             UbicacionSeeder::class,
             DemoProductoSeeder::class,
         ]);
+
+        // Genera las alertas de los productos demo que quedaron bajo umbral.
+        Artisan::call('inventory:check-alerts');
+        $this->command?->info('✅ Alertas de stock generadas para productos en nivel crítico.');
     }
 }

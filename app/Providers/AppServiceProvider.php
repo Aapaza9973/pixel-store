@@ -40,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(\App\Models\Producto::class, \App\Policies\ProductoPolicy::class);
         Gate::policy(AlertaStock::class, \App\Policies\AlertaStockPolicy::class);
+        Gate::policy(\App\Models\Ubicacion::class, \App\Policies\UbicacionPolicy::class);
 
         // Contador de alertas sin leer para el badge del header.
         View::composer('layouts.app', function ($view) {

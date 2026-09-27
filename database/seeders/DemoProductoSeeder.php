@@ -31,7 +31,9 @@ class DemoProductoSeeder extends Seeder
             ]);
         }
 
-        $ubicaciones = Ubicacion::query()->pluck('id', 'nombre');
+        // Con la estructura física, la tienda y el depósito primarios son las primeras de su tipo.
+        $tiendaId = Ubicacion::query()->where('tipo', 'tienda')->orderBy('id')->value('id');
+        $depositoId = Ubicacion::query()->where('tipo', 'deposito')->orderBy('id')->value('id');
 
         foreach ($this->productos() as $datos) {
             $categoria = Categoria::query()->where('nombre', $datos['categoria'])->first();
@@ -65,7 +67,7 @@ class DemoProductoSeeder extends Seeder
                 $this->guardarAtributo($producto, $nombre, $valor);
             }
 
-            $this->distribuirStock($producto, $datos['stock'], $ubicaciones);
+            $this->distribuirStock($producto, $datos['stock'], $tiendaId, $depositoId);
         }
 
         $this->command?->info('✅ '.Producto::count().' productos demo con atributos y stock por ubicación.');
@@ -124,13 +126,10 @@ class DemoProductoSeeder extends Seeder
     /**
      * Reparte el stock total: 30% en tienda y el resto en depósito.
      */
-    private function distribuirStock(Producto $producto, int $stock, $ubicaciones): void
+    private function distribuirStock(Producto $producto, int $stock, ?int $tiendaId, ?int $depositoId): void
     {
         $cantidadTienda = (int) floor($stock * 0.3);
         $cantidadDeposito = $stock - $cantidadTienda;
-
-        $tiendaId = $ubicaciones['Tienda (Exhibición)'] ?? null;
-        $depositoId = $ubicaciones['Depósito Externo'] ?? null;
 
         if ($tiendaId) {
             StockUbicacion::updateOrCreate(

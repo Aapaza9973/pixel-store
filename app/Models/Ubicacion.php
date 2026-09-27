@@ -13,6 +13,9 @@ class Ubicacion extends Model
         'nombre',
         'tipo',
         'direccion',
+        'pasillo',
+        'estante',
+        'anaquel',
         'activa',
     ];
 
@@ -28,5 +31,28 @@ class Ubicacion extends Model
     public function estaActiva(): bool
     {
         return (bool) $this->activa;
+    }
+
+    /**
+     * Nombre legible compuesto: nombre + pasillo + estante + anaquel.
+     * Ej: "Tienda · Pasillo A · Estante 1".
+     */
+    public function getNombreCompletoAttribute(): string
+    {
+        return collect([$this->nombre, $this->pasillo, $this->estante, $this->anaquel])
+            ->filter(fn ($valor) => $valor !== null && $valor !== '')
+            ->implode(' · ');
+    }
+
+    /**
+     * Ubicaciones que representan una subdivisión física concreta.
+     */
+    public function scopeSububicaciones($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNotNull('pasillo')
+                ->orWhereNotNull('estante')
+                ->orWhereNotNull('anaquel');
+        });
     }
 }

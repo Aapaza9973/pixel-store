@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\ProductoController;
+use App\Http\Controllers\Admin\UbicacionController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
@@ -31,6 +32,8 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('categorias', CategoriaController::class);
         Route::resource('productos', ProductoController::class);
+        Route::resource('ubicaciones', UbicacionController::class)
+            ->parameters(['ubicaciones' => 'ubicacion']);
     });
 
     // Alertas de stock
