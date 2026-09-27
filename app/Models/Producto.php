@@ -43,8 +43,16 @@ class Producto extends Model
         return $this->hasMany(ProductoAtributo::class);
     }
 
-    // public function movimientosStock(): HasMany { return $this->hasMany(MovimientoStock::class); }
-    // public function alertasStock(): HasMany { return $this->hasMany(AlertaStock::class); }
+    public function movimientosStock(): HasMany
+    {
+        return $this->hasMany(MovimientoStock::class);
+    }
+
+    public function alertasStock(): HasMany
+    {
+        return $this->hasMany(AlertaStock::class);
+    }
+
     // public function numerosSerie(): HasMany { return $this->hasMany(NumeroSerie::class); }
     public function stockUbicaciones(): HasMany
     {

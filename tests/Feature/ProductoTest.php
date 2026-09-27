@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\Producto;
+use App\Models\Ubicacion;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\UbicacionSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -22,17 +24,21 @@ class ProductoTest extends TestCase
 
     private Marca $marca;
 
+    private Ubicacion $tienda;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->seed(RoleSeeder::class);
+        $this->seed(UbicacionSeeder::class);
 
         $this->admin = User::where('email', 'admin@pixelstore.com')->firstOrFail();
         $this->vendedor = User::where('email', 'vendedor@pixelstore.com')->firstOrFail();
 
         $this->categoria = Categoria::create(['nombre' => 'Categoría Test', 'tipo' => 'Componente']);
         $this->marca = Marca::create(['nombre' => 'Marca Test']);
+        $this->tienda = Ubicacion::where('tipo', 'tienda')->orderBy('id')->firstOrFail();
     }
 
     /**
@@ -77,12 +83,33 @@ class ProductoTest extends TestCase
     public function test_admin_puede_crear_producto(): void
     {
         $response = $this->actingAs($this->admin)
-            ->post(route('admin.productos.store'), $this->datosProducto(['nombre' => 'Producto Nuevo']));
+            ->post(route('admin.productos.store'), $this->datosProducto([
+                'nombre' => 'Producto Nuevo',
+                'ubicacion_id' => $this->tienda->id,
+            ]));
 
         $response->assertRedirect(route('admin.productos.index'));
         $this->assertDatabaseHas('productos', [
             'nombre' => 'Producto Nuevo',
             'sku' => 'SKU-TEST-001',
+            'stock' => 10,
+        ]);
+
+        $producto = Producto::where('nombre', 'Producto Nuevo')->firstOrFail();
+
+        // El stock inicial pasa por InventoryService y deja trazabilidad.
+        $this->assertDatabaseHas('movimientos_stock', [
+            'producto_id' => $producto->id,
+            'tipo' => 'entrada',
+            'cantidad' => 10,
+            'stock_resultante' => 10,
+            'motivo' => 'Stock inicial',
+        ]);
+
+        $this->assertDatabaseHas('stock_ubicacion', [
+            'producto_id' => $producto->id,
+            'ubicacion_id' => $this->tienda->id,
+            'cantidad' => 10,
         ]);
     }
 
@@ -94,6 +121,7 @@ class ProductoTest extends TestCase
             ->put(route('admin.productos.update', $producto), $this->datosProducto([
                 'nombre' => 'Producto Editado',
                 'precio_unitario' => 1500,
+                'stock' => 15,
             ]));
 
         $response->assertRedirect(route('admin.productos.index'));
@@ -101,6 +129,16 @@ class ProductoTest extends TestCase
             'id' => $producto->id,
             'nombre' => 'Producto Editado',
             'precio_unitario' => 1500,
+            'stock' => 15,
+        ]);
+
+        // El delta de stock se aplica como 'ajuste' con stock_resultante.
+        $this->assertDatabaseHas('movimientos_stock', [
+            'producto_id' => $producto->id,
+            'tipo' => 'ajuste',
+            'cantidad' => 5,
+            'stock_resultante' => 15,
+            'motivo' => 'Ajuste manual desde edición',
         ]);
     }
 

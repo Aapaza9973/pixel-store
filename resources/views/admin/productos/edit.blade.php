@@ -135,6 +135,21 @@
                 </div>
             </div>
 
+            <div>
+                <label for="ubicacion_id" class="block text-sm font-medium text-slate-300 mb-1.5">
+                    Ubicación para el ajuste de stock
+                </label>
+                <select name="ubicacion_id" id="ubicacion_id"
+                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                    @foreach ($ubicaciones as $ubicacion)
+                        <option value="{{ $ubicacion->id }}" @selected(old('ubicacion_id', $ubicacionPorDefecto) == $ubicacion->id)>
+                            {{ $ubicacion->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('ubicacion_id') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+            </div>
+
             <div class="flex items-center gap-6">
                 <label class="inline-flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" name="maneja_numero_serie" value="1" {{ old('maneja_numero_serie', $producto->maneja_numero_serie) ? 'checked' : '' }}

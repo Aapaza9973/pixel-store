@@ -10,6 +10,8 @@ use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\Producto;
 use App\Models\ProductoAtributo;
+use App\Models\Ubicacion;
+use App\Services\InventoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,19 +20,70 @@ use Illuminate\View\View;
 
 class ProductoController extends Controller
 {
-    public function __construct()
+    public function __construct(private readonly InventoryService $inventory)
     {
         $this->authorizeResource(Producto::class, 'producto');
     }
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $productos = Producto::query()
-            ->with(['categoria', 'marca'])
-            ->orderByDesc('id')
-            ->paginate(15);
+        $query = Producto::query()->with(['categoria', 'marca']);
 
-        return view('admin.productos.index', compact('productos'));
+        if ($request->filled('buscar')) {
+            $query->buscar($request->string('buscar')->trim()->toString());
+        }
+
+        if ($request->filled('categoria_id')) {
+            $query->where('categoria_id', $request->integer('categoria_id'));
+        }
+
+        if ($request->filled('marca_id')) {
+            $query->where('marca_id', $request->integer('marca_id'));
+        }
+
+        if ($request->filled('precio_min') && $request->filled('precio_max')) {
+            $query->whereBetween('precio_unitario', [
+                $request->input('precio_min'),
+                $request->input('precio_max'),
+            ]);
+        } elseif ($request->filled('precio_min')) {
+            $query->where('precio_unitario', '>=', $request->input('precio_min'));
+        } elseif ($request->filled('precio_max')) {
+            $query->where('precio_unitario', '<=', $request->input('precio_max'));
+        }
+
+        switch ($request->input('disponibilidad')) {
+            case 'con_stock':
+                $query->where('stock', '>', 0);
+                break;
+            case 'agotado':
+                $query->where('stock', 0);
+                break;
+            case 'bajo_stock':
+                $query->whereColumn('stock', '<=', 'umbral_alerta');
+                break;
+        }
+
+        $this->aplicarFiltrosAtributos($request, $query);
+
+        match ($request->input('orden')) {
+            'precio_asc' => $query->orderBy('precio_unitario'),
+            'precio_desc' => $query->orderByDesc('precio_unitario'),
+            'nombre_asc' => $query->orderBy('nombre'),
+            'nombre_desc' => $query->orderByDesc('nombre'),
+            'recientes' => $query->orderByDesc('id'),
+            'stock_bajo' => $query->orderBy('stock'),
+            default => $query->orderByDesc('id'),
+        };
+
+        $productos = $query->paginate(15)->withQueryString();
+
+        return view('admin.productos.index', [
+            'productos' => $productos,
+            'categorias' => Categoria::orderBy('nombre')->get(),
+            'marcas' => Marca::orderBy('nombre')->get(),
+            'atributosFiltrables' => $this->atributosFiltrables(),
+        ]);
     }
 
     public function create(): View
@@ -39,16 +92,35 @@ class ProductoController extends Controller
             'categorias' => Categoria::orderBy('nombre')->get(),
             'marcas' => Marca::orderBy('nombre')->get(),
             'atributosPorCategoria' => $this->atributosPorCategoria(),
+            'ubicaciones' => Ubicacion::orderBy('id')->get(),
+            'ubicacionPorDefecto' => $this->ubicacionPorDefecto(),
         ]);
     }
 
     public function store(StoreProductoRequest $request): RedirectResponse
     {
         DB::transaction(function () use ($request) {
-            $producto = Producto::create($request->safe()->except(['atributos', 'imagen']));
+            // El stock inicial nunca se escribe directo: pasa por InventoryService.
+            $datos = $request->safe()->except(['atributos', 'imagen', 'stock', 'ubicacion_id']);
+            $datos['stock'] = 0;
+
+            $producto = Producto::create($datos);
 
             $this->guardarImagen($request, $producto);
             $this->guardarAtributos($producto, $request->input('atributos', []));
+
+            $stockInicial = (int) $request->input('stock', 0);
+
+            if ($stockInicial > 0) {
+                $this->inventory->ajustarStock(
+                    $producto,
+                    $stockInicial,
+                    'entrada',
+                    'Stock inicial',
+                    $this->resolverUbicacionId($request->input('ubicacion_id')),
+                    $request->user()->id
+                );
+            }
         });
 
         return redirect()
@@ -73,18 +145,37 @@ class ProductoController extends Controller
             'marcas' => Marca::orderBy('nombre')->get(),
             'atributosPorCategoria' => $this->atributosPorCategoria(),
             'valoresActuales' => $this->valoresActuales($producto),
+            'ubicaciones' => Ubicacion::orderBy('id')->get(),
+            'ubicacionPorDefecto' => $this->ubicacionPorDefecto(),
         ]);
     }
 
     public function update(UpdateProductoRequest $request, Producto $producto): RedirectResponse
     {
         DB::transaction(function () use ($request, $producto) {
-            $producto->update($request->safe()->except(['atributos', 'imagen']));
+            $stockActual = (int) $producto->stock;
+
+            // El stock no se actualiza directo: se calcula el delta y pasa por InventoryService.
+            $producto->update($request->safe()->except(['atributos', 'imagen', 'stock', 'ubicacion_id']));
 
             $this->guardarImagen($request, $producto);
 
             $producto->atributos()->delete();
             $this->guardarAtributos($producto, $request->input('atributos', []));
+
+            $stockNuevo = (int) $request->input('stock', $stockActual);
+            $delta = $stockNuevo - $stockActual;
+
+            if ($delta !== 0) {
+                $this->inventory->ajustarStock(
+                    $producto,
+                    $delta,
+                    'ajuste',
+                    'Ajuste manual desde edición',
+                    $this->resolverUbicacionId($request->input('ubicacion_id')),
+                    $request->user()->id
+                );
+            }
         });
 
         return redirect()
@@ -105,6 +196,89 @@ class ProductoController extends Controller
         return redirect()
             ->route('admin.productos.index')
             ->with('success', 'Producto eliminado exitosamente.');
+    }
+
+    /**
+     * Resuelve la ubicación destino del movimiento: la enviada o la tienda por defecto.
+     */
+    private function resolverUbicacionId(mixed $ubicacionId): ?int
+    {
+        if ($ubicacionId !== null && $ubicacionId !== '') {
+            return (int) $ubicacionId;
+        }
+
+        return $this->ubicacionPorDefecto();
+    }
+
+    /**
+     * Primera ubicación de tipo tienda (destino por defecto del stock).
+     */
+    private function ubicacionPorDefecto(): ?int
+    {
+        return Ubicacion::query()
+            ->where('tipo', 'tienda')
+            ->orderBy('id')
+            ->value('id');
+    }
+
+    /**
+     * Aplica los filtros EAV recibidos como atributos[atributo_id] = valor.
+     * Se compara solo la columna correspondiente al tipo_dato del atributo
+     * para evitar castings inválidos en PostgreSQL (p. ej. 'AM4' contra integer).
+     */
+    private function aplicarFiltrosAtributos(Request $request, $query): void
+    {
+        $atributos = (array) $request->input('atributos', []);
+
+        foreach ($atributos as $atributoId => $valor) {
+            if ($valor === null || $valor === '') {
+                continue;
+            }
+
+            $atributo = AtributoTecnico::find($atributoId);
+
+            if (! $atributo) {
+                continue;
+            }
+
+            $query->whereHas('atributos', function ($q) use ($atributo, $valor) {
+                $q->where('atributo_id', $atributo->id)
+                    ->where(function ($sub) use ($atributo, $valor) {
+                        match ($atributo->tipo_dato) {
+                            'enum' => $sub->where('valor_enum_id', $valor)
+                                ->orWhereHas('valorEnum', fn ($v) => $v->where('valor', $valor)),
+                            'integer' => $sub->where('valor_integer', (int) $valor),
+                            'decimal' => $sub->where('valor_decimal', (float) $valor),
+                            'boolean' => $sub->where('valor_boolean', filter_var($valor, FILTER_VALIDATE_BOOLEAN)),
+                            default => $sub->where('valor_string', 'ILIKE', "%{$valor}%"),
+                        };
+                    });
+            });
+        }
+    }
+
+    /**
+     * Atributos marcados como filtrables, agrupados por categoría.
+     */
+    private function atributosFiltrables(): array
+    {
+        return AtributoTecnico::query()
+            ->where('es_filtrable', true)
+            ->with(['valoresPredefinidos' => fn ($query) => $query->orderBy('orden')])
+            ->orderBy('orden')
+            ->get()
+            ->groupBy('categoria_id')
+            ->map(fn ($grupo) => $grupo->map(fn (AtributoTecnico $atributo) => [
+                'id' => $atributo->id,
+                'nombre' => $atributo->nombre,
+                'tipo_dato' => $atributo->tipo_dato,
+                'unidad' => $atributo->unidad,
+                'valores' => $atributo->valoresPredefinidos
+                    ->map(fn ($valor) => ['id' => $valor->id, 'valor' => $valor->valor])
+                    ->values()
+                    ->all(),
+            ])->values()->all())
+            ->all();
     }
 
     /**
