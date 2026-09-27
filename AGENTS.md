@@ -14,15 +14,8 @@ app/
 │ │ └── Update{Modelo}Request.php # Rule::unique()->ignore()
 ├── Models/
 │ └── {Modelo}.php # 
-f
-i
-l
-l
-a
-b
-l
-e
-,
+
+fillable,
 fillable,casts, relaciones, scopes
 └── Policies/
 └── {Modelo}Policy.php # viewAny, view, create, update, delete
