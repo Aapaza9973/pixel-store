@@ -35,5 +35,9 @@ class AppServiceProvider extends ServiceProvider
                     ]);
                 });
         });
+
+        Gate::policy(\App\Models\Producto::class, \App\Policies\ProductoPolicy::class);
     }
+
+
 }

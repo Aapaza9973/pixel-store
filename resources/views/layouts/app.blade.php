@@ -48,16 +48,21 @@
                 </x-nav-link>
 
                 @can('ver productos')
-                    <x-nav-link :href="'#'" :active="request()->routeIs('productos.*')" icon="cube">
-                        Productos
-                    </x-nav-link>
+                    @if (Route::has('admin.productos.index'))
+                        <x-nav-link :href="route('admin.productos.index')" :active="request()->routeIs('admin.productos.*')" icon="cube">
+                            Productos
+                        </x-nav-link>
+                    @endif
                 @endcan
 
                 @can('ver categorias')
-                    <x-nav-link :href="route('admin.categorias.index')" :active="request()->routeIs('admin.categorias.*')" icon="tag">
-                        Categorías
-                    </x-nav-link>
+                    @if (Route::has('admin.categorias.index'))
+                        <x-nav-link :href="route('admin.categorias.index')" :active="request()->routeIs('admin.categorias.*')" icon="tag">
+                            Categorías
+                        </x-nav-link>
+                    @endif
                 @endcan
+
 
                 @can('ver marcas')
                     <x-nav-link :href="'#'" :active="request()->routeIs('marcas.*')" icon="bookmark">
