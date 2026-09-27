@@ -24,4 +24,9 @@ class AlertaStock extends Model
     {
         return $this->belongsTo(Producto::class);
     }
+
+    public function scopeNoLeidas($query)
+    {
+        return $query->where('leida', false);
+    }
 }

@@ -48,6 +48,14 @@
                 </x-nav-link>
 
                 @can('ver productos')
+                    @if (Route::has('alertas.index'))
+                        <x-nav-link :href="route('alertas.index')" :active="request()->routeIs('alertas.*')" icon="bell">
+                            Alertas
+                        </x-nav-link>
+                    @endif
+                @endcan
+
+                @can('ver productos')
                     @if (Route::has('admin.productos.index'))
                         <x-nav-link :href="route('admin.productos.index')" :active="request()->routeIs('admin.productos.*')" icon="cube">
                             Productos
@@ -132,11 +140,16 @@
                 </div>
 
                 <div class="flex items-center gap-4">
-                    <a href="#" class="relative text-slate-400 hover:text-white transition">
+                    <a href="{{ route('alertas.index') }}" class="relative text-slate-400 hover:text-white transition"
+                       title="{{ $alertasNoLeidasCount ?? 0 }} alertas sin leer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                         </svg>
-                        <span class="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></span>
+                        @if (($alertasNoLeidasCount ?? 0) > 0)
+                            <span class="absolute -top-1.5 -right-1.5 min-w-[1.1rem] h-[1.1rem] px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full">
+                                {{ $alertasNoLeidasCount > 99 ? '99+' : $alertasNoLeidasCount }}
+                            </span>
+                        @endif
                     </a>
 
                     <span class="text-xs text-slate-500">

@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Pagination\Paginator;
+use App\Models\AlertaStock;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -37,7 +39,13 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Gate::policy(\App\Models\Producto::class, \App\Policies\ProductoPolicy::class);
+        Gate::policy(AlertaStock::class, \App\Policies\AlertaStockPolicy::class);
+
+        // Contador de alertas sin leer para el badge del header.
+        View::composer('layouts.app', function ($view) {
+            $view->with('alertasNoLeidasCount', auth()->check()
+                ? AlertaStock::query()->noLeidas()->count()
+                : 0);
+        });
     }
-
-
 }
