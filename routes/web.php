@@ -34,6 +34,8 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
         Route::resource('productos', ProductoController::class);
         Route::post('productos/{producto}/transferir-stock', [ProductoController::class, 'transferirStock'])
             ->name('productos.transferir-stock');
+        Route::post('movimientos/salida', [\App\Http\Controllers\Admin\MovimientoController::class, 'registrarSalida'])
+            ->name('movimientos.salida');
         Route::resource('ubicaciones', UbicacionController::class)
             ->parameters(['ubicaciones' => 'ubicacion']);
     });
