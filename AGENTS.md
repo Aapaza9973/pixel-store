@@ -106,3 +106,14 @@ tests/Feature/
 - ❌ `dd()` o `dump()` olvidados en el código
 - ❌ Bootstrap (usar solo Tailwind)
 - ❌ Vistas sin `@can` cuando la acción es sensible
+
+---
+
+## Skills disponibles
+
+Este proyecto usa un sistema de skills para guiar el desarrollo con IA.
+
+- **`skills/hu-development.md`** — Skill completa para desarrollar Historias de Usuario (HU) de principio a fin. Aplica a cualquier sprint.
+- **`skills/crud-module.md`** — Skill específica para CRUDs (incluida en el skill de HU).
+
+**Regla**: al empezar cualquier HU o tarea de sprint, LEE PRIMERO el skill de HU antes de escribir código.
