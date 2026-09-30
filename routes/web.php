@@ -30,25 +30,28 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
     })->name('session.extend');
 
     // Admin
-    Route::prefix('admin')->name('admin.')->group(function () {
-        Route::resource('categorias', CategoriaController::class);
-        Route::resource('productos', ProductoController::class);
-        Route::post('productos/{producto}/transferir-stock', [ProductoController::class, 'transferirStock'])
-            ->name('productos.transferir-stock');
-        Route::post('movimientos/salida', [\App\Http\Controllers\Admin\MovimientoController::class, 'registrarSalida'])
-            ->name('movimientos.salida');
-        Route::resource('ubicaciones', UbicacionController::class)
-            ->parameters(['ubicaciones' => 'ubicacion']);
-        Route::resource('usuarios', UserController::class)
-            ->parameters(['usuarios' => 'usuario']);
-        Route::post('usuarios/{usuario}/desactivar', [UserController::class, 'desactivar'])
-            ->name('usuarios.desactivar');
-        Route::post('usuarios/{usuario}/activar', [UserController::class, 'activar'])
-            ->name('usuarios.activar');
-        Route::post('usuarios/{usuario}/reset-password', [UserController::class, 'resetPassword'])
-            ->name('usuarios.reset-password');
-        Route::get('usuarios/{usuario}/historial', [UserController::class, 'historial'])
-            ->name('usuarios.historial');
+    Route::middleware('user.has.role')->group(function () {
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::resource('categorias', CategoriaController::class);
+            Route::resource('productos', ProductoController::class);
+            Route::post('productos/{producto}/transferir-stock', [ProductoController::class, 'transferirStock'])
+                ->name('productos.transferir-stock');
+            Route::post('movimientos/salida', [\App\Http\Controllers\Admin\MovimientoController::class, 'registrarSalida'])
+                ->name('movimientos.salida');
+            Route::resource('ubicaciones', UbicacionController::class)
+                ->parameters(['ubicaciones' => 'ubicacion']);
+            Route::resource('usuarios', UserController::class)
+                ->parameters(['usuarios' => 'usuario']);
+            Route::post('usuarios/{usuario}/desactivar', [UserController::class, 'desactivar'])
+                ->name('usuarios.desactivar');
+            Route::post('usuarios/{usuario}/activar', [UserController::class, 'activar'])
+                ->name('usuarios.activar');
+            Route::post('usuarios/{usuario}/reset-password', [UserController::class, 'resetPassword'])
+                ->name('usuarios.reset-password');
+            Route::get('usuarios/{usuario}/historial', [UserController::class, 'historial'])
+                ->name('usuarios.historial');
+        });
+        Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
     });
 
     // Alertas de stock
