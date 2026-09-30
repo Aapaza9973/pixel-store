@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\ProductoController;
 use App\Http\Controllers\Admin\UbicacionController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
@@ -38,6 +39,16 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             ->name('movimientos.salida');
         Route::resource('ubicaciones', UbicacionController::class)
             ->parameters(['ubicaciones' => 'ubicacion']);
+        Route::resource('usuarios', UserController::class)
+            ->parameters(['usuarios' => 'usuario']);
+        Route::post('usuarios/{usuario}/desactivar', [UserController::class, 'desactivar'])
+            ->name('usuarios.desactivar');
+        Route::post('usuarios/{usuario}/activar', [UserController::class, 'activar'])
+            ->name('usuarios.activar');
+        Route::post('usuarios/{usuario}/reset-password', [UserController::class, 'resetPassword'])
+            ->name('usuarios.reset-password');
+        Route::get('usuarios/{usuario}/historial', [UserController::class, 'historial'])
+            ->name('usuarios.historial');
     });
 
     // Alertas de stock
