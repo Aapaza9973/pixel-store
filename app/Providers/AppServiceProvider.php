@@ -19,8 +19,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Admin es super-admin: tiene todos los permisos
-        Gate::before(function ($user, $ability) {
+        // Admin es super-admin: tiene todos los permisos excepto reglas de negocio sobre usuarios
+        Gate::before(function ($user, $ability, array $arguments = []) {
+            if (isset($arguments[0]) && ($arguments[0] instanceof \App\Models\User || $arguments[0] === \App\Models\User::class)) {
+                return null;
+            }
+
             if ($user->hasRole('Admin')) {
                 return true;
             }
@@ -41,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Producto::class, \App\Policies\ProductoPolicy::class);
         Gate::policy(AlertaStock::class, \App\Policies\AlertaStockPolicy::class);
         Gate::policy(\App\Models\Ubicacion::class, \App\Policies\UbicacionPolicy::class);
+        Gate::policy(\App\Models\User::class, \App\Policies\UserPolicy::class);
 
         // Contador de alertas sin leer para el badge del header.
         View::composer('layouts.app', function ($view) {
