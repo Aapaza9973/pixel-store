@@ -96,12 +96,15 @@
                     <div class="pt-4 pb-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                         Administración
                     </div>
-                    <x-nav-link :href="'#'" :active="request()->routeIs('usuarios.*')" icon="users">
+                    <x-nav-link :href="route('admin.usuarios.index')" :active="request()->routeIs('admin.usuarios.*')" icon="users">
                         Usuarios
                     </x-nav-link>
-                    <x-nav-link :href="'#'" :active="request()->routeIs('auditoria.*')" icon="clipboard">
-                        Auditoría
-                    </x-nav-link>
+                    @if (Route::has('admin.auditoria.index'))
+                        <x-nav-link :href="route('admin.auditoria.index')" :active="request()->routeIs('admin.auditoria.*')" icon="clipboard">
+                            Auditorías
+                        </x-nav-link>
+                    @endif
+
                 @endcan
             </nav>
 
