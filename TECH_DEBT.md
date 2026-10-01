@@ -27,6 +27,33 @@ No sigue el patrón profesional de las skills:
 
 **Cuándo arreglarlo**: cuando se toque el módulo de movimientos (Sprint 2).
 
+### Bug — Vista `historial.blade.php` faltante
+- [ ] Crear `resources/views/admin/usuarios/historial.blade.php`
+- Ruta `GET admin/usuarios/{user}/historial` devuelve 500 porque
+  `UserController@historial()` hace `view('admin.usuarios.historial')`
+  pero la vista no existe.
+- **Detectado**: durante tarea 1.1.8 (commit 2e45c07)
+- **Cuándo arreglarlo**: al cerrar HU-1.1 o al planificar módulo de
+  auditoría individual
+
+### Código muerto — UserController
+- [ ] Eliminar alias `historialAccesos()` (sin ruta, sin vista, sin test)
+- [ ] Eliminar claves duplicadas `'accesos'` y `'logs'` en `show()`
+      (la vista solo usa `$ultimosAccesos`)
+- **Detectado**: durante auditoría Bloque 0
+- **Cuándo arreglarlo**: junto con el bug de historial (una vez creada
+  la vista)
+
+### Auditoría — homogeneizar try/catch best-effort
+- [ ] Verificar que los 3 métodos de `AuditoriaService`
+      (`registrarLoginExitoso`, `registrarLogout`, `registrarIntentoFallido`)
+      no propaguen excepciones al usuario. Si sus callers (listeners)
+      no los protegen, agregar `try/catch + report()` internos.
+- [ ] Verificar lo mismo en `CheckUserHasRole` middleware
+- **Detectado**: durante tarea 2.B (discrepancia entre la asunción del
+  prompt y el código real)
+- **Cuándo arreglarlo**: Sprint 2 al refactorizar auditoría
+
 ---
 
 ## 🟢 Prioridad baja
