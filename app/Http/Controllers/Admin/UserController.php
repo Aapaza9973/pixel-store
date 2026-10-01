@@ -111,8 +111,6 @@ class UserController extends Controller
         return view('admin.usuarios.show', [
             'usuario' => $user,
             'ultimosAccesos' => $ultimosAccesos,
-            'accesos' => $ultimosAccesos,
-            'logs' => $ultimosAccesos,
         ]);
     }
 
@@ -236,13 +234,17 @@ class UserController extends Controller
 
     /**
      * Muestra el historial completo de accesos y auditoría del usuario.
+     *
+     * Filtra por `modelo`/`modelo_id` (evento que afecta al usuario):
+     * sus logins y cualquier CRUD o cambio de roles realizado sobre él.
      */
     public function historial(User $user): View
     {
         $this->authorize('view', $user);
 
         $logs = LogAuditoria::query()
-            ->where('user_id', $user->id)
+            ->where('modelo', User::class)
+            ->where('modelo_id', $user->id)
             ->latest('id')
             ->paginate(20)
             ->withQueryString();
@@ -250,15 +252,6 @@ class UserController extends Controller
         return view('admin.usuarios.historial', [
             'usuario' => $user,
             'logs' => $logs,
-            'historial' => $logs,
         ]);
-    }
-
-    /**
-     * Alias de historial para compatibilidad de nomenclatura.
-     */
-    public function historialAccesos(User $user): View
-    {
-        return $this->historial($user);
     }
 }

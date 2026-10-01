@@ -27,22 +27,29 @@ No sigue el patrón profesional de las skills:
 
 **Cuándo arreglarlo**: cuando se toque el módulo de movimientos (Sprint 2).
 
+### Bug — Tabla `telescope_entries` no migrada
+- [ ] Ejecutar `php artisan telescope:install` + `php artisan migrate` en local
+      (o desinstalar Telescope si no se usa activamente)
+- 25.449 errores `Undefined table: telescope_entries` acumulados en
+  `storage/logs/laravel.log` desde el 2026-09-23
+- **Impacto**: ensucia el log real; un bug crítico puede quedar enterrado
+- **Detectado**: durante verificación manual del Bloque 3
+- **Cuándo arreglarlo**: antes de empezar el Sprint 2
+
 ### Bug — Vista `historial.blade.php` faltante
-- [ ] Crear `resources/views/admin/usuarios/historial.blade.php`
+- [x] Crear `resources/views/admin/usuarios/historial.blade.php`
 - Ruta `GET admin/usuarios/{user}/historial` devuelve 500 porque
   `UserController@historial()` hace `view('admin.usuarios.historial')`
   pero la vista no existe.
 - **Detectado**: durante tarea 1.1.8 (commit 2e45c07)
-- **Cuándo arreglarlo**: al cerrar HU-1.1 o al planificar módulo de
-  auditoría individual
+- **Cerrado**: Bloque 3 (vista creada + link en `show` + `UserHistorialTest`)
 
 ### Código muerto — UserController
-- [ ] Eliminar alias `historialAccesos()` (sin ruta, sin vista, sin test)
-- [ ] Eliminar claves duplicadas `'accesos'` y `'logs'` en `show()`
+- [x] Eliminar alias `historialAccesos()` (sin ruta, sin vista, sin test)
+- [x] Eliminar claves duplicadas `'accesos'` y `'logs'` en `show()`
       (la vista solo usa `$ultimosAccesos`)
 - **Detectado**: durante auditoría Bloque 0
-- **Cuándo arreglarlo**: junto con el bug de historial (una vez creada
-  la vista)
+- **Cerrado**: Bloque 3 (commit `fix(usuarios): crear vista historial`)
 
 ### Auditoría — homogeneizar try/catch best-effort
 - [ ] Verificar que los 3 métodos de `AuditoriaService`

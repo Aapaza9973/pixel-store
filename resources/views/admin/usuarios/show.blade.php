@@ -17,6 +17,12 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
+            @can('view', $usuario)
+                <a href="{{ route('admin.usuarios.historial', $usuario) }}"
+                   class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg transition">
+                    Ver historial completo
+                </a>
+            @endcan
             @can('editar usuarios')
                 <a href="{{ route('admin.usuarios.edit', $usuario) }}"
                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
