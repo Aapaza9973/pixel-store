@@ -268,6 +268,92 @@ Producto::whereRaw("nombre % ?", ['rayzen'])->get();
 
 ---
 
+## ⚡ Índices de rendimiento
+
+### Tabla `users` (tarea 1.1.2)
+
+| Índice | Columna | Tipo | Origen |
+|---|---|---|---|
+| `users_pkey` | `id` | btree UNIQUE | `PRIMARY KEY` |
+| `users_email_key` | `email` | btree UNIQUE | `email VARCHAR(255) NOT NULL UNIQUE` |
+| `idx_users_activo` | `activo` | btree | Migración `2026_10_01_000001_add_indexes_to_users_table` |
+
+**Queries que aceleran:**
+
+- `users_email_key` → login y búsquedas por email (`WHERE email = ?`); además
+  garantiza la unicidad del email.
+- `idx_users_activo` → filtros de estado del listado de usuarios
+  (`User::activos()` / `User::inactivos()`, usados por `UserController@index`).
+
+### Decisión: NO se crea `idx_users_email`
+
+El backlog de 1.1.2 lo pedía "por si no existe", pero `email` ya es `UNIQUE` y su
+btree (`users_email_key`) cubre las búsquedas por igualdad. Un segundo índice
+sobre la misma columna sería **redundante**: solo agregaría coste de escritura y
+espacio en disco, sin aportar un camino de acceso nuevo al planner.
+
+### Migración y schema dump
+
+La estructura proviene del schema dump (`database/schema/pgsql-schema.sql`), que
+ya declaraba `idx_users_activo`. La migración
+`2026_10_01_000001_add_indexes_to_users_table` es **idempotente**: consulta
+`pg_indexes` y solo crea el índice si no existe, por lo que puede correrse sobre
+bases ya pobladas desde el dump sin fallar. Su `down()` lo elimina.
+
+```bash
+php artisan migrate
+```
+
+### EXPLAIN ANALYZE (dev)
+
+Base de desarrollo con solo **4 usuarios**, por lo que el planner elige
+`Seq Scan` — comportamiento **esperado y correcto** en tablas diminutas: el
+coste de recorrer 4 filas es menor que el de usar un índice.
+
+```sql
+EXPLAIN ANALYZE SELECT * FROM users WHERE email = 'admin@pixelstore.com';
+
+Seq Scan on users  (cost=0.00..1.05 rows=1 width=1940) (actual time=0.020..0.021 rows=1.00 loops=1)
+  Filter: ((email)::text = 'admin@pixelstore.com'::text)
+  Rows Removed by Filter: 3
+  Buffers: shared hit=1
+Planning Time: 2.343 ms
+Execution Time: 0.034 ms
+```
+
+```sql
+EXPLAIN ANALYZE SELECT * FROM users WHERE activo = true;
+
+Seq Scan on users  (cost=0.00..1.04 rows=2 width=1940) (actual time=0.028..0.029 rows=4.00 loops=1)
+  Filter: activo
+  Buffers: shared hit=1
+Planning Time: 1.798 ms
+Execution Time: 0.041 ms
+```
+
+**Verificación de que los índices son caminos válidos** — forzando el planner con
+`SET enable_seqscan = off` (solo para la prueba):
+
+```sql
+SET enable_seqscan = off;
+EXPLAIN SELECT * FROM users WHERE email = 'admin@pixelstore.com';
+
+Index Scan using users_email_key on users  (cost=0.13..8.15 rows=1 width=1940)
+  Index Cond: ((email)::text = 'admin@pixelstore.com'::text)
+```
+
+```sql
+EXPLAIN SELECT * FROM users WHERE activo = true;
+
+Index Scan using idx_users_activo on users  (cost=0.13..8.17 rows=2 width=1940)
+  Index Cond: (activo = true)
+```
+
+Con volumen real (miles de usuarios) el planner usará estos índices en lugar del
+`Seq Scan`.
+
+---
+
 ## 🛡️ Reglas de integridad
 
 | Regla | Dónde se aplica |

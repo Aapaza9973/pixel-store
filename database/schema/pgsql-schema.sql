@@ -41,7 +41,12 @@ CREATE TABLE users (
     updated_at             TIMESTAMP NOT NULL DEFAULT now()
 );
 
+-- Índice para filtros de estado (users.activo) — tarea 1.1.2.
 CREATE INDEX idx_users_activo ON users (activo);
+
+-- NOTA: no se define `idx_users_email` porque `email` es UNIQUE y el índice
+-- `users_email_key` ya cubre las búsquedas por email (login). Un segundo
+-- índice sobre la misma columna sería redundante.
 
 CREATE TABLE roles (
     id          BIGSERIAL PRIMARY KEY,
