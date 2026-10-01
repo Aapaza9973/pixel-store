@@ -158,6 +158,30 @@ class UserManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_puede_eliminar_usuario(): void
+    {
+        $admin = User::where('email', 'admin@pixelstore.com')->firstOrFail();
+
+        // Víctima SIN roles: evita la dependencia del pivot model_has_roles en el DELETE.
+        $victima = User::factory()->create();
+        $victimaId = $victima->id;
+
+        $response = $this->actingAs($admin)
+            ->delete(route('admin.usuarios.destroy', $victima));
+
+        $response->assertRedirect(route('admin.usuarios.index'));
+        $response->assertSessionHas('success');
+        $this->assertDatabaseMissing('users', ['id' => $victimaId]);
+
+        // Cadena completa: ruta → policy → controller → observer → logs_auditoria.
+        $this->assertDatabaseHas('logs_auditoria', [
+            'accion' => 'eliminar_user',
+            'user_id' => $admin->id,
+            'modelo' => User::class,
+            'modelo_id' => $victimaId,
+        ]);
+    }
+
     public function test_admin_no_puede_desactivar_su_cuenta(): void
     {
         $admin = $this->admin();
