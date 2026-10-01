@@ -72,4 +72,33 @@ class AuditoriaService
             'user_agent' => request()->userAgent(),
         ]);
     }
+
+    /**
+     * Registra un cambio de roles en la auditoría.
+     *
+     * `syncRoles()` no dispara eventos de Eloquent, por lo que este método
+     * cubre la subtarea 1.1.15.6 (cambio de rol queda en `logs_auditoria`).
+     *
+     * @param  array<int, string>  $rolesAntes
+     * @param  array<int, string>  $rolesDespues
+     */
+    public function registrarCambioRoles(User $user, array $rolesAntes, array $rolesDespues): void
+    {
+        $ip = request()->ip();
+
+        try {
+            LogAuditoria::create([
+                'user_id' => auth()->id(),
+                'accion' => 'cambiar_roles_user',
+                'modelo' => User::class,
+                'modelo_id' => $user->id,
+                'datos_anteriores' => ['roles' => $rolesAntes],
+                'datos_nuevos' => ['roles' => $rolesDespues],
+                'ip' => $ip,
+                'user_agent' => request()->userAgent(),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
 }

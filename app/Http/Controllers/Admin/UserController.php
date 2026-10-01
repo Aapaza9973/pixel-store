@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\LogAuditoria;
 use App\Models\User;
+use App\Services\AuditoriaService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -135,6 +136,9 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
+        // Estado de roles previo a la edición (syncRoles no dispara eventos Eloquent).
+        $rolesAntes = $user->getRoleNames()->sort()->values()->all();
+
         DB::transaction(function () use ($request, $user): void {
             $datos = $request->safe()->except(['roles', 'password']);
 
@@ -145,6 +149,13 @@ class UserController extends Controller
             $user->update($datos);
             $user->syncRoles($request->validated('roles'));
         });
+
+        $user->refresh();
+        $rolesDespues = $user->getRoleNames()->sort()->values()->all();
+
+        if ($rolesAntes !== $rolesDespues) {
+            app(AuditoriaService::class)->registrarCambioRoles($user, $rolesAntes, $rolesDespues);
+        }
 
         return redirect()
             ->route('admin.usuarios.index')

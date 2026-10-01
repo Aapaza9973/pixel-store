@@ -49,6 +49,24 @@ class UserObserverTest extends TestCase
             ->first();
     }
 
+    /**
+     * Carga del formulario de edición con los datos actuales del usuario.
+     *
+     * @param  array<int, string>  $roles
+     * @return array<string, mixed>
+     */
+    private function datosActualizacion(User $user, array $roles): array
+    {
+        return [
+            'name' => $user->name,
+            'email' => $user->email,
+            'telefono' => $user->telefono,
+            'nit_ci' => $user->nit_ci,
+            'activo' => $user->estaActivo(),
+            'roles' => $roles,
+        ];
+    }
+
     public function test_crear_usuario_registra_en_auditoria(): void
     {
         $admin = $this->admin();
@@ -235,6 +253,59 @@ class UserObserverTest extends TestCase
             'accion' => 'crear_user',
             'modelo' => User::class,
             'modelo_id' => $nuevo->id,
+        ]);
+    }
+
+    public function test_cambio_de_roles_registra_en_auditoria(): void
+    {
+        $admin = $this->admin();
+        $vendedor = User::where('email', 'vendedor@pixelstore.com')->firstOrFail();
+
+        $response = $this->actingAs($admin)->put(
+            route('admin.usuarios.update', $vendedor),
+            $this->datosActualizacion($vendedor, ['Vendedor', 'Cajero'])
+        );
+
+        $response->assertRedirect(route('admin.usuarios.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertTrue($vendedor->fresh()->hasRole('Cajero'));
+
+        $this->assertDatabaseHas('logs_auditoria', [
+            'accion' => 'cambiar_roles_user',
+            'user_id' => $admin->id,
+            'modelo' => User::class,
+            'modelo_id' => $vendedor->id,
+        ]);
+
+        $log = $this->ultimoLog('cambiar_roles_user', $vendedor->id);
+
+        $this->assertNotNull($log);
+        $this->assertSame($admin->id, (int) $log->user_id);
+        $this->assertSame(['Vendedor'], $log->datos_anteriores['roles'] ?? null);
+        $this->assertSame(['Cajero', 'Vendedor'], $log->datos_nuevos['roles'] ?? null);
+        $this->assertArrayNotHasKey('password', $log->datos_anteriores);
+        $this->assertArrayNotHasKey('password', $log->datos_nuevos);
+    }
+
+    public function test_sin_cambio_de_roles_no_genera_registro_de_roles(): void
+    {
+        $admin = $this->admin();
+        $vendedor = User::where('email', 'vendedor@pixelstore.com')->firstOrFail();
+
+        $response = $this->actingAs($admin)->put(
+            route('admin.usuarios.update', $vendedor),
+            $this->datosActualizacion($vendedor, ['Vendedor'])
+        );
+
+        $response->assertRedirect(route('admin.usuarios.index'));
+
+        $this->assertTrue($vendedor->fresh()->hasRole('Vendedor'));
+
+        $this->assertDatabaseMissing('logs_auditoria', [
+            'accion' => 'cambiar_roles_user',
+            'modelo' => User::class,
+            'modelo_id' => $vendedor->id,
         ]);
     }
 }
