@@ -32,19 +32,78 @@ Implementar el **módulo de inventario completo**, incluyendo:
 
 ## 📋 Historias de usuario cubiertas
 
-### HU 1.1 — Registro, autenticación y administración de usuarios
+### HU 1.1 — Registro, autenticación y administración de usuarios con roles
 
-**Estado**: ✅ Completado
+**Estado**: ✅ Completada — 2026-10-01
+**Story Points**: 21
+**Tests**: 146 passed (543 assertions)
 
 **Funcionalidades**:
-- Login/logout con Breeze
-- Registro de usuarios (solo Admin)
-- Asignación de roles (Admin, Vendedor, Cajero, Inventario, Cliente)
-- Desactivación de cuentas
-- Middleware `CheckUserActive`
-- Rate limiting: 5 intentos / 15 min
+- Login/logout con Breeze + auditoría de cada sesión
+- Registro de usuarios y CRUD completo desde el panel admin
+- Asignación de roles (Admin, Vendedor, Cajero, Inventario, Cliente), incluidos múltiples roles
+- Activación / desactivación de cuentas
+- Middleware `CheckUserActive` (`user.active`) y `CheckUserHasRole` (`user.has.role`)
+- Rate limiting: 5 intentos / minuto por `email + IP`
+- Auditoría en `logs_auditoria` (login, logout, fallos, CRUD de usuarios y cambios de rol)
+- Historial de auditoría por usuario (`admin.usuarios.historial`)
+- Vista de error 403 personalizada
 
-**Tests**: 20 passing (`AuthenticationTest`, `RegistrationTest`, `PasswordResetTest`, etc.)
+#### Tareas
+
+| # | Tarea | Estado | Commit(s) |
+|:-:|---|:-:|---|
+| 1.1.1 | Modelo User profesional | [x] | `0e7ac58` |
+| 1.1.2 | Migración índices | [x] | `b2d159d` |
+| 1.1.3 | Policy UserPolicy | [x] | `ae6a49d` |
+| 1.1.4 | StoreUserRequest | [x] | `6e7edec` |
+| 1.1.5 | UpdateUserRequest | [x] | `73d8d82` |
+| 1.1.6 | AuditoriaService | [x] | `94e0c01` |
+| 1.1.7 | UserController CRUD | [x] | `79e52c7` |
+| 1.1.8 | Rutas admin | [x] | `480f48c` + `2e45c07` |
+| 1.1.9 | index.blade | [x] | `3e15e5c` |
+| 1.1.10 | create.blade | [x] | `4383a55` |
+| 1.1.11 | edit.blade | [x] | `4383a55` |
+| 1.1.12 | show.blade | [x] | `4383a55` |
+| 1.1.13 | Middleware sin rol | [x] | `5497beb` |
+| 1.1.14 | Vista 403 | [x] | `a11138d` |
+| 1.1.15 | UserObserver | [x] | `b355eb0` + `aa6cc54` |
+| 1.1.16 | Tests feature | [x] | `f8ae2e9` |
+| 1.1.17 | Tests regresión | [x] | `a0beb53` + `65fe467` |
+| 1.1.18 | Docs | [x] | (este commit) |
+
+#### Desviaciones justificadas
+
+- **1.1.2.4** (`idx_users_email`): **OMITIDO** por redundancia con el índice UNIQUE
+  `users_email_key`. Ver [03 — Base de datos](03-base-de-datos.md).
+- **1.1.18.5** (capturas de pantalla): pendientes de captura manual. Vistas a
+  capturar: login, dashboard admin, listado de usuarios, formulario de creación,
+  formulario de edición, ficha de usuario, historial de auditoría y vista 403.
+
+#### Cobertura de criterios de aceptación
+
+| # | Criterio | Test | Estado |
+|:-:|---|---|:-:|
+| 1 | Registro con nombre, email, contraseña y rol | `test_admin_puede_crear_usuario_con_roles` | ✅ |
+| 2 | Rechazo por email duplicado | `test_email_duplicado_devuelve_error` | ✅ |
+| 3 | Autenticación + redirección al dashboard | `test_login_exitoso_redirige_al_dashboard` | ✅ |
+| 4 | Rechazo por contraseña incorrecta + auditoría | `test_login_con_password_incorrecta_registra_auditoria` | ✅ |
+| 5 | Selector con los 5 roles | `test_selector_de_roles_muestra_las_5_opciones` | ✅ |
+| 6 | Múltiples roles simultáneos | `test_usuario_puede_tener_multiples_roles` | ✅ |
+| 7 | Bloqueo sin rol | `test_usuario_sin_rol_no_accede_al_panel` | ✅ |
+
+#### Lecciones aprendidas
+
+- Migración idempotente sobre schema dump: guard contra `pg_indexes` y ciclo
+  `up`/`down` probado a mano (no basta con que `migrate` "no falle").
+- `syncRoles()` **no** dispara eventos de Eloquent → el cambio de rol hubo que
+  auditarlo explícitamente desde el controller.
+- Auditoría **best-effort** (`try/catch + report()`): un fallo al escribir en
+  `logs_auditoria` nunca debe romper el CRUD del usuario.
+- `UserObserver` cubre `created`/`updated`/`deleted` registrando solo el diff real
+  y filtrando `password` y `remember_token`.
+- Un bug de vista faltante (`historial.blade.php`) devolvía 500 y no lo detectaba
+  ningún test: **toda ruta necesita al menos un caso que la ejercite**.
 
 ### HU 4.1 y 4.2 — Inicio de sesión al módulo de inventario
 
@@ -255,13 +314,15 @@ Route::resource('ubicaciones', UbicacionController::class)
 | Tipos ENUM | 20 |
 | Modelos Eloquent | 20+ |
 | Servicios | 1 (+ 9 planificados) |
-| Controladores | 5 |
-| Policies | 3 |
+| Controladores | 17 |
+| Policies | 4 |
 | Componentes Blade | 4 personalizados |
 | Vistas Blade | 15+ |
-| Tests | 96 |
-| Assertions | 316 |
+| Tests | 146 |
+| Assertions | 543 |
 | Archivos trackeados en Git | ~200 |
+
+*Controladores concretos (excluye el abstract `Controller`). Incluye 3 top-level, 5 Admin y 9 Auth (Breeze).*
 
 ---
 

@@ -120,6 +120,64 @@ Acceder a **http://localhost:8000**
 
 ---
 
+## 🔐 Autenticación y roles
+
+El panel interno está protegido por login. Cada usuario recibe uno o más roles
+(Admin, Vendedor, Cajero, Inventario, Cliente) y los permisos se resuelven con
+Spatie Laravel-Permission.
+
+### Roles
+
+| Rol | Puede | Permisos |
+|---|---|:-:|
+| 👑 **Admin** | Todo el sistema (super-admin vía `Gate::before`) | 67 |
+| 💼 **Vendedor** | Ventas, clientes, cotizaciones, caja, pedidos | 17 |
+| 💰 **Cajero** | Ventas, clientes, caja | 8 |
+| 📦 **Inventario** | Productos, categorías, marcas, atributos, ubicaciones, proveedores, órdenes de compra | 32 |
+| 🧑 **Cliente** | Catálogo y sus cotizaciones | 2 |
+
+Se pueden asignar **varios roles** a la vez. La matriz completa rol × permiso está
+en [docs/04 — Roles y permisos](docs/04-roles-permisos.md).
+
+### Crear un usuario
+
+1. Iniciá sesión como Admin (ver credenciales demo abajo).
+2. Entrá a **Admin → Usuarios** (`/admin/usuarios`).
+3. **Nuevo usuario** → completá nombre, email, contraseña, teléfono, NIT/CI y roles.
+4. El email es único; el usuario puede quedar activo o inactivo.
+
+Desde la ficha de cada usuario podés **editar**, **activar/desactivar**,
+**restablecer la contraseña** y abrir su **historial de auditoría**.
+
+> Un usuario **sin ningún rol** no puede acceder al panel interno: recibe 403
+> (`No tiene permisos asignados.`). Un usuario **desactivado** es deslogueado
+> y redirigido al login.
+
+### Auditoría
+
+Todas las acciones sensibles quedan en la tabla `logs_auditoria`:
+
+- `login`, `logout` y `login_fallido` (con email intentado e IP)
+- `crear_user`, `editar_user`, `eliminar_user` (vía `UserObserver`, sin password)
+- `cambiar_roles_user` (roles antes y después)
+- `acceso_denegado_sin_rol`
+
+El historial por usuario se ve en `/admin/usuarios/{id}/historial`. El flujo
+completo (eventos, listeners y middleware) está en
+[docs/02 — Arquitectura](docs/02-arquitectura.md).
+
+### Comandos útiles
+
+```bash
+php artisan migrate:fresh --seed   # schema + migraciones + datos demo
+php artisan serve                  # servidor de desarrollo
+php artisan test                   # suite completa (146 tests)
+php artisan test --filter=UserManagementTest
+./vendor/bin/pint --dirty          # formateo de código
+```
+
+---
+
 ## 👤 Usuarios demo
 
 Una vez corridos los seeders (`migrate:fresh --seed`), tendrás estos usuarios disponibles:
@@ -148,18 +206,20 @@ php artisan test --filter=ProductoTest
 php artisan test --coverage
 ```
 
-**Estado actual**: ✅ **96 tests passing** (316 assertions)
+**Estado actual**: ✅ **146 tests passing** (543 assertions)
 
 | Módulo | Tests | Estado |
 |---|:-:|:-:|
-| Auth + Roles | 20 | ✅ |
-| Productos (CRUD + filtros) | 18 | ✅ |
+| Usuarios, roles y auditoría | 55 | ✅ |
+| Productos (CRUD + filtros) | 31 | ✅ |
+| Auth (Breeze) | 18 | ✅ |
 | InventoryService | 14 | ✅ |
-| Stock y ubicaciones | 14 | ✅ |
 | Alertas | 8 | ✅ |
 | Ubicaciones (almacén) | 6 | ✅ |
+| Perfil | 5 | ✅ |
+| Sesión (extensión) | 5 | ✅ |
 | Dashboard | 2 | ✅ |
-| Otros (perfil, sesión, ejemplo) | 14 | ✅ |
+| Ejemplos (smoke) | 2 | ✅ |
 
 ---
 

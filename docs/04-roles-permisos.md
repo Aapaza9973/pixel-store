@@ -6,17 +6,24 @@ Sistema de autorización basado en Spatie Laravel-Permission.
 
 ## 👥 Roles del sistema
 
-| Rol | Descripción | Acceso |
-|---|---|---|
-| 👑 **Admin** | Dueño / Gerente | Todo (super-admin vía `Gate::before`) |
-| 💼 **Vendedor** | Personal de ventas | Ventas, clientes, cotizaciones, caja |
-| 💰 **Cajero** | Encargado de caja | Ventas, clientes, caja |
-| 📦 **Inventario** | Encargado de almacén | Productos, categorías, marcas, atributos, ubicaciones, proveedores |
-| 🧑 **Cliente** | Cliente registrado | Catálogo, sus cotizaciones y pedidos |
+| Rol | Descripción | Acceso | Permisos |
+|---|---|---|:-:|
+| 👑 **Admin** | Dueño / Gerente | Todo (super-admin vía `Gate::before`) | 67 (todos) |
+| 💼 **Vendedor** | Personal de ventas | Ventas, clientes, cotizaciones, caja | 17 |
+| 💰 **Cajero** | Encargado de caja | Ventas, clientes, caja | 8 |
+| 📦 **Inventario** | Encargado de almacén | Productos, categorías, marcas, atributos, ubicaciones, proveedores | 32 |
+| 🧑 **Cliente** | Cliente registrado | Catálogo y sus cotizaciones | 2 |
 
 ---
 
 ## 🔑 Permisos por módulo
+
+**67 permisos** en total, agrupados por módulo. La matriz se extrae de
+`database/seeders/RoleSeeder.php`, que es la fuente de verdad.
+
+> ℹ️ Esta matriz se verificó contra la BD (`Role::with('permissions')`) al
+> cerrar HU-1.1. Las filas marcadas con — significan que el rol **no** tiene ese
+> permiso.
 
 ### Inventario / Catálogo
 
@@ -65,7 +72,7 @@ Sistema de autorización basado en Spatie Laravel-Permission.
 | `crear caja` | ✅ | ✅ | ✅ | — | — |
 | `ver todos los cierres` | ✅ | — | — | — | — |
 | `ver reportes` | ✅ | ✅ | — | ✅ | — |
-| `exportar reportes` | ✅ | — | — | ✅ | — |
+| `exportar reportes` | ✅ | — | — | — | — |
 
 ### Compras
 
@@ -90,7 +97,7 @@ Sistema de autorización basado en Spatie Laravel-Permission.
 | `eliminar clientes` | ✅ | — | — | — | — |
 | `ver pedidos` | ✅ | ✅ | — | — | — |
 | `confirmar pedidos` | ✅ | ✅ | — | — | — |
-| `cancelar pedidos` | ✅ | ✅ | — | — | — |
+| `cancelar pedidos` | ✅ | — | — | — | — |
 
 ### Administración
 
@@ -104,7 +111,7 @@ Sistema de autorización basado en Spatie Laravel-Permission.
 | `crear respaldos` | ✅ | — | — | — | — |
 | `ver encuestas` | ✅ | — | — | — | — |
 | `ver auditoria` | ✅ | — | — | — | — |
-| `ver facturacion` | ✅ | ✅ | — | — | — |
+| `ver facturacion` | ✅ | — | — | — | — |
 | `emitir facturacion` | ✅ | — | — | — | — |
 | `anular facturacion` | ✅ | — | — | — | — |
 
@@ -208,6 +215,23 @@ php artisan test --filter=RoleAccessTest
 - ✅ usuario desactivado no puede acceder
 - ✅ admin tiene rol asignado
 - ✅ vendedor no tiene rol admin
+
+Además, la administración de usuarios y roles está cubierta por:
+
+| Archivo | Casos | Qué verifica |
+|---|:-:|---|
+| `UserManagementTest` | 13 | CRUD de usuarios, roles múltiples, bloqueo sin rol |
+| `UserPolicyTest` | 6 | Reglas de `UserPolicy` (auto-eliminación, último Admin) |
+| `UserObserverTest` | 9 | Auditoría `created`/`updated`/`deleted` |
+| `UserHistorialTest` | 3 | Historial de auditoría por usuario |
+| `StoreUserRequestTest` / `UpdateUserRequestTest` | 6 + 6 | Validación de formularios |
+| `AuditoriaLoginTest` | 4 | Login, logout e intentos fallidos en `logs_auditoria` |
+
+### Verificar la matriz contra la BD
+
+```bash
+php artisan tinker --execute="foreach (Spatie\Permission\Models\Role::with('permissions')->orderBy('name')->get() as \$r) { echo \$r->name . ' (' . \$r->permissions->count() . ')' . PHP_EOL; }"
+```
 
 ---
 

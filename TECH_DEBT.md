@@ -61,6 +61,16 @@ No sigue el patrón profesional de las skills:
   prompt y el código real)
 - **Cuándo arreglarlo**: Sprint 2 al refactorizar auditoría
 
+### Config muerta — `RateLimiter::for('login')` sin aplicar
+- [ ] Decidir: aplicar `throttle:login` a `POST /login` en `routes/auth.php`
+      **O** eliminar el limiter de `AppServiceProvider`
+- Definido como `Limit::perMinute(15, 5)` (15 intentos / 5 min) pero **ninguna
+  ruta lo usa**. El límite activo real es de `LoginRequest` (5 intentos / 60 s,
+  por `email + IP`).
+- **Riesgo**: un dev puede asumir que el límite es 15/5 min cuando no es así.
+- **Detectado**: durante tarea 1.1.18 (documentación del flujo de auth)
+- **Cuándo arreglarlo**: al refactorizar seguridad en Sprint 2
+
 ---
 
 ## 🟢 Prioridad baja
