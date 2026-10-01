@@ -24,12 +24,12 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $usuario = $this->route('usuario');
-        $usuarioId = is_object($usuario) ? $usuario->id : $usuario;
+        $user = $this->route('user');
+        $userId = is_object($user) ? $user->id : $user;
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($usuarioId)],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed', 'regex:/[A-Z]/', 'regex:/[0-9]/'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'nit_ci' => ['nullable', 'string', 'max:20'],

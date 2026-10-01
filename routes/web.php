@@ -41,14 +41,14 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::resource('ubicaciones', UbicacionController::class)
                 ->parameters(['ubicaciones' => 'ubicacion']);
             Route::resource('usuarios', UserController::class)
-                ->parameters(['usuarios' => 'usuario']);
-            Route::post('usuarios/{usuario}/desactivar', [UserController::class, 'desactivar'])
+                ->parameters(['usuarios' => 'user']);
+            Route::post('usuarios/{user}/desactivar', [UserController::class, 'desactivar'])
                 ->name('usuarios.desactivar');
-            Route::post('usuarios/{usuario}/activar', [UserController::class, 'activar'])
+            Route::post('usuarios/{user}/activar', [UserController::class, 'activar'])
                 ->name('usuarios.activar');
-            Route::post('usuarios/{usuario}/reset-password', [UserController::class, 'resetPassword'])
+            Route::post('usuarios/{user}/reset-password', [UserController::class, 'resetPassword'])
                 ->name('usuarios.reset-password');
-            Route::get('usuarios/{usuario}/historial', [UserController::class, 'historial'])
+            Route::get('usuarios/{user}/historial', [UserController::class, 'historial'])
                 ->name('usuarios.historial');
         });
         Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');

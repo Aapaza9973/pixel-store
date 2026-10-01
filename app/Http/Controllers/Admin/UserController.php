@@ -22,7 +22,7 @@ class UserController extends Controller
 {
     public function __construct()
     {
-        $this->authorizeResource(User::class, 'usuario');
+        $this->authorizeResource(User::class, 'user');
     }
 
     /**
@@ -85,8 +85,8 @@ class UserController extends Controller
             $datos = $request->safe()->except(['roles', 'password']);
             $datos['password'] = Hash::make($request->validated('password'));
 
-            $usuario = User::create($datos);
-            $usuario->syncRoles($request->validated('roles'));
+            $user = User::create($datos);
+            $user->syncRoles($request->validated('roles'));
         });
 
         return redirect()
@@ -97,18 +97,18 @@ class UserController extends Controller
     /**
      * Muestra el detalle del usuario y sus últimos 20 accesos.
      */
-    public function show(User $usuario): View
+    public function show(User $user): View
     {
-        $usuario->load('roles');
+        $user->load('roles');
 
         $ultimosAccesos = LogAuditoria::query()
-            ->where('user_id', $usuario->id)
+            ->where('user_id', $user->id)
             ->latest('id')
             ->limit(20)
             ->get();
 
         return view('admin.usuarios.show', [
-            'usuario' => $usuario,
+            'usuario' => $user,
             'ultimosAccesos' => $ultimosAccesos,
             'accesos' => $ultimosAccesos,
             'logs' => $ultimosAccesos,
@@ -118,13 +118,13 @@ class UserController extends Controller
     /**
      * Muestra el formulario para editar el usuario especificado.
      */
-    public function edit(User $usuario): View
+    public function edit(User $user): View
     {
         $roles = Role::orderBy('name')->get();
-        $rolesAsignados = $usuario->roles()->pluck('name')->all();
+        $rolesAsignados = $user->roles()->pluck('name')->all();
 
         return view('admin.usuarios.edit', [
-            'usuario' => $usuario,
+            'usuario' => $user,
             'roles' => $roles,
             'rolesAsignados' => $rolesAsignados,
         ]);
@@ -133,17 +133,17 @@ class UserController extends Controller
     /**
      * Actualiza el usuario especificado en la base de datos.
      */
-    public function update(UpdateUserRequest $request, User $usuario): RedirectResponse
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        DB::transaction(function () use ($request, $usuario): void {
+        DB::transaction(function () use ($request, $user): void {
             $datos = $request->safe()->except(['roles', 'password']);
 
             if ($request->filled('password')) {
                 $datos['password'] = Hash::make($request->validated('password'));
             }
 
-            $usuario->update($datos);
-            $usuario->syncRoles($request->validated('roles'));
+            $user->update($datos);
+            $user->syncRoles($request->validated('roles'));
         });
 
         return redirect()
@@ -154,11 +154,11 @@ class UserController extends Controller
     /**
      * Elimina el usuario especificado.
      */
-    public function destroy(User $usuario): RedirectResponse
+    public function destroy(User $user): RedirectResponse
     {
         try {
-            DB::transaction(function () use ($usuario): void {
-                $usuario->delete();
+            DB::transaction(function () use ($user): void {
+                $user->delete();
             });
 
             return redirect()
@@ -174,43 +174,43 @@ class UserController extends Controller
     /**
      * Desactiva la cuenta del usuario especificado.
      */
-    public function desactivar(User $usuario): RedirectResponse
+    public function desactivar(User $user): RedirectResponse
     {
-        $this->authorize('desactivar', $usuario);
+        $this->authorize('desactivar', $user);
 
-        DB::transaction(function () use ($usuario): void {
-            $usuario->update(['activo' => false]);
+        DB::transaction(function () use ($user): void {
+            $user->update(['activo' => false]);
         });
 
         return redirect()
             ->route('admin.usuarios.index')
-            ->with('success', "Usuario '{$usuario->name}' desactivado exitosamente.");
+            ->with('success', "Usuario '{$user->name}' desactivado exitosamente.");
     }
 
     /**
      * Activa la cuenta del usuario especificado.
      */
-    public function activar(User $usuario): RedirectResponse
+    public function activar(User $user): RedirectResponse
     {
-        $this->authorize('update', $usuario);
+        $this->authorize('update', $user);
 
-        DB::transaction(function () use ($usuario): void {
-            $usuario->update(['activo' => true]);
+        DB::transaction(function () use ($user): void {
+            $user->update(['activo' => true]);
         });
 
         return redirect()
             ->route('admin.usuarios.index')
-            ->with('success', "Usuario '{$usuario->name}' activado exitosamente.");
+            ->with('success', "Usuario '{$user->name}' activado exitosamente.");
     }
 
     /**
      * Envía el correo para restablecer la contraseña del usuario especificado.
      */
-    public function resetPassword(User $usuario): RedirectResponse
+    public function resetPassword(User $user): RedirectResponse
     {
-        $this->authorize('update', $usuario);
+        $this->authorize('update', $user);
 
-        $status = Password::sendResetLink(['email' => $usuario->email]);
+        $status = Password::sendResetLink(['email' => $user->email]);
 
         if ($status === Password::RESET_LINK_SENT) {
             return redirect()
@@ -226,18 +226,18 @@ class UserController extends Controller
     /**
      * Muestra el historial completo de accesos y auditoría del usuario.
      */
-    public function historial(User $usuario): View
+    public function historial(User $user): View
     {
-        $this->authorize('view', $usuario);
+        $this->authorize('view', $user);
 
         $logs = LogAuditoria::query()
-            ->where('user_id', $usuario->id)
+            ->where('user_id', $user->id)
             ->latest('id')
             ->paginate(20)
             ->withQueryString();
 
         return view('admin.usuarios.historial', [
-            'usuario' => $usuario,
+            'usuario' => $user,
             'logs' => $logs,
             'historial' => $logs,
         ]);
@@ -246,8 +246,8 @@ class UserController extends Controller
     /**
      * Alias de historial para compatibilidad de nomenclatura.
      */
-    public function historialAccesos(User $usuario): View
+    public function historialAccesos(User $user): View
     {
-        return $this->historial($usuario);
+        return $this->historial($user);
     }
 }

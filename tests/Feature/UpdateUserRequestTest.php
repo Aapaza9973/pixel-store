@@ -43,15 +43,15 @@ class UpdateUserRequestTest extends TestCase
     }
 
     /**
-     * Instancia UpdateUserRequest con el parámetro de ruta 'usuario' configurado.
+     * Instancia UpdateUserRequest con el parámetro de ruta 'user' configurado.
      */
     private function crearRequestConUsuario(mixed $usuario): UpdateUserRequest
     {
         $request = new UpdateUserRequest;
 
-        $route = new Route('PUT', 'admin/usuarios/{usuario}', []);
+        $route = new Route('PUT', 'admin/usuarios/{user}', []);
         $route->bind(request());
-        $route->setParameter('usuario', $usuario);
+        $route->setParameter('user', $usuario);
 
         $request->setRouteResolver(fn () => $route);
 
