@@ -1,11 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Listeners\LogFailedLogin;
 use App\Listeners\LogSuccessfulLogin;
 use App\Listeners\LogSuccessfulLogout;
 use App\Models\AlertaStock;
+use App\Models\User;
+use App\Observers\UserObserver;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -53,6 +57,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(AlertaStock::class, \App\Policies\AlertaStockPolicy::class);
         Gate::policy(\App\Models\Ubicacion::class, \App\Policies\UbicacionPolicy::class);
         Gate::policy(\App\Models\User::class, \App\Policies\UserPolicy::class);
+
+        // Auditoría de cambios CRUD sobre usuarios (tarea 1.1.15)
+        User::observe(UserObserver::class);
 
         // Contador de alertas sin leer para el badge del header.
         View::composer('layouts.app', function ($view) {
