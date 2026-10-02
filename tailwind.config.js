@@ -12,7 +12,9 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Chakra Petch', ...defaultTheme.fontFamily.sans],
+                display: ['Space Grotesk', ...defaultTheme.fontFamily.sans],
+                body: ['Chakra Petch', ...defaultTheme.fontFamily.sans],
             },
         },
     },

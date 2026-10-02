@@ -136,7 +136,7 @@
             {{-- HEADER --}}
             <header class="h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-6">
                 <div>
-                    <h1 class="text-lg font-semibold text-white">
+                    <h1 class="font-display text-lg font-semibold text-white">
                         @yield('title', 'Dashboard')
                     </h1>
                     @hasSection('subtitle')
