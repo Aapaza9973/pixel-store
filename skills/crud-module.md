@@ -1076,3 +1076,10 @@ CRUDs futuros (Sprint 2+):
 - 🎨 **Mismo estilo visual**: `bg-slate-900`, `<x-card>`, badges coherentes
 - 📝 **Reporta con formato**: el jefe necesita saber qué hiciste
 - ⏸️ **Espera el OK**: nunca avances sin confirmación
+
+### Vistas Blade
+> Ver también `skills/frontend-design.md` para decisiones estéticas y de marca.
+
+- Extiende `layouts.app`
+- ...
+

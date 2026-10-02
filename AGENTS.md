@@ -111,9 +111,13 @@ tests/Feature/
 
 ## Skills disponibles
 
-Este proyecto usa un sistema de skills para guiar el desarrollo con IA.
-
 - **`skills/hu-development.md`** — Skill completa para desarrollar Historias de Usuario (HU) de principio a fin. Aplica a cualquier sprint.
 - **`skills/crud-module.md`** — Skill específica para CRUDs (incluida en el skill de HU).
+- **`skills/frontend-design.md`** — Identidad de marca y criterio visual. Aplicar en toda vista Blade nueva o rediseñada (panel interno y catálogo público).
 
-**Regla**: al empezar cualquier HU o tarea de sprint, LEE PRIMERO el skill de HU antes de escribir código.
+**Reglas**:
+1. Al empezar cualquier HU o tarea de sprint, LEE PRIMERO `hu-development.md`.
+2. Antes de escribir o modificar **cualquier vista Blade**, LEE `frontend-design.md`.
+3. Para CRUDs nuevos, LEE también `crud-module.md`.
+
+

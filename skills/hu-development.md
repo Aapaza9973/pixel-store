@@ -553,6 +553,11 @@ class MiModeloServicio
 
 ### 3.7. VISTA BLADE
 
+> ⚠️ **Antes de crear o modificar cualquier vista**, leer `skills/frontend-design.md`
+> para identidad de marca (logo, icono, paleta, tipografía) y criterio visual.
+
+...
+
 **Estructura obligatoria**:
 
 ```blade
