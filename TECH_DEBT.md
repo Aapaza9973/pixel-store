@@ -82,6 +82,14 @@ No sigue el patrón profesional de las skills:
 **Actual**: cualquier usuario autenticado puede invocarla si conoce la URL.
 **Riesgo**: bajo (no hay UI, requiere conocer la URL exacta, el service valida stock).
 
+### Assets — Falta logo para fondos oscuros
+- [ ] Encargar/generar `pixel-logo-white.png` (isotipo + wordmark blanco)
+- El único logo completo (`pixel-logo-horizontal.png`) tiene píxeles oscuros
+  → bajo contraste sobre `slate-950`
+- Tratamiento actual: icono + wordmark manual en Space Grotesk
+- **Detectado**: spike /preview (validación frontend-design)
+- **Cuándo arreglarlo**: antes de producción del catálogo público
+
 ---
 
 ## Convención

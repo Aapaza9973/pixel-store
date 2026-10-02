@@ -20,11 +20,18 @@ los contradice, la decisión se descarta.
 
 ### 1.1 Logo e icono — SIEMPRE presentes
 
-| Activo | Ruta | Uso |
+| Activo | Ruta real | Uso |
 |---|---|---|
-| **Icono** (isotipo) | `public/images/logo/pixel-icon-sm.png` | Favicon, avatar del sidebar colapsado, 403/404, emails |
-| **Logo completo** (isotipo + wordmark) | `public/images/logo/pixel-logo.png` *(verificar ruta exacta)* | Header del panel, navbar del catálogo, login, footer |
-| **Logo blanco** (para fondos oscuros) | `public/images/logo/pixel-logo-white.png` *(si existe)* | Preferente dado el dark-first del proyecto |
+| **Icono (isotipo)** | `public/images/logo/pixel-icon-sm.png` | Favicon, sidebar, 403/404/500 |
+| **Icono grande** | `public/images/logo/pixel-icon.png` | Variante alta resolución |
+| **Logo horizontal** | `public/images/logo/pixel-logo-horizontal.png` | og:image, fondos CLAROS |
+| **Logo compacto** | `public/images/logo/pixel-logo-compacto.png` | Variante compacta |
+| **Favicon** | `public/images/logo/favicon.png` | Fallback |
+
+⚠️ **Gap conocido**: NO existe logo para fondos oscuros (`pixel-logo-white.png`
+no está en el repo). El logo horizontal tiene píxeles oscuros (luminancia media
+75) → baja contraste sobre `slate-950`. **Tratamiento actual**: icono + wordmark
+en Space Grotesk (patrón del sidebar). **Deuda**: ver `TECH_DEBT.md`.
 
 **Reglas no negociables**:
 - ✅ El **icono** aparece SIEMPRE en el `<head>` como `favicon`: `<link rel="icon" href="{{ asset('images/logo/pixel-icon-sm.png') }}">`
@@ -91,6 +98,11 @@ Ambas están cargadas en el layout vía `fonts.bunny.net`. **No agregar familias
   `text-5xl` (48). No usar tamaños intermedios ni arbitrarios (`text-[17px]`).
 - ❌ No mezclar más de 2 pesos en un mismo bloque.
 - ❌ No usar `font-black` (900) — el máximo es 700.
+
+**Estado**: `tailwind.config.js` mapea `font-sans` → Chakra Petch,
+`font-display` → Space Grotesk, `font-body` → Chakra Petch. Todas las vistas
+usan `font-sans` en el body → tipografía de marca activa. Usar `font-display`
+explícito en `<h1>`/`<h2>` que deban destacar por sobre el resto.
 
 ### 1.4 Border radius — coherente
 
@@ -211,7 +223,40 @@ ser **obvio**. Si todo pesa igual, nada importa.
 - ❌ No animar todo. Es la marca #1 de diseño generado por IA.
 - ✅ Respetar `prefers-reduced-motion` siempre
 
-### 4.5 Complejidad calibrada
+### 4.5 El hero como tesis
+
+En el catálogo público, el hero **no es decoración**: es la tesis de la página.
+Abre con lo más característico del sujeto, en la forma que mejor le sirva:
+
+- **Datos en vivo** ("148 componentes en stock · actualizado hace 2 min")
+- **Ficha técnica** del producto estrella (RTX 4070: GPU, memoria, TDP)
+- **Comparador** (RTX 4060 vs 4070 con specs reales lado a lado)
+- **Demo interactivo** (armado de PC paso a paso)
+
+**Anti-patrón explícito**: título + subtítulo + 2 botones + mockup de laptop
+sobre gradiente azul. Ese combo ya no comunica nada.
+
+**Regla**: si el hero se puede reemplazar por cualquier otra tienda de
+tecnología sin que se note, no es una tesis. Es relleno.
+
+### 4.6 El elemento signature
+
+Cada página pública tiene **UN** elemento memorable. Uno solo. Ese elemento:
+
+1. **Encarna algo verdadero del sujeto** (no decora)
+2. **Se repite en toda la página** de forma coherente
+3. **No se puede copiar** a otra tienda sin perder sentido
+
+Ejemplos aplicados a Pixel Store:
+- **Barra de señal pixel**: 12 celdas que codifican stock o specs. Color
+  semántico por estado (azul normal, ámbar bajo, apagado agotado).
+- **Spec readout**: fila de datos monospace con números tabulares.
+- **Grid pixelado de fondo** (sutil, marca no decoración).
+
+**Regla Chanel**: antes de entregar, quitar un accesorio. Si dudás entre dos
+signatures, elegí uno y borrá el otro.
+
+### 4.7 Complejidad calibrada
 
 - **Minimalismo** requiere **precisión**: 1px de diferencia importa. Espaciado sin
   excepción, jerarquía tipográfica perfecta.
@@ -270,4 +315,29 @@ Si algo similar existe, **extenderlo** (props/variantes), no duplicarlo.
     </x-card>
 </div>
 @endsection
+```
+
+### 5.3 Anatomía del catálogo público
+
+Estructura mínima de una vista pública (home, listado, ficha de producto):
+
+┌──────────────────────────────────────────────┐
+│ HEADER: icono + wordmark · nav · CTA         │
+├──────────────────────────────────────────────┤
+│ HERO: tesis + elemento signature             │
+│  (asimetría 2-col o composición no genérica) │
+├──────────────────────────────────────────────┤
+│ SECCIÓN PRODUCTOS: grid 2/3 cols             │
+│  cards con specs + precio + stock            │
+├──────────────────────────────────────────────┤
+│ FOOTER: icono + marca + ubicación + ©        │
+└──────────────────────────────────────────────┘
+
+**No extiende `layouts.app`** (ese layout asume usuario autenticado con sidebar).
+Cuando el catálogo sea real, crear `layouts.public`.
+
+**Componentes públicos futuros** (no crear todavía):
+- `<x-product-card>` — datos de producto
+- `<x-pixel-bar>` — barra de señal signature
+- `<x-spec-table>` — tabla de especificaciones densa
 
