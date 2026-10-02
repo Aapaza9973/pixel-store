@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\UbicacionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+// SPIKE: prototipo de landing publica. NO es la home real.
+// Ver docs/rediseno/00-plan.md. Eliminar antes de produccion.
+Route::get('/preview', [PreviewController::class, 'index'])->name('preview');
 
 Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
