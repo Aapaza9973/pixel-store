@@ -12,7 +12,28 @@
     - Instanciado desde la propuesta visual del cliente, NO copiado: sin WebGL (CSS),
       sin Tailwind CDN (@vite), sin Material Symbols (SVG inline), sin telemetría
       inventada y sin credenciales hardcodeadas. El form es real.
+    - Galería de componentes DENTRO del aside de marca (no es una 3ª columna).
+      Necesita ancho Y alto: se muestra desde 1280x800. A 1280 de ancho el aside
+      necesita ~800px de alto (medido); con menos, el contenido desborda y la
+      firma se pega al borde inferior. En `lg` (1024-1279) no aparece, así que el
+      layout ya aprobado queda intacto. Verificado con Chrome headless midiendo la
+      posición del dot emerald de la firma.
+    - Todas las animaciones decorativas respetan `prefers-reduced-motion: reduce`
+      (excepción: el spinner del CTA, que es feedback funcional).
 --}}
+
+@php
+    // Datos demo de la galería del panel de marca. Hardcodeados a propósito:
+    // moverlos a BD requiere tocar el controlador (fuera de scope de esta tarea).
+    $componentes = [
+        ['cat' => 'Laptop',  'nombre' => 'ASUS ROG Strix G16',  'spec' => 'RTX 4060 · i7-13650HX', 'icono' => 'laptop'],
+        ['cat' => 'GPU',     'nombre' => 'ASUS TUF RTX 4070',   'spec' => '12 GB GDDR6X',          'icono' => 'gpu'],
+        ['cat' => 'CPU',     'nombre' => 'AMD Ryzen 7 7800X3D', 'spec' => '8C/16T · AM5',          'icono' => 'cpu'],
+        ['cat' => 'SSD',     'nombre' => 'Samsung 990 PRO',     'spec' => '2 TB · NVMe PCIe 4.0',  'icono' => 'ssd'],
+        ['cat' => 'Monitor', 'nombre' => 'LG UltraGear 27"',    'spec' => '4K · 144 Hz',           'icono' => 'monitor'],
+        ['cat' => 'RAM',     'nombre' => 'Corsair Vengeance',   'spec' => '32 GB DDR5-6000',       'icono' => 'ram'],
+    ];
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
 <head>
@@ -56,6 +77,54 @@
             -webkit-backdrop-filter: blur(24px);
         }
 
+        /* ============ Entrada escalonada (form + galería) ============
+           `backwards` (no `both`): durante el delay el elemento está en el estado
+           inicial y, al terminar, la animación se suelta y el elemento vuelve a sus
+           estilos normales. Con `both` el keyframe final (`transform: none`) pisaría
+           para siempre los transforms de hover/active de los tiles y del CTA. */
+        @keyframes rise-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: none; }
+        }
+
+        .rise-in {
+            animation: rise-in .5s cubic-bezier(.2, .7, .2, 1) backwards;
+        }
+
+        /* ============ Float continuo de los tiles (1-2px, desincronizado) ============ */
+        @keyframes tile-float {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-2px); }
+        }
+
+        .tile-float {
+            animation: tile-float 5s ease-in-out infinite;
+        }
+
+        /* ============ Spotlight del card (sigue al cursor; el JS no corre con
+           reduced-motion, así que el layer queda en opacity-0) ============ */
+        .card-spotlight {
+            background: radial-gradient(400px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+                                        rgba(37, 99, 235, .18), transparent 80%);
+        }
+
+        /* ============ Galería del panel de marca ============
+           Necesita ancho Y alto a la vez. Medido con Chrome headless (posición del
+           dot emerald exacto de la firma): a 1280 de ancho el aside necesita ~800px
+           de alto. Con 620/700/740/760 el contenido desborda y la firma queda
+           pegada al borde inferior (overlay clipped). A 1280x800 entra justo y a
+           1280x900/1920x1080 sobra. En lg (1024-1279) queda oculta: el layout ya
+           aprobado no cambia. */
+        .gallery-brand {
+            display: none;
+        }
+
+        @media (min-width: 1280px) and (min-height: 800px) {
+            .gallery-brand {
+                display: block;
+            }
+        }
+
         /* ============ Signature: onda de la barra pixel ============ */
         @keyframes pixel-wave {
             0%, 100% { transform: scale(1); opacity: .55; }
@@ -74,6 +143,8 @@
            (El spinner del botón se mantiene: es feedback funcional, no decoración.) */
         @media (prefers-reduced-motion: reduce) {
             .pixel-cell,
+            .rise-in,
+            .tile-float,
             .animate-ping {
                 animation: none;
             }
@@ -84,15 +155,15 @@
     <div class="min-h-screen lg:grid lg:grid-cols-2">
 
         {{-- ===================== Panel de marca (solo desktop) ===================== --}}
-        <aside class="relative hidden overflow-hidden bg-surface p-12 lg:flex lg:flex-col lg:justify-between xl:p-16">
-            {{-- Capas de fondo: grid + glows ambientales --}}
+        <aside class="relative hidden overflow-hidden bg-surface p-10 lg:flex lg:flex-col lg:justify-between xl:p-14">
+            {{-- Capas de fondo: grid + velo + glows ambientales --}}
             <div class="obsidian-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
+            <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-surface/40 via-surface/80 to-surface" aria-hidden="true"></div>
             <div class="obsidian-glow-primary pointer-events-none absolute inset-0" aria-hidden="true"></div>
             <div class="obsidian-glow-tertiary pointer-events-none absolute inset-0" aria-hidden="true"></div>
-            <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-surface" aria-hidden="true"></div>
 
-            {{-- Marca --}}
-            <div class="relative">
+            {{-- Bloque superior: marca + tesis + galería --}}
+            <div class="relative flex flex-col gap-8">
                 <div class="flex items-center gap-4">
                     <img src="{{ asset('images/logo/pixel-icon-sm.png') }}"
                          alt="Pixel Store" class="h-12 w-12">
@@ -102,35 +173,103 @@
                     </div>
                 </div>
 
-                {{-- Tesis de marca (el <h1> vive en el formulario: ver cabecera) --}}
-                <p class="mt-16 font-headline-xl text-headline-xl text-on-surface">
-                    Todo el mundo<br>
-                    tecnológico,<br>
-                    <span class="text-tertiary">pixel a pixel.</span>
-                </p>
+                <div>
+                    {{-- Tesis de marca (el <h1> vive en el formulario: ver cabecera) --}}
+                    <p class="font-headline-xl text-headline-xl text-on-surface">
+                        Todo el mundo<br>
+                        tecnológico,<br>
+                        <span class="text-tertiary">pixel a pixel.</span>
+                    </p>
 
-                {{-- Signature: barra de señal pixel, 12 celdas con onda escalonada --}}
-                <div class="mt-10 flex gap-1.5" aria-hidden="true">
-                    @for ($i = 0; $i < 12; $i++)
-                        @if ($i < 9)
-                            <span class="pixel-cell pixel-cell-live h-3 w-3 rounded-obsidian bg-primary-container"
-                                  style="animation-delay: {{ number_format($i * 0.18, 2) }}s"></span>
-                        @else
-                            <span class="h-3 w-3 rounded-obsidian bg-surface-variant"></span>
-                        @endif
-                    @endfor
+                    {{-- Signature: barra de señal pixel, 12 celdas con onda escalonada --}}
+                    <div class="mt-6 flex gap-1.5" aria-hidden="true">
+                        @for ($i = 0; $i < 12; $i++)
+                            @if ($i < 9)
+                                <span class="pixel-cell pixel-cell-live h-3 w-3 rounded-obsidian bg-primary-container"
+                                      style="animation-delay: {{ number_format($i * 0.18, 2) }}s"></span>
+                            @else
+                                <span class="h-3 w-3 rounded-obsidian bg-surface-variant"></span>
+                            @endif
+                        @endfor
+                    </div>
+                </div>
+
+                {{-- Galería: DENTRO del aside (no es una 3ª columna). --}}
+                <div class="gallery-brand">
+                    <div class="mb-3 flex items-center gap-2">
+                        <span class="h-px w-6 bg-outline-variant/50"></span>
+                        <p class="text-label-sm uppercase tracking-[0.18em] text-outline">
+                            Lo último en tienda
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 xl:grid-cols-3">
+                        @foreach ($componentes as $i => $c)
+                            <article class="rise-in group relative flex flex-col rounded-obsidian-lg border border-outline-variant/25 bg-surface-container-low/40 p-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-container/40 hover:bg-surface-container-low/70"
+                                     style="animation-delay: {{ 100 + $i * 70 }}ms">
+                                <div class="tile-float flex flex-1 flex-col gap-2.5"
+                                     style="animation-delay: {{ number_format($i * 0.35, 2) }}s">
+                                    {{-- Icono del tipo de componente --}}
+                                    <div class="flex h-8 w-8 items-center justify-center rounded-obsidian border border-outline-variant/30 bg-surface-container-lowest/60 text-tertiary transition-colors group-hover:text-primary">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                            @switch($c['icono'])
+                                                @case('laptop')
+                                                    <rect x="3" y="5.5" width="18" height="11" rx="2" />
+                                                    <path stroke-linecap="round" d="M2 19.5h20" />
+                                                    @break
+
+                                                @case('gpu')
+                                                    <rect x="2.5" y="6.5" width="19" height="10" rx="1.5" />
+                                                    <circle cx="8" cy="11.5" r="2" />
+                                                    <circle cx="16" cy="11.5" r="2" />
+                                                    @break
+
+                                                @case('cpu')
+                                                    <rect x="6.5" y="6.5" width="11" height="11" rx="1.5" />
+                                                    <rect x="10" y="10" width="4" height="4" />
+                                                    <path stroke-linecap="round"
+                                                          d="M10 3.5v3M14 3.5v3M10 17.5v3M14 17.5v3M3.5 10h3M3.5 14h3M17.5 10h3M17.5 14h3" />
+                                                    @break
+
+                                                @case('ssd')
+                                                    <rect x="3" y="7" width="18" height="10" rx="1.5" />
+                                                    <path stroke-linecap="round" d="M7 10.5h7M7 13.5h4" />
+                                                    @break
+
+                                                @case('monitor')
+                                                    <rect x="2.5" y="4.5" width="19" height="12.5" rx="1.5" />
+                                                    <path stroke-linecap="round" d="M12 17v3M8.5 20h7" />
+                                                    @break
+
+                                                @case('ram')
+                                                    <rect x="2.5" y="8" width="19" height="7" rx="1" />
+                                                    <path stroke-linecap="round" d="M6.5 11h4M13.5 11h4" />
+                                                    <path stroke-linecap="round" d="M7 15v2.5M11 15v2.5M15 15v2.5M19 15v2.5" />
+                                                    @break
+                                            @endswitch
+                                        </svg>
+                                    </div>
+
+                                    <p class="text-label-sm uppercase tracking-[0.18em] text-outline">{{ $c['cat'] }}</p>
+                                    <h3 class="font-headline-sm text-sm font-semibold leading-tight text-on-surface">
+                                        {{ $c['nombre'] }}
+                                    </h3>
+                                    <p class="mt-auto truncate text-label-sm text-on-surface-variant/70">{{ $c['spec'] }}</p>
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
                 </div>
             </div>
 
             {{-- Firma --}}
-            <div class="relative">
-                <div class="mb-5 h-px w-24 bg-outline-variant/50"></div>
-                <div class="flex items-center gap-3">
-                    <span class="relative flex h-1.5 w-1.5">
+            <div class="relative border-t border-outline-variant/15 pt-6">
+                <div class="flex items-center gap-2">
+                    <span class="relative flex h-2 w-2">
                         <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                        <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
                     </span>
-                    <p class="text-label-sm uppercase tracking-[0.18em] text-outline">
+                    <p class="text-label-sm uppercase tracking-widest text-outline">
                         Sistema de ventas e inventario · La Paz, Bolivia
                     </p>
                 </div>
@@ -152,9 +291,17 @@
                 </div>
 
                 {{-- Card glass --}}
-                <div class="glass-login-panel rounded-obsidian-xl border border-outline-variant/30 p-7 sm:p-9">
+                <div id="login-card"
+                     class="glass-login-panel relative rounded-obsidian-xl border border-outline-variant/30 p-7 sm:p-9">
+                    {{-- Spotlight que sigue al cursor (A.1). Decorativo: el JS no corre
+                         con prefers-reduced-motion, así que queda en opacity-0. --}}
+                    <div id="card-spotlight"
+                         class="card-spotlight pointer-events-none absolute -inset-px rounded-obsidian-xl opacity-0 transition-opacity duration-300"
+                         aria-hidden="true"></div>
+
                     {{-- Badge eyebrow --}}
-                    <div class="inline-flex items-center gap-2 rounded-obsidian border border-outline-variant/40 bg-surface-container-low/60 px-2.5 py-1">
+                    <div class="rise-in inline-flex items-center gap-2 rounded-obsidian border border-outline-variant/40 bg-surface-container-low/60 px-2.5 py-1"
+                         style="animation-delay: 0ms">
                         <span class="relative flex h-1.5 w-1.5">
                             <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-tertiary opacity-75"></span>
                             <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-tertiary"></span>
@@ -164,10 +311,11 @@
                         </span>
                     </div>
 
-                    <h1 class="mt-6 font-headline-lg text-headline-lg-mobile text-on-surface sm:text-headline-lg">
+                    <h1 class="rise-in mt-6 font-headline-lg text-headline-lg-mobile text-on-surface sm:text-headline-lg"
+                        style="animation-delay: 80ms">
                         {{ __('Iniciar sesión') }}
                     </h1>
-                    <p class="mt-2 text-body-md text-on-surface-variant">
+                    <p class="rise-in mt-2 text-body-md text-on-surface-variant" style="animation-delay: 140ms">
                         Ingresá tus credenciales para acceder al panel.
                     </p>
 
@@ -197,13 +345,14 @@
                         @csrf
 
                         {{-- Correo electrónico --}}
-                        <div>
+                        <div class="rise-in" style="animation-delay: 200ms">
                             <label for="email"
                                    class="mb-2 block text-label-md uppercase tracking-[0.12em] text-outline">
                                 {{ __('Correo electrónico') }}
                             </label>
-                            <div class="relative">
-                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-outline" aria-hidden="true">
+                            <div class="group relative">
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-outline transition-colors group-focus-within:text-primary"
+                                      aria-hidden="true">
                                     {{-- mail --}}
                                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -223,13 +372,14 @@
                         </div>
 
                         {{-- Contraseña --}}
-                        <div>
+                        <div class="rise-in" style="animation-delay: 260ms">
                             <label for="password"
                                    class="mb-2 block text-label-md uppercase tracking-[0.12em] text-outline">
                                 {{ __('Contraseña') }}
                             </label>
-                            <div class="relative">
-                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-outline" aria-hidden="true">
+                            <div class="group relative">
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-outline transition-colors group-focus-within:text-primary"
+                                      aria-hidden="true">
                                     {{-- lock --}}
                                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -265,7 +415,7 @@
                         </div>
 
                         {{-- Recordarme / recuperar contraseña --}}
-                        <div class="flex items-center justify-between gap-4 pt-1">
+                        <div class="rise-in flex items-center justify-between gap-4 pt-1" style="animation-delay: 320ms">
                             <label for="remember_me" class="inline-flex cursor-pointer items-center gap-2">
                                 <input id="remember_me" type="checkbox" name="remember"
                                        class="rounded-obsidian border-outline-variant bg-surface-container-low text-primary-container transition focus:ring-2 focus:ring-primary-container/40 focus:ring-offset-0" />
@@ -283,7 +433,8 @@
                         {{-- CTA con loading real (el submit sigue siendo de Laravel) --}}
                         <button type="submit"
                                 x-bind:disabled="enviando"
-                                class="inline-flex w-full items-center justify-center gap-2 rounded-obsidian-lg bg-primary-container px-5 py-3 text-body-md font-medium text-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_24px_rgba(37,99,235,0.35)] transition hover:bg-primary-container/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-container/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-lowest disabled:cursor-not-allowed disabled:opacity-70">
+                                style="animation-delay: 380ms"
+                                class="rise-in inline-flex w-full items-center justify-center gap-2 rounded-obsidian-lg bg-primary-container px-5 py-3 text-body-md font-medium text-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_24px_rgba(37,99,235,0.35)] transition-all duration-200 hover:bg-primary-container/90 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_32px_rgba(37,99,235,0.55)] active:scale-[0.985] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-container/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-lowest disabled:cursor-not-allowed disabled:opacity-70">
                             <svg x-cloak x-show="enviando" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                                 <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z" />
@@ -301,5 +452,29 @@
             </div>
         </main>
     </div>
+
+    {{-- Spotlight del card que sigue al cursor (A.1). Vanilla, ~15 líneas.
+         Si el usuario pidió menos movimiento, no se engancha ningún listener y el
+         layer queda en opacity-0. --}}
+    <script>
+        (function () {
+            var card = document.getElementById('login-card');
+            var spot = document.getElementById('card-spotlight');
+
+            if (!card || !spot) return;
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+            card.addEventListener('mousemove', function (e) {
+                var rect = card.getBoundingClientRect();
+                spot.style.setProperty('--spot-x', ((e.clientX - rect.left) / rect.width * 100) + '%');
+                spot.style.setProperty('--spot-y', ((e.clientY - rect.top) / rect.height * 100) + '%');
+                spot.style.opacity = '1';
+            });
+
+            card.addEventListener('mouseleave', function () {
+                spot.style.opacity = '0';
+            });
+        })();
+    </script>
 </body>
 </html>
