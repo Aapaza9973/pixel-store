@@ -15,6 +15,22 @@ license: Ver LICENSE.txt
 
 ## 1. Identidad de marca — inmutable
 
+> ⚠️ **Sistema en migración (2026-10)**: se está adoptando el sistema
+> **"Obsidian Cyber Grid"** entregado por el cliente. Ver
+> `docs/design/obsidian-cyber-grid.md` (tokens resueltos + notas de reconciliación).
+>
+> - **Etapa 1 (login + fundamentos)**: ✅ aplicado — nuevo login con paleta
+>   `surface`/`on-surface`/`primary-container`, tipografía Space Grotesk + Geist +
+>   JetBrains Mono, radios `obsidian`.
+> - **Etapa 2 (panel, componentes, layouts)**: pendiente — el panel sigue con la
+>   paleta `slate`/`blue` de Fase 0/1.
+> - **Etapa 3 (catálogo público)**: pendiente.
+>
+> **Regla de convivencia**: al crear vistas **nuevas** usar los tokens Obsidian; al
+> editar vistas **existentes** del panel, seguir con `slate`/`blue` hasta que se
+> migren en la Etapa 2. Las dos paletas conviven en `tailwind.config.js` (que solo se
+> modifica de forma **aditiva**).
+
 Estos elementos **no se negocian** en ninguna vista. Si una decisión de diseño
 los contradice, la decisión se descarta.
 
