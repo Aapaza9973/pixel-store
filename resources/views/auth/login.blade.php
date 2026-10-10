@@ -340,7 +340,7 @@
                     @endif
 
                     <form method="POST" action="{{ route('login') }}" class="mt-7 space-y-5"
-                          x-data="{ showPassword: false, enviando: false }"
+                          x-data="loginForm({ email: {{ json_encode(old('email')) }}, hasServerEmailError: {{ $errors->has('email') ? 'true' : 'false' }}, hasServerPasswordError: {{ $errors->has('password') ? 'true' : 'false' }} })"
                           x-on:submit="enviando = true">
                         @csrf
 
@@ -362,12 +362,35 @@
                                 <input id="email" name="email" type="email" required autofocus
                                        autocomplete="username"
                                        value="{{ old('email') }}"
+                                       x-on:blur="emailTouched = true"
+                                       :aria-invalid="emailAriaInvalid ? 'true' : 'false'"
+                                       :aria-describedby="emailAriaInvalid ? (hasServerEmailError ? 'email-error-server' : 'email-error-client') : null"
                                        placeholder="tu@pixelstore.com"
-                                       @error('email') aria-invalid="true" @enderror
-                                       class="block w-full rounded-obsidian-lg border border-outline-variant/30 bg-surface-container-low py-3 pl-11 pr-4 text-body-md text-on-surface placeholder:text-outline/70 transition focus:border-primary-container focus:outline-none focus:ring-2 focus:ring-primary-container/30" />
+                                       x-model="email"
+                                       class="block w-full rounded-obsidian-lg border bg-surface-container-low py-3 pl-11 pr-4 text-body-md text-on-surface placeholder:text-outline/70 transition focus:outline-none focus:ring-[3px]"
+                                       :class="emailInvalid
+                                               ? 'border-error/60 focus:border-error focus:ring-error/20'
+                                               : 'border-outline-variant/30 focus:border-primary-container focus:ring-primary-container/25'" />
                             </div>
+
+                            {{-- Error de cliente (Alpine). Se oculta si hay error de servidor. --}}
+                            <p id="email-error-client" x-cloak x-show="emailError !== ''"
+                               x-transition.opacity.duration.150ms
+                               class="mt-1.5 flex items-center gap-1.5 text-body-sm text-error">
+                                <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                                </svg>
+                                <span x-text="emailError"></span>
+                            </p>
+
+                            {{-- Error de servidor (tiene prioridad sobre el de cliente) --}}
                             @error('email')
-                                <p class="mt-2 text-body-sm text-error">{{ $message }}</p>
+                                <p id="email-error-server" class="mt-1.5 flex items-center gap-1.5 text-body-sm text-error">
+                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                                    </svg>
+                                    {{ $message }}
+                                </p>
                             @enderror
                         </div>
 
@@ -390,8 +413,14 @@
                                        :type="showPassword ? 'text' : 'password'"
                                        type="password"
                                        required autocomplete="current-password"
-                                       @error('password') aria-invalid="true" @enderror
-                                       class="block w-full rounded-obsidian-lg border border-outline-variant/30 bg-surface-container-low py-3 pl-11 pr-12 text-body-md text-on-surface placeholder:text-outline/70 transition focus:border-primary-container focus:outline-none focus:ring-2 focus:ring-primary-container/30" />
+                                       x-model="password"
+                                       x-on:blur="passwordTouched = true"
+                                       :aria-invalid="passwordAriaInvalid ? 'true' : 'false'"
+                                       :aria-describedby="passwordAriaInvalid ? (hasServerPasswordError ? 'password-error-server' : 'password-error-client') : null"
+                                       class="block w-full rounded-obsidian-lg border bg-surface-container-low py-3 pl-11 pr-12 text-body-md text-on-surface placeholder:text-outline/70 transition focus:outline-none focus:ring-[3px]"
+                                       :class="passwordInvalid
+                                               ? 'border-error/60 focus:border-error focus:ring-error/20'
+                                               : 'border-outline-variant/30 focus:border-primary-container focus:ring-primary-container/25'" />
 
                                 {{-- Toggle de visibilidad (Alpine ya viene en app.js) --}}
                                 <button type="button" x-on:click="showPassword = !showPassword"
@@ -409,8 +438,24 @@
                                     </svg>
                                 </button>
                             </div>
+                            {{-- Error de cliente (Alpine). Se oculta si hay error de servidor. --}}
+                            <p id="password-error-client" x-cloak x-show="passwordError !== ''"
+                               x-transition.opacity.duration.150ms
+                               class="mt-1.5 flex items-center gap-1.5 text-body-sm text-error">
+                                <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                                </svg>
+                                <span x-text="passwordError"></span>
+                            </p>
+
+                            {{-- Error de servidor (tiene prioridad sobre el de cliente) --}}
                             @error('password')
-                                <p class="mt-2 text-body-sm text-error">{{ $message }}</p>
+                                <p id="password-error-server" class="mt-1.5 flex items-center gap-1.5 text-body-sm text-error">
+                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                                    </svg>
+                                    {{ $message }}
+                                </p>
                             @enderror
                         </div>
 
@@ -452,6 +497,43 @@
             </div>
         </main>
     </div>
+
+    {{-- Validación en tiempo real del login (Alpine). No bloquea el submit: Laravel
+         sigue validando en el backend. Los errores de servidor tienen prioridad. --}}
+    <script>
+        function loginForm(initial) {
+            return {
+                email: initial.email || '',
+                password: '',
+                showPassword: false,
+                enviando: false,
+                emailTouched: false,
+                passwordTouched: false,
+                hasServerEmailError: initial.hasServerEmailError,
+                hasServerPasswordError: initial.hasServerPasswordError,
+
+                get emailError() {
+                    if (this.hasServerEmailError) return '';
+                    if (! this.emailTouched) return '';
+                    if (this.email === '') return 'Ingresá tu correo electrónico.';
+                    if (! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) return 'Ingresá un correo válido.';
+                    return '';
+                },
+
+                get passwordError() {
+                    if (this.hasServerPasswordError) return '';
+                    if (! this.passwordTouched) return '';
+                    if (this.password === '') return 'Ingresá tu contraseña.';
+                    return '';
+                },
+
+                get emailInvalid() { return this.emailError !== ''; },
+                get passwordInvalid() { return this.passwordError !== ''; },
+                get emailAriaInvalid() { return this.hasServerEmailError || this.emailInvalid; },
+                get passwordAriaInvalid() { return this.hasServerPasswordError || this.passwordInvalid; },
+            };
+        }
+    </script>
 
     {{-- Spotlight del card que sigue al cursor (A.1). Vanilla, ~15 líneas.
          Si el usuario pidió menos movimiento, no se engancha ningún listener y el
