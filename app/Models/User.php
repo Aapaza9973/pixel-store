@@ -146,6 +146,21 @@ class User extends Authenticatable
     }
 
     /**
+     * Panel inicial al que se redirige al usuario tras el login.
+     *
+     * Admin y demás roles van al dashboard general; el Encargado de
+     * inventario va directo a su módulo.
+     */
+    public function panelHome(): string
+    {
+        if ($this->hasRole('Inventario') && ! $this->hasRole('Admin')) {
+            return route('admin.inventario.index', absolute: false);
+        }
+
+        return route('dashboard', absolute: false);
+    }
+
+    /**
      * Nombre del primer rol asignado (o cadena por defecto).
      */
     public function getRolPrincipalAttribute(): string
