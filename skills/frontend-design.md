@@ -15,21 +15,13 @@ license: Ver LICENSE.txt
 
 ## 1. Identidad de marca — inmutable
 
-> ⚠️ **Sistema en migración (2026-10)**: se está adoptando el sistema
-> **"Obsidian Cyber Grid"** entregado por el cliente. Ver
-> `docs/design/obsidian-cyber-grid.md` (tokens resueltos + notas de reconciliación).
+> ⚠️ **Sistema primario (2026-10)**: Pixel Store usa el sistema **Obsidian
+> Cyber Grid** (propuesta del cliente). Ver `docs/design/obsidian-cyber-grid.md`
+> para tokens y `resources/views/auth/login.blade.php` para la implementación
+> canónica.
 >
-> - **Etapa 1 (login + fundamentos)**: ✅ aplicado — nuevo login con paleta
->   `surface`/`on-surface`/`primary-container`, tipografía Space Grotesk + Geist +
->   JetBrains Mono, radios `obsidian`.
-> - **Etapa 2 (panel, componentes, layouts)**: pendiente — el panel sigue con la
->   paleta `slate`/`blue` de Fase 0/1.
-> - **Etapa 3 (catálogo público)**: pendiente.
->
-> **Regla de convivencia**: al crear vistas **nuevas** usar los tokens Obsidian; al
-> editar vistas **existentes** del panel, seguir con `slate`/`blue` hasta que se
-> migren en la Etapa 2. Las dos paletas conviven en `tailwind.config.js` (que solo se
-> modifica de forma **aditiva**).
+> **Slate/blue**: sistema **legacy**, solo en el panel admin no migrado
+> (`layouts/app`, `admin/*`, `errors/*`). Se migrará en bloques futuros.
 
 Estos elementos **no se negocian** en ninguna vista. Si una decisión de diseño
 los contradice, la decisión se descarta.
@@ -62,72 +54,83 @@ en Space Grotesk (patrón del sidebar). **Deuda**: ver `TECH_DEBT.md`.
 **Si falta algún asset**: **parar y preguntar**. No inventar un placeholder ni
 usar un texto genérico "PIXEL STORE" con tipografía improvisada.
 
-### 1.2 Paleta — dark-first, acento azul
+### 1.2 Paleta — Obsidian Cyber Grid (sistema primario)
 
-El proyecto es **dark-first**. No hay versión light. Los colores están alineados
-con Tailwind y existen como clases; no introducir hex sueltos.
+Fuente de verdad: `docs/design/obsidian-cyber-grid.md`
 
-| Rol | Clase Tailwind | Hex (referencia) | Uso |
-|---|---|---|---|
-| Fondo app | `bg-slate-950` | `#020617` | `<body>`, fondo global |
-| Superficie | `bg-slate-900` | `#0f172a` | `<x-card>`, sidebar, header |
-| Elevado | `bg-slate-800` | `#1e293b` | Inputs, hover, tabla header |
-| Borde | `border-slate-800` / `border-slate-700` | — | Separadores, inputs |
-| Texto primario | `text-white` | `#ffffff` | Títulos, valores numéricos |
-| Texto secundario | `text-slate-300` | `#cbd5e1` | Cuerpo, descripciones |
-| Texto terciario | `text-slate-400` / `text-slate-500` | — | Labels, captions |
-| **Acento primario** | `bg-blue-600` + `hover:bg-blue-700` | `#2563eb` | Botón principal, CTA |
-| **Acento informativo** | `text-blue-400` / `text-blue-500` | `#60a5fa` | Links, badges, focus ring |
-| Éxito | `text-emerald-400` / `bg-emerald-500/10` | `#10b981` | Estado activo, confirmación |
-| Advertencia | `text-amber-400` / `bg-amber-500/10` | `#f59e0b` | Stock bajo, avisos |
-| Peligro | `text-red-400` / `bg-red-500/10` | `#ef4444` | Eliminar, inactivo, error |
-| Especial (rol) | `text-purple-400` / `bg-purple-500/10` | `#a855f7` | Distinguir roles sin alarma |
-
-**Reglas**:
-- ❌ No introducir colores fuera de esta paleta. Si hace falta, **parar y preguntar**.
-- ❌ No usar gradientes decorativos en el panel interno. En el catálogo público se
-  permiten **solo si son sutiles** (azul → transparente, no arcoíris).
-- ❌ No usar `bg-white`, `bg-gray-*` (usar `slate-*`), `bg-black` puro.
-- ✅ El color **comunica**: verde = activo, rojo = peligro/inactivo, ámbar = atención.
-  No usar colores semánticos como decoración.
-- ✅ El azul es el único color "de marca" más allá de los semánticos.
-
-### 1.3 Tipografía — Space Grotesk + Chakra Petch
-
-Ambas están cargadas en el layout vía `fonts.bunny.net`. **No agregar familias nuevas.**
-
-| Rol | Familia | Peso | Uso |
-|---|---|---|---|
-| **Display** | `Space Grotesk` | 500–700 | `<h1>`, `<h2>`, títulos de card, hero del catálogo |
-| **Body** | `Chakra Petch` | 400–500 | Cuerpo, formularios, tablas, botones, navegación |
-| **Utility** | `font-mono` (system) | 400 | SKUs, IDs, códigos técnicos |
+| Rol | Clase Tailwind | Uso |
+|---|---|---|
+| Canvas | `bg-surface` / `bg-background` | Fondo de app |
+| Superficie base | `bg-surface-container-lowest` | Fondo de cards glass |
+| Superficie input | `bg-surface-container-low` | Inputs, badges |
+| Superficie elevada | `bg-surface-container` | Cards secundarias |
+| Superficie alta | `bg-surface-container-high` | Modales, dropdowns |
+| Borde hairline | `border-outline-variant/30` | Bordes sutiles |
+| Borde fuerte | `border-outline` | Separadores visibles |
+| Texto primario | `text-on-surface` | Títulos, valores |
+| Texto secundario | `text-on-surface-variant` | Cuerpo |
+| Texto terciario | `text-outline` | Labels, metadata |
+| CTA | `bg-primary-container` (`#2563eb`) | Botón principal |
+| Link / hover | `text-secondary` (`#a4c9ff`) | Links, hover |
+| Live / telemetría | `text-tertiary` (`#00dbe9`) | Estados activos, dots |
+| Éxito | `text-emerald-400` / `bg-emerald-500/10` | Activo, confirmación |
+| Advertencia | `text-amber-400` / `bg-amber-500/10` | Stock bajo, avisos |
+| Error | `text-error` / `border-error/60` | Peligro, error, focus error |
 
 **Reglas**:
-- ✅ **Space Grotesk**: usar con moderación. Su carácter angular y geométrico destaca
-  cuando es escaso. Un `<h1>` grande con Space Grotesk 700 en `text-white` ya es
-  statement suficiente.
-- ✅ **Chakra Petch**: su angularidad funciona perfecto para datos densos
-  (tablas, fórmulas, specs). Es una fuente técnica, no una fuente de lectura larga.
-  En bloques de texto >4 líneas, bajar peso a 400 y aumentar `leading-relaxed`.
-- ✅ **Escala tipográfica** (Tailwind): `text-xs` (11–12), `text-sm` (13–14), `text-base`
-  (16), `text-lg` (18), `text-xl` (20), `text-2xl` (24), `text-3xl` (30), `text-4xl` (36),
-  `text-5xl` (48). No usar tamaños intermedios ni arbitrarios (`text-[17px]`).
-- ❌ No mezclar más de 2 pesos en un mismo bloque.
-- ❌ No usar `font-black` (900) — el máximo es 700.
+- ❌ No introducir colores fuera de esta paleta ni de `obsidian-cyber-grid.md`
+- ❌ No usar `bg-white`, `bg-gray-*`, `text-gray-*`, `indigo-*`, `dark:*`
+- ✅ Los colores **comunican** (emerald=éxito, amber=aviso, error=fallo)
 
-**Estado**: `tailwind.config.js` mapea `font-sans` → Chakra Petch,
-`font-display` → Space Grotesk, `font-body` → Chakra Petch. Todas las vistas
-usan `font-sans` en el body → tipografía de marca activa. Usar `font-display`
-explícito en `<h1>`/`<h2>` que deban destacar por sobre el resto.
+### Paleta legacy (no usar en vistas nuevas)
 
-### 1.4 Border radius — coherente
+`slate-950`, `slate-900`, `slate-800`, `blue-600`, `blue-400` — solo en
+vistas del panel admin que aún no se migraron. Al **editar** una vista
+existente: mantener la paleta legacy hasta que se migre en bloque. Al
+**crear** una vista nueva: usar Obsidian.
 
-- `rounded-lg` (8px): inputs, botones, badges pequeños
-- `rounded-xl` (12px): cards, modales
-- `rounded-full`: avatares, avatares de iniciales, chips de rol
-- ❌ No mezclar radios distintos en un mismo contexto. Si una card es `rounded-xl`,
-  todos sus hijos respetan la coherencia (inputs dentro de la card siguen siendo
-  `rounded-lg`, no `rounded-2xl`).
+### 1.3 Tipografía — Space Grotesk + Geist + JetBrains Mono
+
+Fuente: `docs/design/obsidian-cyber-grid.md` §Typography
+
+| Rol | Clase Tailwind | Familia | Uso |
+|---|---|---|---|
+| Headlines | `font-headline-xl` / `font-headline-lg` / `font-headline-md` / `font-headline-sm` | Space Grotesk | H1, H2, títulos de card |
+| Body | `font-body-lg` / `font-body-md` / `font-body-sm` | Geist | Cuerpo, formularios, tablas |
+| Labels | `font-label-lg` / `font-label-md` / `font-label-sm` | JetBrains Mono | Metadata, badges, mono uppercase |
+
+**Escala** (definida en `tailwind.config.js`):
+- `text-headline-xl` 48/56/700 (o `text-headline-xl-mobile` 32/40/700 en <lg)
+- `text-headline-lg` 36/44/700
+- `text-headline-md` 24/32/600
+- `text-headline-sm` 18/26/600
+- `text-body-lg` 16/24/400 · `text-body-md` 14/20/400 · `text-body-sm` 12/18/400
+- `text-label-lg` 14/20/500 · `text-label-md` 12/16/500 · `text-label-sm` 10/14/600
+
+**Reglas**:
+- ✅ Cada texto declara **familia + tamaño**: `font-headline-md text-headline-md`
+- ✅ Labels en `label-*` van uppercase con `tracking-[0.18em]`
+- ✅ Códigos/SKUs en `font-label-md` o `font-mono`
+- ❌ No mezclar más de 2 familias en un bloque
+- ❌ No usar `text-sm`, `text-base`… en vistas Obsidian (usar la escala)
+
+**Legacy**: Chakra Petch solo en panel admin no migrado. Al migrar, reemplazar
+por Geist (body) o Space Grotesk (títulos).
+
+### 1.4 Border radius — coherencia Obsidian
+
+| Clase | Píxeles | Uso |
+|---|---|---|
+| `rounded-obsidian` | 4px | Botones, inputs, badges chicos |
+| `rounded-obsidian-lg` | 8px | Cards medianas, dropdowns |
+| `rounded-obsidian-xl` | 12px | Cards grandes, modales, containers |
+| `rounded-sm` | 2px | Celdas de pixel bar, detalles |
+| `rounded-full` | 9999px | Avatares, dots de estado |
+
+**Reglas**:
+- ❌ No usar `rounded-lg`, `rounded-xl` (radius legacy del panel)
+- ✅ Elemento hijo mantiene proporción con el padre: card `xl` → input `lg`
+- ✅ Contenedores glass con `rounded-obsidian-xl`
 
 ---
 
@@ -288,52 +291,93 @@ signatures, elegí uno y borrá el otro.
 
 Antes de crear cualquier vista, verificar qué hay en `resources/views/components/`:
 
-- `<x-card>` — contenedor estándar (`bg-slate-900`, `border-slate-800`, `rounded-xl`)
-- `<x-alert>` — mensajes flash
-- `<x-nav-link>` — navegación del sidebar
+- `<x-card>` — contenedor estándar (`bg-slate-900`, `border-slate-800`, `rounded-xl`) — **legacy** hasta la migración de la Etapa 2
+- `<x-alert>` — mensajes flash — **legacy** hasta la Etapa 2
+- `<x-nav-link>` — navegación del sidebar — **legacy** hasta la Etapa 2
+
+En vistas **nuevas** Obsidian, preferir las superficies de §5.2 en lugar de `<x-card>`
+(que todavía renderiza tokens legacy).
 
 Si algo similar existe, **extenderlo** (props/variantes), no duplicarlo.
 
-### 5.2 Anatomía de una vista de panel
+### 5.2 Anatomía de una vista del panel (Obsidian)
+
+Referencia: `resources/views/auth/login.blade.php` para clases concretas.
 
 ```blade
 @extends('layouts.app')
 
-@section('title', 'Usuarios')
-@section('subtitle', 'Gestión del personal con acceso al sistema')
+@section('title', 'Título')
+@section('subtitle', 'Descripción')
 
 @section('content')
 <div class="space-y-6">
-    {{-- 1. Header de sección con acción primaria --}}
+
+    {{-- Header de sección --}}
     <div class="flex items-center justify-between">
-        <p class="text-sm text-slate-400">
-            Total: <span class="text-white font-semibold">{{ $items->total() }}</span>
-        </p>
-        @can('crear usuarios')
-            <a href="..." class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
-                <svg class="w-4 h-4">...</svg>
-                Nuevo usuario
+        <div>
+            <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                Sección
+            </p>
+            <h1 class="mt-1 font-headline-md text-headline-md text-on-surface">
+                Título
+            </h1>
+        </div>
+        @can('crear X')
+            <a href="..."
+               class="inline-flex items-center gap-2 rounded-obsidian-lg
+                      bg-primary-container px-4 py-2.5
+                      text-body-md font-medium text-on-primary-container
+                      shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_20px_rgba(37,99,235,0.35)]
+                      transition hover:bg-primary-container/90
+                      focus:outline-none focus-visible:ring-2
+                      focus-visible:ring-primary-container/60">
+                Nuevo
             </a>
         @endcan
     </div>
 
-    {{-- 2. Filtros/búsqueda (dentro de x-card) --}}
-    <x-card>
+    {{-- Filtros --}}
+    <div class="rounded-obsidian-lg border border-outline-variant/30
+                bg-surface-container-low/40 p-4">
         <form method="GET">...</form>
-    </x-card>
+    </div>
 
-    {{-- 3. Tabla o listado principal --}}
-    <x-card>
-        <table class="min-w-full divide-y divide-slate-800 text-sm">...</table>
-        @if ($items->hasPages())
-            <div class="mt-4">{{ $items->links() }}</div>
-        @endif
-    </x-card>
+    {{-- Tabla --}}
+    <div class="rounded-obsidian-xl border border-outline-variant/30
+                bg-surface-container-lowest/60 backdrop-blur-xl overflow-hidden">
+        <table class="min-w-full text-body-md">...</table>
+    </div>
 </div>
 @endsection
 ```
 
-### 5.3 Anatomía del catálogo público
+### 5.3 Tablas Obsidian
+
+- Header sticky: `bg-surface-container-low` + `text-label-sm uppercase tracking-[0.18em] text-outline`
+- Filas separadas por `border-b border-outline-variant/15`
+- Hover de fila: `hover:bg-primary-container/[0.04]`
+- Celdas: `px-4 py-3.5`
+- Números: `tabular-nums font-label-md`
+- Acciones: links `text-secondary hover:text-on-surface`
+
+### 5.4 Badges Obsidian
+
+```blade
+{{-- Estado --}}
+<span class="inline-flex items-center gap-1.5 rounded-obsidian px-2 py-1
+             font-label-sm text-label-sm uppercase tracking-[0.14em]
+             bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+    Activo
+</span>
+
+{{-- Neutral --}}
+<span class="... bg-surface-container-low text-on-surface-variant
+             border border-outline-variant/30">...</span>
+```
+
+### 5.5 Anatomía del catálogo público
 
 Estructura mínima de una vista pública (home, listado, ficha de producto):
 
@@ -356,4 +400,99 @@ Cuando el catálogo sea real, crear `layouts.public`.
 - `<x-product-card>` — datos de producto
 - `<x-pixel-bar>` — barra de señal signature
 - `<x-spec-table>` — tabla de especificaciones densa
+
+### 5.6 Patrones del dashboard (Obsidian)
+
+**Layout**: grid de 12 columnas con `gap-6` (24px).
+- Fila de KPIs: `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4`
+- Sección principal: `grid grid-cols-1 lg:grid-cols-3 gap-6`
+  (2/3 para gráfico o tabla principal · 1/3 para lista secundaria)
+
+**Card de KPI** (patrón canónico):
+
+```blade
+<article class="group relative flex flex-col gap-3 overflow-hidden
+                rounded-obsidian-xl border border-outline-variant/30
+                bg-surface-container-lowest/60 p-5 backdrop-blur-xl
+                transition-all duration-300
+                hover:border-primary-container/40 hover:bg-surface-container-lowest/80">
+
+    {{-- Header: label + ícono --}}
+    <div class="flex items-start justify-between">
+        <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+            Ventas del día
+        </p>
+        <div class="flex h-9 w-9 items-center justify-center rounded-obsidian
+                    border border-outline-variant/30 bg-surface-container-low/60
+                    text-tertiary transition-colors group-hover:text-primary">
+            <svg class="h-4 w-4" ...>...</svg>
+        </div>
+    </div>
+
+    {{-- Valor principal --}}
+    <div class="flex items-baseline gap-2">
+        <p class="font-headline-lg text-headline-lg text-on-surface tabular-nums">
+            Bs 4.280
+        </p>
+        <span class="font-label-md text-label-md text-emerald-400">+12,4 %</span>
+    </div>
+
+    {{-- Subtexto --}}
+    <p class="font-body-sm text-body-sm text-on-surface-variant/80">
+        vs. ayer · Bs 3.810
+    </p>
+</article>
+```
+
+**Reglas del KPI**:
+- Valor en `text-headline-lg` + `tabular-nums`
+- Delta con color semántico (emerald positivo, error negativo)
+- Ícono en cuadro con borde (nunca suelto)
+- Hover: borde `primary-container/40` (no lift)
+- Nunca mostrar gráficos en un KPI — solo dato + delta
+
+**Sección de gráfico principal**:
+
+```blade
+<div class="rounded-obsidian-xl border border-outline-variant/30
+            bg-surface-container-lowest/60 p-6 backdrop-blur-xl">
+    <div class="mb-5 flex items-center justify-between">
+        <div>
+            <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                Tendencia
+            </p>
+            <h3 class="mt-1 font-headline-sm text-headline-sm text-on-surface">
+                Ventas de los últimos 30 días
+            </h3>
+        </div>
+        <select class="rounded-obsidian bg-surface-container-low
+                       border-outline-variant/30 px-3 py-1.5
+                       font-label-md text-label-md text-on-surface-variant
+                       focus:border-primary-container focus:ring-2
+                       focus:ring-primary-container/25">
+            <option>30 días</option>
+        </select>
+    </div>
+
+    <div class="h-64">
+        {{-- Chart library o SVG inline --}}
+    </div>
+</div>
+```
+
+**Lista de actividad reciente** (1/3 de la columna):
+- Filas con `divide-y divide-outline-variant/15`
+- Cada fila: ícono (cuadro 8x8) + texto principal + timestamp en `label-sm text-outline`
+- Máximo 5-7 filas visibles
+
+**Reglas del dashboard**:
+- **Jerarquía visual**: KPIs arriba, gráfico central, actividad secundaria
+- **Espaciado**: `space-y-6` entre secciones, `gap-4` entre KPIs
+- **Superficies**: siempre `bg-surface-container-lowest/60` + `backdrop-blur-xl`
+  (glass consistente con el login)
+- **Sin gradientes decorativos** (solo los del login en el aside)
+- **Sin animaciones** más allá de `hover` y `transition` (el dashboard es
+  dato, no espectáculo). Excepción: `animate-ping` para dots "live"
+- **Números primero**: el valor siempre en `headline-*`, la unidad en
+  `body-sm text-outline`
 
