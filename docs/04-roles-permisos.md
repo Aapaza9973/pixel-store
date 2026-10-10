@@ -8,17 +8,17 @@ Sistema de autorización basado en Spatie Laravel-Permission.
 
 | Rol | Descripción | Acceso | Permisos |
 |---|---|---|:-:|
-| 👑 **Admin** | Dueño / Gerente | Todo (super-admin vía `Gate::before`) | 67 (todos) |
+| 👑 **Admin** | Dueño / Gerente | Todo (super-admin vía `Gate::before`) | 68 (todos) |
 | 💼 **Vendedor** | Personal de ventas | Ventas, clientes, cotizaciones, caja | 17 |
 | 💰 **Cajero** | Encargado de caja | Ventas, clientes, caja | 8 |
-| 📦 **Inventario** | Encargado de almacén | Productos, categorías, marcas, atributos, ubicaciones, proveedores | 32 |
+| 📦 **Inventario** | Encargado de almacén | Productos, categorías, marcas, atributos, ubicaciones, proveedores | 33 |
 | 🧑 **Cliente** | Cliente registrado | Catálogo y sus cotizaciones | 2 |
 
 ---
 
 ## 🔑 Permisos por módulo
 
-**67 permisos** en total, agrupados por módulo. La matriz se extrae de
+**68 permisos** en total, agrupados por módulo. La matriz se extrae de
 `database/seeders/RoleSeeder.php`, que es la fuente de verdad.
 
 > ℹ️ Esta matriz se verificó contra la BD (`Role::with('permissions')`) al
@@ -30,6 +30,7 @@ Sistema de autorización basado en Spatie Laravel-Permission.
 | Permiso | Admin | Vendedor | Cajero | Inventario | Cliente |
 |---|:-:|:-:|:-:|:-:|:-:|
 | `ver productos` | ✅ | ✅ | ✅ | ✅ | — |
+| `ver inventario` | ✅ | — | — | ✅ | — |
 | `crear productos` | ✅ | — | — | ✅ | — |
 | `editar productos` | ✅ | — | — | ✅ | — |
 | `eliminar productos` | ✅ | — | — | ✅ | — |

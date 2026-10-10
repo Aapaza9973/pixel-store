@@ -63,6 +63,14 @@
                     @endif
                 @endcan
 
+                @can('ver inventario')
+                    @if (Route::has('admin.inventario.index'))
+                        <x-nav-link :href="route('admin.inventario.index')" :active="request()->routeIs('admin.inventario.*')" icon="archive">
+                            Inventario
+                        </x-nav-link>
+                    @endif
+                @endcan
+
                 @can('ver categorias')
                     @if (Route::has('admin.categorias.index'))
                         <x-nav-link :href="route('admin.categorias.index')" :active="request()->routeIs('admin.categorias.*')" icon="tag">

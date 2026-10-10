@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RoleSeeder extends Seeder
 {
@@ -16,6 +16,7 @@ class RoleSeeder extends Seeder
 
         $permisos = [
             'ver productos', 'crear productos', 'editar productos', 'eliminar productos',
+            'ver inventario',
             'ver categorias', 'crear categorias', 'editar categorias', 'eliminar categorias',
             'ver marcas', 'crear marcas', 'editar marcas', 'eliminar marcas',
             'ver atributos', 'crear atributos', 'editar atributos', 'eliminar atributos',
@@ -71,6 +72,7 @@ class RoleSeeder extends Seeder
         $inventario = Role::firstOrCreate(['name' => 'Inventario', 'guard_name' => 'web']);
         $inventario->syncPermissions([
             'ver productos', 'crear productos', 'editar productos', 'eliminar productos',
+            'ver inventario',
             'ver categorias', 'crear categorias', 'editar categorias', 'eliminar categorias',
             'ver marcas', 'crear marcas', 'editar marcas', 'eliminar marcas',
             'ver atributos', 'crear atributos', 'editar atributos', 'eliminar atributos',

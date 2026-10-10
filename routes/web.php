@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoriaController;
+use App\Http\Controllers\Admin\InventarioController;
 use App\Http\Controllers\Admin\ProductoController;
 use App\Http\Controllers\Admin\UbicacionController;
 use App\Http\Controllers\Admin\UserController;
@@ -55,6 +56,11 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
                 ->name('usuarios.reset-password');
             Route::get('usuarios/{user}/historial', [UserController::class, 'historial'])
                 ->name('usuarios.historial');
+
+            Route::middleware('inventario.access')->group(function () {
+                Route::get('inventario', [InventarioController::class, 'index'])
+                    ->name('inventario.index');
+            });
         });
         Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
     });

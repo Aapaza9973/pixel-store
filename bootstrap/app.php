@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'user.active' => \App\Http\Middleware\CheckUserActive::class,
             'user.has.role' => \App\Http\Middleware\CheckUserHasRole::class,
+            'inventario.access' => \App\Http\Middleware\EnsureInventarioAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
