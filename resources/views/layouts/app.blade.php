@@ -23,20 +23,20 @@
     {{-- Scripts --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-sans antialiased bg-slate-950 text-slate-200">
+<body class="antialiased bg-surface text-on-surface font-body-md">
     <div class="min-h-screen flex">
 
         {{-- SIDEBAR --}}
-        <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
+        <aside class="w-64 bg-surface-container-lowest/80 border-r border-outline-variant/30 backdrop-blur-xl flex flex-col">
             {{-- Logo --}}
-            <div class="h-16 flex items-center px-4 border-b border-slate-800">
+            <div class="h-16 flex items-center px-4 border-b border-outline-variant/30">
                 <a href="{{ route('dashboard') }}" class="flex items-center gap-3 group">
                     <img src="{{ asset('images/logo/pixel-icon-sm.png') }}"
                          alt="Pixel Store"
                          class="w-9 h-9 rounded group-hover:scale-105 transition-transform">
                     <div class="flex flex-col leading-none">
-                        <span class="text-white font-bold text-sm tracking-tight">PIXEL STORE</span>
-                        <span class="text-[10px] text-slate-500 tracking-wider">TECNOLOGÍA SERIA</span>
+                        <span class="font-headline-md text-headline-sm tracking-tight text-on-surface">PIXEL STORE</span>
+                        <span class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">TECNOLOGÍA SERIA</span>
                     </div>
                 </a>
             </div>
@@ -93,7 +93,7 @@
                 @endcan
 
                 @can('ver usuarios')
-                    <div class="pt-4 pb-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    <div class="pt-4 pb-2 px-3 font-label-sm text-label-sm font-semibold text-outline uppercase tracking-[0.18em]">
                         Administración
                     </div>
                     <x-nav-link :href="route('admin.usuarios.index')" :active="request()->routeIs('admin.usuarios.*')" icon="users">
@@ -109,21 +109,21 @@
             </nav>
 
             {{-- User info --}}
-            <div class="border-t border-slate-800 p-4">
+            <div class="border-t border-outline-variant/30 p-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
+                    <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-semibold text-body-sm">
                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-slate-500 truncate">
+                        <p class="text-body-sm font-medium text-on-surface truncate">{{ auth()->user()->name }}</p>
+                        <p class="font-label-sm text-label-sm text-outline truncate">
                             {{ auth()->user()->getRoleNames()->first() ?? 'Sin rol' }}
                         </p>
                     </div>
                 </div>
                 <form method="POST" action="{{ route('logout') }}" data-logout-form class="mt-3">
                     @csrf
-                    <button type="submit" class="w-full text-left text-xs text-slate-400 hover:text-white transition">
+                    <button type="submit" class="w-full text-left font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition">
                         Cerrar sesión
                     </button>
                 </form>
@@ -134,18 +134,18 @@
         <div class="flex-1 flex flex-col min-w-0">
 
             {{-- HEADER --}}
-            <header class="h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-6">
+            <header class="h-16 bg-surface-container-lowest/60 border-b border-outline-variant/30 backdrop-blur-xl flex items-center justify-between px-6">
                 <div>
-                    <h1 class="font-display text-lg font-semibold text-white">
+                    <h1 class="font-headline-md text-headline-md text-on-surface">
                         @yield('title', 'Dashboard')
                     </h1>
                     @hasSection('subtitle')
-                        <p class="text-xs text-slate-500">@yield('subtitle')</p>
+                        <p class="text-body-sm text-on-surface-variant">@yield('subtitle')</p>
                     @endif
                 </div>
 
                 <div class="flex items-center gap-4">
-                    <a href="{{ route('alertas.index') }}" class="relative text-slate-400 hover:text-white transition"
+                    <a href="{{ route('alertas.index') }}" class="relative text-on-surface-variant hover:text-on-surface transition"
                        title="{{ $alertasNoLeidasCount ?? 0 }} alertas sin leer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
@@ -157,7 +157,7 @@
                         @endif
                     </a>
 
-                    <span class="text-xs text-slate-500">
+                    <span class="font-label-sm text-label-sm text-outline">
                         v1.0 · {{ now()->format('d/m/Y') }}
                     </span>
                 </div>
@@ -175,13 +175,13 @@
             @endif
 
             {{-- CONTENT --}}
-            <main class="flex-1 p-6 overflow-y-auto">
+            <main class="flex-1 overflow-y-auto bg-surface p-6">
                 {{ $slot ?? '' }}
                 @yield('content')
             </main>
 
             {{-- FOOTER --}}
-            <footer class="h-12 bg-slate-900 border-t border-slate-800 flex items-center justify-between px-6 text-xs text-slate-500">
+            <footer class="h-12 bg-surface-container-lowest/60 border-t border-outline-variant/30 flex items-center justify-between px-6 font-label-sm text-label-sm text-outline">
                 <span>&copy; {{ date('Y') }} Pixel Store — Todo el mundo tecnológico, pixel a pixel</span>
                 <span>Laravel {{ app()->version() }} · PostgreSQL</span>
             </footer>

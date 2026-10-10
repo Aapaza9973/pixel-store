@@ -11,7 +11,7 @@
     aria-modal="true"
     aria-labelledby="session-timeout-title"
 >
-    <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+    <div class="max-w-md w-full mx-4 rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-high p-6 shadow-2xl">
         <div class="flex items-start gap-4">
             <div class="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -19,19 +19,19 @@
                 </svg>
             </div>
             <div class="flex-1">
-                <h3 id="session-timeout-title" class="text-white font-semibold">Sesión por expirar</h3>
-                <p class="text-sm text-slate-400 mt-1">
+                <h3 id="session-timeout-title" class="font-headline-sm text-headline-sm text-on-surface">Sesión por expirar</h3>
+                <p class="mt-1 text-body-sm text-on-surface-variant">
                     Su sesión expirará en <span class="text-amber-400 font-semibold" x-text="secondsLeft"></span> segundos por inactividad.
                 </p>
                 <div class="flex gap-2 mt-4">
                     <button @click="extend()"
                             :disabled="extending"
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition">
+                            class="px-4 py-2 rounded-obsidian-lg bg-primary-container text-body-sm font-medium text-on-primary-container transition hover:bg-primary-container/90 disabled:opacity-50">
                         <span x-show="! extending">Extender sesión</span>
                         <span x-show="extending" x-cloak>Extendiendo…</span>
                     </button>
                     <button @click="logout()"
-                            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg transition">
+                            class="px-4 py-2 rounded-obsidian-lg bg-surface-container-low text-body-sm font-medium text-on-surface-variant transition hover:bg-surface-container">
                         Cerrar sesión
                     </button>
                 </div>
@@ -193,7 +193,7 @@ document.addEventListener('alpine:init', () => {
             // Ligero aviso no bloqueante; no depende de librerías externas.
             const toast = document.createElement('div');
             toast.textContent = message;
-            toast.className = 'fixed bottom-6 right-6 z-[60] rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-lg';
+            toast.className = 'fixed bottom-6 right-6 z-[60] rounded-obsidian-lg bg-emerald-600 px-4 py-2 text-body-sm font-medium text-white shadow-lg';
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         },

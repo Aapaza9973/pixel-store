@@ -15,12 +15,12 @@ $icons = [
 @endphp
 
 <a href="{{ $href }}"
-   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+   class="flex items-center gap-3 px-3 py-2 rounded-obsidian-lg font-body-md text-body-md transition-colors
           {{ $active
-              ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-500'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
+              ? 'bg-primary-container/10 text-on-surface border-l-2 border-primary-container'
+              : 'text-on-surface-variant hover:bg-surface-container-low/60 hover:text-on-surface' }}">
     @if ($icon && isset($icons[$icon]))
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-4 h-4 flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icons[$icon] }}"/>
         </svg>
     @endif
