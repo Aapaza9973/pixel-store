@@ -7,6 +7,16 @@ prioridad y sprint objetivo.
 
 ## 🔴 Prioridad alta
 
+### Auth — Bloquear login de usuario inactivo de raíz
+- [ ] Un usuario con `activo=false` **puede autenticarse** (`POST /login` → 302
+      al panel); el bloqueo ocurre después, en `CheckUserActive`.
+- **Impacto**: el usuario despedido obtiene una sesión válida hasta que un
+      middleware lo expulse en la siguiente request.
+- **Fix sugerido**: `LoginRequest@authenticate` con `->where('activo', true)`
+      en `Auth::attempt`, o validación en el controller.
+- **Detectado**: Wave 2 Bloque 3 (commit `a8bdbad`)
+- **Cuándo arreglarlo**: Sprint 2, junto con la auditoría de auth.
+
 ### Sprint 2 — Modelos pendientes
 - [ ] Crear modelo `Venta` (tabla `ventas` ya existe en schema)
 - [ ] Crear modelo `CierreCaja` (tabla `cierres_cajas` ya existe en schema)
@@ -16,6 +26,16 @@ prioridad y sprint objetivo.
 ---
 
 ## 🟡 Prioridad media
+
+### Bug — Ruta `/alertas` duplicada en `routes/web.php`
+- [ ] `routes/web.php` declara `Route::get('/alertas', ...)->name('alertas.index')`
+      dos veces (líneas 65 y 69: dentro y fuera del grupo `user.has.role`).
+- **Impacto**: la segunda declaración sobrescribe el nombre; el control de
+      roles para alertas queda ambiguo.
+- **Fix sugerido**: eliminar la duplicada y mantener la que tiene el middleware
+      correcto (presumiblemente la del grupo con `user.has.role`).
+- **Detectado**: Wave 2 Bloque 2 (commit `bc621e1`)
+- **Cuándo arreglarlo**: Sprint 2, junto con la revisión de rutas.
 
 ### Refactor pendiente — `app/Models/MovimientoStock.php`
 No sigue el patrón profesional de las skills:
@@ -62,18 +82,28 @@ No sigue el patrón profesional de las skills:
 - **Cuándo arreglarlo**: Sprint 2 al refactorizar auditoría
 
 ### Config muerta — `RateLimiter::for('login')` sin aplicar
-- [ ] Decidir: aplicar `throttle:login` a `POST /login` en `routes/auth.php`
-      **O** eliminar el limiter de `AppServiceProvider`
+- [x] Eliminar el limiter de `AppServiceProvider` (ninguna ruta aplicaba
+      `throttle:login`)
 - Definido como `Limit::perMinute(15, 5)` (15 intentos / 5 min) pero **ninguna
-  ruta lo usa**. El límite activo real es de `LoginRequest` (5 intentos / 60 s,
+  ruta lo usaba**. El límite activo real es de `LoginRequest` (5 intentos / 60 s,
   por `email + IP`).
-- **Riesgo**: un dev puede asumir que el límite es 15/5 min cuando no es así.
 - **Detectado**: durante tarea 1.1.18 (documentación del flujo de auth)
-- **Cuándo arreglarlo**: al refactorizar seguridad en Sprint 2
+- **Cerrado**: `2ecdc43` — el limiter ya no existe en el código.
 
 ---
 
 ## 🟢 Prioridad baja
+
+### UX — Usuario sin rol puede ver `/dashboard`
+- [ ] Un usuario autenticado sin rol puede acceder a `/dashboard` (solo está
+      protegido por `auth` + `verified` + `user.active`); `/admin/*` sí exige
+      `user.has.role`.
+- **Impacto**: bajo (sin rol no puede operar nada), pero el dashboard muestra
+      una UI vacía sin contexto.
+- **Fix sugerido**: mover `/dashboard` detrás de `user.has.role`, o mostrar un
+      empty-state "sin permisos asignados".
+- **Detectado**: Wave 2 Bloque 3 (commit `a8bdbad`)
+- **Cuándo arreglarlo**: cuando se defina el flujo completo de usuario sin rol.
 
 ### Middleware en ruta de movimientos
 - [ ] Agregar `->middleware('can:editar productos')` a la ruta

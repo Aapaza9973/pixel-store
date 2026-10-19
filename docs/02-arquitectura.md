@@ -294,7 +294,7 @@ Usado para:
 ## 🔐 Seguridad transversal
 
 - **CSRF**: global con excepción firmada para webhooks
-- **Rate limiting**: 5 intentos / minuto por `email + IP` en login (ver flujo abajo)
+- **Rate limiting**: 5 intentos / 60 s por `email + IP` en login (ver flujo abajo)
 - **Cierre automático de sesión**: 30 min de inactividad
 - **Middleware `user.active`**: rechaza usuarios desactivados
 - **Bcrypt 12 rounds**: contraseñas
@@ -329,23 +329,37 @@ Usado para:
     │                          │                evento Failed ────────┤   │
     │                          │                LogFailedLogin ───────┼──>│ INSERT logs_auditoria (login_fallido)
     │                          │                                      │   │
-    │  302 → /dashboard        │                                      │   │
-    │<─────────────────────────┤ redirect()->intended(...)             │   │
+    │  302 → panelHome()       │                                      │   │
+    │<─────────────────────────┤ redirect()->intended(panelHome())     │   │
 ```
 
 ### Pasos
 
 1. **Formulario** — `GET /login` → `AuthenticatedSessionController@create` → `view('auth.login')`.
-2. **Validación y rate limiting** — `POST /login` → `LoginRequest` (reglas: `email` requerido/email, `password` requerido).
+2. **Validación y rate limiting** — `POST /login` → `LoginRequest` (reglas: `email` requerido/email, `password` requerido). El login es **email-only**: no existe campo `username` ni columna equivalente; el email es la credencial.
    - Límite **activo**: **5 intentos por minuto**, con clave `email|IP` (`RateLimiter::tooManyAttempts($key, 5)`; `hit()` usa 60 s de decaimiento).
    - Al excederlo se dispara el evento `Lockout` y se devuelve el error de validación `auth.throttle`.
 3. **Auditoría de intentos fallidos** — evento `Failed` → `LogFailedLogin` → `AuditoriaService::registrarIntentoFallido()` → `logs_auditoria` (`accion = login_fallido`, `modelo = null`, `user_id = null`, `datos_nuevos = {email, ip}`).
 4. **Sesión** — en éxito: `RateLimiter::clear()` + `session()->regenerate()` + evento `Login` → `LogSuccessfulLogin` → `logs_auditoria` (`accion = login`, `modelo = App\Models\User`, `modelo_id = id`).
-5. **Redirección** — `redirect()->intended(route('dashboard'))`. **No existe redirección por rol**: todos los roles aterrizan en `/dashboard`; el nivel de acceso lo aplican el middleware `user.has.role` y las policies.
+5. **Redirección** — `redirect()->intended($request->user()->panelHome())`. El destino por defecto lo decide `User::panelHome()`; si el usuario venía de una URL protegida, `intended()` la respeta y `panelHome()` solo actúa como fallback.
+
+   | Rol | Panel home |
+   |---|---|
+   | Admin / Vendedor / Cajero / Cliente | `/dashboard` |
+   | Inventario (sin Admin) | `/admin/inventario` |
+
+   La regla es `hasRole('Inventario') && ! hasRole('Admin')`: un usuario con varios roles que incluya `Admin` siempre aterriza en `/dashboard`.
+
 6. **Middleware en rutas internas**, en este orden:
-   `auth` → `verified` → `user.active` → `user.has.role`
-   - `user.active` (`CheckUserActive`): si `activo = false` → `Auth::logout()` + invalidación de sesión + redirect a `/login` con mensaje de error.
-   - `user.has.role` (`CheckUserHasRole`): si el usuario no tiene **ningún** rol → `abort(403, 'No tiene permisos asignados.')` y registro `acceso_denegado_sin_rol`.
+   `auth` → `verified` → `user.active` → `user.has.role` → `inventario.access` (este último solo en `/admin/inventario`).
+
+   | Caso | Middleware | Resultado |
+   |---|---|---|
+   | Cuenta desactivada (`activo = false`) | `user.active` (`CheckUserActive`) | `Auth::logout()` + sesión invalidada + redirect a `/login` con flash `error` |
+   | Autenticado sin ningún rol | `user.has.role` (`CheckUserHasRole`) | `abort(403, 'No tiene permisos asignados.')` + auditoría `acceso_denegado_sin_rol` |
+   | Con rol pero sin `ver inventario` | `inventario.access` (`EnsureInventarioAccess`) | `abort(403, 'No tiene permisos para acceder al módulo de inventario.')` |
+
+   > `/dashboard` queda protegido solo por `auth` + `verified` + `user.active`: un usuario sin rol entra y ve el dashboard vacío. Ver `TECH_DEBT.md`.
 7. **Logout** — `POST /logout` → `AuthenticatedSessionController@destroy` → `Auth::guard('web')->logout()` + `invalidate()` + `regenerateToken()` → evento `Logout` → `LogSuccessfulLogout` → `logs_auditoria` (`accion = logout`).
 8. **Observers** — `UserObserver` (registrado en `AppServiceProvider`) audita `created`, `updated` (solo el diff real) y `deleted`. Excluye `password` y `remember_token`, y si no hay usuario autenticado no registra nada.
 9. **Cambios de rol** — `syncRoles()` **no** dispara eventos de Eloquent, por lo que `UserController@update` detecta el cambio y llama a `AuditoriaService::registrarCambioRoles()` (`accion = cambiar_roles_user`, con los roles antes y después).

@@ -108,14 +108,55 @@ Implementar el **módulo de inventario completo**, incluyendo:
 - Un bug de vista faltante (`historial.blade.php`) devolvía 500 y no lo detectaba
   ningún test: **toda ruta necesita al menos un caso que la ejercite**.
 
-### HU 4.1 y 4.2 — Inicio de sesión al módulo de inventario
+### HU-RF.4 — Inicio de sesión al módulo de inventario
 
-**Estado**: ✅ Completado
+Los requisitos RF.4.1 (evidente) y RF.4.2 (oculto) se resolvieron en un bloque de
+5 waves (0a → 4), cerrado el 2026-10-10. El detalle de la HU 4.1/4.2 original
+(login, sesiones en BD, cierre por inactividad a los 30 min) sigue vigente y se
+extiende con la redirección por rol y el acceso exclusivo al inventario.
 
-- Login específico con redirección por rol
-- Validación de credenciales
-- Sesiones en BD
-- Cierre automático por inactividad (30 min)
+**Estado**: ✅ Completada — 2026-10-10
+**Requisitos**: RF.4.1 (evidente), RF.4.2 (oculto)
+**Tests**: 174 passed (608 assertions)
+
+**Funcionalidades**:
+- Validación del login en tiempo real (Alpine `loginForm`) con error por campo
+- Redirección post-login según rol vía `User::panelHome()`, respetando `intended()`
+- Módulo `/admin/inventario` con acceso exclusivo (middleware `inventario.access`)
+- Mensajes contextuales diferenciados para los 5 casos de error/bloqueo
+- Chrome del panel y dashboard migrados al sistema Obsidian Cyber Grid
+
+**Waves**:
+
+| Wave | Alcance | Commit |
+|:-:|---|---|
+| 0a | skill `frontend-design` migrada a Obsidian | `2b4b5c4` |
+| 0b | chrome del panel + dashboard a Obsidian | `abe736f` |
+| 1 | validación en tiempo real del login (Alpine) | `91afa6a` |
+| 2 | módulo `/admin/inventario` + middleware + `panelHome()` + redirect por rol | `bc621e1`, `5c3c052`, `a8bdbad` |
+| 3 | mensajes contextuales (verificación, sin código nuevo) | `87bf291` |
+| 4 | docs + cierre | (este commit) |
+
+#### Cobertura de criterios de aceptación
+
+| # | Criterio | Cómo |
+|:-:|---|---|
+| 1 | Interfaz con campos de usuario y contraseña | `auth/login.blade.php` (Wave 1): `email` + `password` |
+| 2 | Contraseña enmascarada | `type=password` + toggle Alpine (`showPassword`) |
+| 3 | Validación en tiempo real | `loginForm()` de Alpine (Wave 1) |
+| 4 | Contraste con la base de datos | `Auth::attempt` vía `LoginRequest` (HU 1.1) |
+| 5 | Acceso exclusivo al módulo + redirección | `inventario.access` + `panelHome()` (Wave 2) |
+| 6 | Mensaje de error descriptivo | 5 mensajes contextuales (Wave 3) |
+
+#### Lecciones aprendidas
+
+- La skill `frontend-design` pasó a Obsidian como sistema primario (Waves 0a-0b).
+- `DashboardController` delega en `InventoryService::resumen()`: el refactor evitó
+  duplicar la lógica de stock entre dashboard y módulo de inventario.
+- Dos gaps quedaron documentados en `TECH_DEBT.md`: el login de usuario inactivo
+  (entra y se le expulsa después) y la ruta `/alertas` duplicada.
+- Los 5 mensajes contextuales ya existían desde HU 1.1 / Wave 2: la Wave 3 solo los
+  verificó con tests, sin tocar código de aplicación.
 
 ### HU 4.3 y 4.4 — Registro y gestión de productos técnicos
 

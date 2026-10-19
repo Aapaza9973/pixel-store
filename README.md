@@ -139,6 +139,31 @@ Spatie Laravel-Permission.
 Se pueden asignar **varios roles** a la vez. La matriz completa rol × permiso está
 en [docs/04 — Roles y permisos](docs/04-roles-permisos.md).
 
+### Paneles home
+
+Al iniciar sesión, cada usuario aterriza en el panel de su rol:
+
+| Rol | Panel home |
+|---|---|
+| 👑 Admin / 💼 Vendedor / 💰 Cajero / 🧑 Cliente | `/dashboard` |
+| 📦 Inventario (sin Admin) | `/admin/inventario` |
+
+Un usuario con varios roles que incluya **Admin** siempre va a `/dashboard`.
+
+### Acceso exclusivo al inventario
+
+`/admin/inventario` exige el permiso **`ver inventario`** (middleware
+`inventario.access`). Un usuario con rol pero sin ese permiso recibe 403 con un
+mensaje propio: `No tiene permisos para acceder al módulo de inventario.`
+
+### Seguridad del login
+
+- Login **email-only**: `email` + `password` (no hay campo usuario).
+- **Rate limiting**: 5 intentos / 60 s por `email + IP` (`LoginRequest`).
+- Validación en tiempo real en el formulario (Alpine) + mensajes contextuales.
+- Tres bloqueos distintos: cuenta desactivada (logout + redirect), sin rol (403)
+  y sin permiso de inventario (403).
+
 ### Crear un usuario
 
 1. Iniciá sesión como Admin (ver credenciales demo abajo).
@@ -149,9 +174,10 @@ en [docs/04 — Roles y permisos](docs/04-roles-permisos.md).
 Desde la ficha de cada usuario podés **editar**, **activar/desactivar**,
 **restablecer la contraseña** y abrir su **historial de auditoría**.
 
-> Un usuario **sin ningún rol** no puede acceder al panel interno: recibe 403
-> (`No tiene permisos asignados.`). Un usuario **desactivado** es deslogueado
-> y redirigido al login.
+> Un usuario **sin ningún rol** no accede a `/admin/*`: recibe 403 (`No tiene
+> permisos asignados.`). Sí puede entrar a `/dashboard`, que hoy solo valida
+> sesión y cuenta activa (ver `TECH_DEBT.md`). Un usuario **desactivado** es
+> deslogueado y redirigido al login.
 
 ### Auditoría
 
@@ -182,12 +208,12 @@ php artisan test --filter=UserManagementTest
 
 Una vez corridos los seeders (`migrate:fresh --seed`), tendrás estos usuarios disponibles:
 
-| Rol | Email | Password |
-|---|---|---|
-| 👑 Admin | `admin@pixelstore.com` | `password` |
-| 💼 Vendedor | `vendedor@pixelstore.com` | `password` |
-| 📦 Inventario | `inventario@pixelstore.com` | `password` |
-| 💰 Cajero | `cajero@pixelstore.com` | `password` |
+| Rol | Email | Password | Panel home |
+|---|---|---|---|
+| 👑 Admin | `admin@pixelstore.com` | `password` | `/dashboard` |
+| 💼 Vendedor | `vendedor@pixelstore.com` | `password` | `/dashboard` |
+| 📦 Inventario | `inventario@pixelstore.com` | `password` | `/admin/inventario` |
+| 💰 Cajero | `cajero@pixelstore.com` | `password` | `/dashboard` |
 
 > ⚠️ **Solo para desarrollo**. En producción cambiar todas las contraseñas y crear usuarios reales.
 
