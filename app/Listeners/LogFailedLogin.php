@@ -21,10 +21,10 @@ class LogFailedLogin
     {
         try {
             $user = $event->user instanceof User ? $event->user : null;
-            $email = (string) ($event->credentials['email'] ?? $user?->email ?? request()->input('email', ''));
+            $loginIntentado = (string) ($event->credentials['email'] ?? $user?->email ?? request()->input('email', ''));
             $ip = (string) (request()->ip() ?? '');
 
-            $this->auditoriaService->registrarIntentoFallido($email, $ip);
+            $this->auditoriaService->registrarIntentoFallido($loginIntentado, $ip);
         } catch (\Throwable $e) {
             report($e);
         }

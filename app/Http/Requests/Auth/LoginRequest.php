@@ -41,7 +41,16 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        // `activo` se filtra en la consulta: una cuenta desactivada no debe
+        // obtener sesion. El mensaje sigue siendo generico para no filtrar si
+        // el email existe (evita enumeracion de usuarios).
+        $credentials = [
+            'email' => (string) $this->string('email'),
+            'password' => (string) $this->input('password'),
+            'activo' => true,
+        ];
+
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([

@@ -161,6 +161,17 @@ class User extends Authenticatable
     }
 
     /**
+     * Indica si el usuario puede entrar al modulo de inventario.
+     *
+     * Se resuelve con el permiso `ver inventario`, que ya contempla al Admin
+     * via `Gate::before`. Fuente unica para el middleware `inventario.access`.
+     */
+    public function puedeAccederAlInventario(): bool
+    {
+        return $this->can('ver inventario');
+    }
+
+    /**
      * Nombre del primer rol asignado (o cadena por defecto).
      */
     public function getRolPrincipalAttribute(): string

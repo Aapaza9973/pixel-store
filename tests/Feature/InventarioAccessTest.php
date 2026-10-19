@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\LogAuditoria;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -59,5 +60,37 @@ class InventarioAccessTest extends TestCase
         $sinRol = User::factory()->create();
 
         $this->actingAs($sinRol)->get('/admin/inventario')->assertForbidden();
+    }
+
+    public function test_acceso_denegado_al_inventario_registra_auditoria(): void
+    {
+        $vendedor = User::where('email', 'vendedor@pixelstore.com')->firstOrFail();
+
+        $this->actingAs($vendedor)->get('/admin/inventario')->assertForbidden();
+
+        $this->assertDatabaseHas('logs_auditoria', [
+            'accion' => 'acceso_denegado_inventario',
+            'user_id' => $vendedor->id,
+        ]);
+
+        $log = LogAuditoria::where('accion', 'acceso_denegado_inventario')
+            ->where('user_id', $vendedor->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($log);
+        $this->assertSame('admin/inventario', $log->datos_nuevos['ruta_intentada'] ?? null);
+    }
+
+    public function test_acceso_permitido_al_inventario_no_registra_auditoria(): void
+    {
+        $admin = User::where('email', 'admin@pixelstore.com')->firstOrFail();
+
+        $this->actingAs($admin)->get('/admin/inventario')->assertOk();
+
+        $this->assertDatabaseMissing('logs_auditoria', [
+            'accion' => 'acceso_denegado_inventario',
+            'user_id' => $admin->id,
+        ]);
     }
 }

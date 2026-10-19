@@ -189,6 +189,28 @@ public function __construct()
 @endcan
 ```
 
+### 5. Acceso exclusivo al módulo de inventario
+
+El módulo `/admin/inventario` es de **acceso exclusivo**: además de `auth`,
+`verified`, `user.active` y `user.has.role`, exige el permiso **`ver inventario`**
+a través del middleware `inventario.access` (`EnsureInventarioAccess`).
+
+| Rol | Entra a `/admin/inventario` | Por qué |
+|---|:-:|---|
+| 👑 Admin | ✅ | `Gate::before` (super-admin) |
+| 📦 Inventario | ✅ | permiso `ver inventario` |
+| 💼 Vendedor / 💰 Cajero / 🧑 Cliente | ❌ | sin el permiso → 403 |
+
+La comprobación vive en una única fuente, `User::puedeAccederAlInventario()`, que
+resuelve `can('ver inventario')`. Un acceso denegado responde
+`403 No tiene permisos para acceder al módulo de inventario.` y queda auditado en
+`logs_auditoria` como `acceso_denegado_inventario`, con la ruta intentada y la IP
+(los accesos permitidos **no** generan log).
+
+El panel home de cada rol (`User::panelHome()`) usa el mismo criterio: Inventario
+(sin Admin) aterriza directo en su módulo, el resto en `/dashboard`. El flujo
+completo de login está en [02 — Arquitectura](02-arquitectura.md).
+
 ---
 
 ## 👤 Usuarios demo

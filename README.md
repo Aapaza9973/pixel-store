@@ -176,8 +176,9 @@ Desde la ficha de cada usuario podés **editar**, **activar/desactivar**,
 
 > Un usuario **sin ningún rol** no accede a `/admin/*`: recibe 403 (`No tiene
 > permisos asignados.`). Sí puede entrar a `/dashboard`, que hoy solo valida
-> sesión y cuenta activa (ver `TECH_DEBT.md`). Un usuario **desactivado** es
-> deslogueado y redirigido al login.
+> sesión y cuenta activa (ver `TECH_DEBT.md`). Un usuario **desactivado** no
+> puede autenticarse; si se lo desactiva con la sesión abierta, es deslogueado
+> en la siguiente request.
 
 ### Auditoría
 

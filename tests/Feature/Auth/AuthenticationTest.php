@@ -42,6 +42,25 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_users_with_inactive_account_can_not_authenticate(): void
+    {
+        $user = User::factory()->create(['activo' => false]);
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('email');
+
+        // No debe quedar rastro de sesión iniciada para la cuenta desactivada
+        $this->assertDatabaseMissing('logs_auditoria', [
+            'accion' => 'login',
+            'user_id' => $user->id,
+        ]);
+    }
+
     public function test_users_can_logout(): void
     {
         $user = User::factory()->create();

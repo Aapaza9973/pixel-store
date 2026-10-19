@@ -55,8 +55,12 @@ class AuditoriaService
 
     /**
      * Registra un intento fallido de autenticación.
+     *
+     * Guarda el identificador **tal como se intentó** bajo `login_intentado`
+     * (no `email`): hoy es siempre un email, pero la clave no debe mentir si
+     * más adelante se admite otro identificador de login.
      */
-    public function registrarIntentoFallido(string $email, string $ip): LogAuditoria
+    public function registrarIntentoFallido(string $loginIntentado, string $ip): LogAuditoria
     {
         return LogAuditoria::create([
             'user_id' => null,
@@ -65,7 +69,7 @@ class AuditoriaService
             'modelo_id' => null,
             'datos_anteriores' => null,
             'datos_nuevos' => [
-                'email' => $email,
+                'login_intentado' => $loginIntentado,
                 'ip' => $ip,
             ],
             'ip' => $ip !== '' ? $ip : request()->ip(),

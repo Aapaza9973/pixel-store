@@ -38,20 +38,34 @@ php artisan test --parallel
 ## 📊 Estado actual
 
 ```
-Tests:    96 passed (316 assertions)
-Duration: ~22s
+Tests:    177 passed (613 assertions)
+Duration: ~49s
 ```
 
 ### Distribución por módulo
 
 | Archivo | Tests | Cobertura |
 |---|:-:|---|
-| `Auth/AuthenticationTest` | 4 | Login, logout, credenciales |
+| `Auth/AuthenticationTest` | 5 | Login, logout, credenciales, cuenta inactiva |
+| `Auth/LoginRedirectTest` | 9 | Redirección post-login por rol + `intended()` |
+| `Auth/LoginValidationTest` | 3 | Validación del form de login (Alpine + servidor) |
 | `Auth/RegistrationTest` | 2 | Registro |
 | `Auth/PasswordResetTest` | 4 | Reset de contraseña |
 | `Auth/PasswordConfirmationTest` | 3 | Confirmación |
 | `Auth/PasswordUpdateTest` | 2 | Actualización |
 | `Auth/EmailVerificationTest` | 3 | Verificación |
+| `AuditoriaLoginTest` | 4 | Auditoría de login/logout/fallos |
+| `InventarioAccessTest` | 8 | Acceso exclusivo al módulo + auditoría del 403 |
+| `MensajesContextualesTest` | 6 | Los 5 mensajes de error/bloqueo |
+| `UserManagementTest` | 13 | CRUD de usuarios y roles |
+| `UserHistorialTest` | 3 | Historial de auditoría por usuario |
+| `UserObserverTest` | 9 | Observers de auditoría |
+| `UserPolicyTest` | 6 | Policy de usuarios |
+| `UserPanelHomeTest` | 4 | `User::panelHome()` por rol |
+| `StoreUserRequestTest` | 6 | Validación de alta de usuario |
+| `UpdateUserRequestTest` | 6 | Validación de edición de usuario |
+| `RoleAccessTest` | 5 | Matriz de permisos |
+| `ErrorPageTest` | 3 | Vistas de error (403) |
 | `DashboardTest` | 2 | Métricas del dashboard |
 | `InventoryServiceTest` | 14 | Servicio de inventario |
 | `ProductoTest` | 7 | CRUD de productos |
@@ -59,10 +73,20 @@ Duration: ~22s
 | `ProductoStockTest` | 14 | Stock por ubicación |
 | `AlertaTest` | 8 | Sistema de alertas |
 | `UbicacionTest` | 6 | CRUD de ubicaciones |
-| `RoleAccessTest` | 5 | Matriz de permisos |
 | `SessionExtendTest` | 5 | Extensión de sesión |
 | `ProfileTest` | 5 | Gestión de perfil |
-| `ExampleTest` | 2 | Smoke tests |
+| `ExampleTest` (Feature + Unit) | 2 | Smoke tests |
+
+### Cobertura de autenticación y acceso al inventario (HU-RF.4)
+
+| Archivo | Qué verifica |
+|---|---|
+| `Auth/AuthenticationTest` | Login válido, password incorrecta, **cuenta inactiva no se autentica** y logout |
+| `Auth/LoginRedirectTest` | Admin/Vendedor/Cajero → `/dashboard`, Inventario → `/admin/inventario`, `intended()`, expulsión de cuenta desactivada con sesión abierta, usuario sin rol |
+| `Auth/LoginValidationTest` | Directivas Alpine presentes, error de servidor y preservación de `old()` |
+| `InventarioAccessTest` | Admin e Inventario entran; Vendedor, Cajero, Cliente y sin rol reciben 403; **el 403 queda en `logs_auditoria`** y el acceso permitido no genera log |
+| `MensajesContextualesTest` | Los 5 mensajes (403 inventario, 403 sin rol, cuenta desactivada, credenciales inválidas, rate limit) son distintos entre sí |
+| `AuditoriaLoginTest` | `login`, `logout` y `login_fallido` con `login_intentado`, sin exponer la contraseña |
 
 ---
 
@@ -71,16 +95,27 @@ Duration: ~22s
 ```
 tests/
 ├── Feature/                     # Tests de integración (HTTP)
-│   ├── Auth/                    # Autenticación
+│   ├── Auth/                    # Autenticación (6 archivos)
 │   ├── AlertaTest.php
+│   ├── AuditoriaLoginTest.php
 │   ├── DashboardTest.php
+│   ├── ErrorPageTest.php
+│   ├── InventarioAccessTest.php
 │   ├── InventoryServiceTest.php
+│   ├── MensajesContextualesTest.php
 │   ├── ProductoFilterTest.php
 │   ├── ProductoStockTest.php
 │   ├── ProductoTest.php
 │   ├── RoleAccessTest.php
 │   ├── SessionExtendTest.php
-│   └── UbicacionTest.php
+│   ├── StoreUserRequestTest.php
+│   ├── UbicacionTest.php
+│   ├── UpdateUserRequestTest.php
+│   ├── UserHistorialTest.php
+│   ├── UserManagementTest.php
+│   ├── UserObserverTest.php
+│   ├── UserPanelHomeTest.php
+│   └── UserPolicyTest.php
 ├── Unit/                        # Tests de unidades aisladas
 │   └── ExampleTest.php
 └── TestCase.php                 # Clase base (carga schema)

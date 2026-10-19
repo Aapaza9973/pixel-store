@@ -43,11 +43,13 @@ class MensajesContextualesTest extends TestCase
 
     public function test_usuario_inactivo_es_expulsado_con_mensaje(): void
     {
-        $inactivo = User::factory()->create(['activo' => false]);
+        $usuario = User::factory()->create(['activo' => true]);
 
-        // El login acepta las credenciales; el middleware user.active bloquea al acceder.
-        $this->post('/login', ['email' => $inactivo->email, 'password' => 'password'])
-            ->assertRedirect('/dashboard');
+        $this->actingAs($usuario);
+
+        // La cuenta se desactiva con la sesión ya abierta: el login ya rechaza
+        // cuentas inactivas, así que el mensaje lo emite el middleware user.active.
+        $usuario->update(['activo' => false]);
 
         $this->get('/dashboard')
             ->assertRedirect('/login')

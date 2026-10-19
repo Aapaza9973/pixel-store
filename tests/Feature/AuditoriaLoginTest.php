@@ -63,7 +63,7 @@ class AuditoriaLoginTest extends TestCase
             ->first();
 
         $this->assertNotNull($log);
-        $this->assertSame($user->email, $log->datos_nuevos['email'] ?? null);
+        $this->assertSame($user->email, $log->datos_nuevos['login_intentado'] ?? null);
     }
 
     public function test_logout_registra_en_auditoria(): void
@@ -109,7 +109,7 @@ class AuditoriaLoginTest extends TestCase
             ->first();
 
         $this->assertNotNull($log);
-        $this->assertSame($intentadoEmail, $log->datos_nuevos['email'] ?? null);
+        $this->assertSame($intentadoEmail, $log->datos_nuevos['login_intentado'] ?? null);
 
         // La contraseña no debe aparecer en datos_nuevos ni en el payload serializado
         $this->assertArrayNotHasKey('password', (array) $log->datos_nuevos);

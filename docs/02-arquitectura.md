@@ -339,6 +339,7 @@ Usado para:
 2. **Validación y rate limiting** — `POST /login` → `LoginRequest` (reglas: `email` requerido/email, `password` requerido). El login es **email-only**: no existe campo `username` ni columna equivalente; el email es la credencial.
    - Límite **activo**: **5 intentos por minuto**, con clave `email|IP` (`RateLimiter::tooManyAttempts($key, 5)`; `hit()` usa 60 s de decaimiento).
    - Al excederlo se dispara el evento `Lockout` y se devuelve el error de validación `auth.throttle`.
+   - `Auth::attempt()` filtra `activo = true`: una cuenta desactivada **no obtiene sesión**. El mensaje sigue siendo genérico a propósito (evita enumerar usuarios); el mensaje específico de "cuenta desactivada" lo emite `CheckUserActive` cuando la desactivación ocurre con la sesión ya abierta.
 3. **Auditoría de intentos fallidos** — evento `Failed` → `LogFailedLogin` → `AuditoriaService::registrarIntentoFallido()` → `logs_auditoria` (`accion = login_fallido`, `modelo = null`, `user_id = null`, `datos_nuevos = {email, ip}`).
 4. **Sesión** — en éxito: `RateLimiter::clear()` + `session()->regenerate()` + evento `Login` → `LogSuccessfulLogin` → `logs_auditoria` (`accion = login`, `modelo = App\Models\User`, `modelo_id = id`).
 5. **Redirección** — `redirect()->intended($request->user()->panelHome())`. El destino por defecto lo decide `User::panelHome()`; si el usuario venía de una URL protegida, `intended()` la respeta y `panelHome()` solo actúa como fallback.
@@ -355,7 +356,7 @@ Usado para:
 
    | Caso | Middleware | Resultado |
    |---|---|---|
-   | Cuenta desactivada (`activo = false`) | `user.active` (`CheckUserActive`) | `Auth::logout()` + sesión invalidada + redirect a `/login` con flash `error` |
+   | Cuenta desactivada (`activo = false`) | `LoginRequest` (no autentica) + `user.active` (`CheckUserActive`) | El login falla con credenciales inválidas; con sesión ya abierta: `Auth::logout()` + sesión invalidada + redirect a `/login` con flash `error` |
    | Autenticado sin ningún rol | `user.has.role` (`CheckUserHasRole`) | `abort(403, 'No tiene permisos asignados.')` + auditoría `acceso_denegado_sin_rol` |
    | Con rol pero sin `ver inventario` | `inventario.access` (`EnsureInventarioAccess`) | `abort(403, 'No tiene permisos para acceder al módulo de inventario.')` |
 

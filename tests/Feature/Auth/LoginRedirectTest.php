@@ -78,11 +78,13 @@ class LoginRedirectTest extends TestCase
 
     public function test_usuario_inactivo_es_expulsado_al_acceder_al_panel(): void
     {
-        $inactivo = User::factory()->create(['activo' => false]);
+        $usuario = User::factory()->create(['activo' => true]);
 
-        // El login acepta las credenciales; el bloqueo ocurre en el middleware user.active.
-        $this->login($inactivo->email)->assertRedirect('/dashboard');
-        $this->assertAuthenticated();
+        $this->actingAs($usuario);
+
+        // Desactivación con la sesión abierta: user.active expulsa en la
+        // siguiente request (el login ya no deja entrar a una cuenta inactiva).
+        $usuario->update(['activo' => false]);
 
         $this->get('/dashboard')->assertRedirect('/login');
         $this->assertGuest();

@@ -8,14 +8,16 @@ prioridad y sprint objetivo.
 ## 🔴 Prioridad alta
 
 ### Auth — Bloquear login de usuario inactivo de raíz
-- [ ] Un usuario con `activo=false` **puede autenticarse** (`POST /login` → 302
-      al panel); el bloqueo ocurre después, en `CheckUserActive`.
-- **Impacto**: el usuario despedido obtiene una sesión válida hasta que un
-      middleware lo expulse en la siguiente request.
-- **Fix sugerido**: `LoginRequest@authenticate` con `->where('activo', true)`
-      en `Auth::attempt`, o validación en el controller.
+- [x] Resuelto: `LoginRequest@authenticate` incluye `'activo' => true` en
+      `Auth::attempt`, así que una cuenta desactivada no obtiene sesión.
+- Un usuario con `activo=false` **podía autenticarse** (`POST /login` → 302 al
+  panel); el bloqueo ocurría después, en `CheckUserActive`.
+- **Impacto (histórico)**: el usuario despedido obtenía una sesión válida hasta
+  que un middleware lo expulsara en la siguiente request.
 - **Detectado**: Wave 2 Bloque 3 (commit `a8bdbad`)
-- **Cuándo arreglarlo**: Sprint 2, junto con la auditoría de auth.
+- **Cerrado**: bloque de seguridad post-Wave 4 (`tests/Feature/Auth/AuthenticationTest`
+  cubre el caso). El mensaje sigue siendo genérico a propósito: revelar
+  "cuenta desactivada" en el login permitiría enumerar usuarios.
 
 ### Sprint 2 — Modelos pendientes
 - [ ] Crear modelo `Venta` (tabla `ventas` ya existe en schema)

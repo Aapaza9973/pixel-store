@@ -242,7 +242,7 @@ class UserManagementTest extends TestCase
             ->first();
 
         $this->assertNotNull($log);
-        $this->assertSame($user->email, $log->datos_nuevos['email'] ?? null);
+        $this->assertSame($user->email, $log->datos_nuevos['login_intentado'] ?? null);
         $this->assertArrayNotHasKey('password', (array) $log->datos_nuevos);
     }
 
