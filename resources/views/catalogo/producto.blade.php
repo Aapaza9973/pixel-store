@@ -5,8 +5,9 @@
 
 @section('content')
 @php
-    $imagen = $producto->imagenesGaleria->firstWhere('es_principal', true)
-        ?? $producto->imagenesGaleria->first();
+    $imagenes = $producto->imagenesGaleria;
+
+    $principal = $imagenes->firstWhere('es_principal', true) ?? $imagenes->first();
 
     $estadoStock = match (true) {
         (int) $producto->stock <= 0 => ['label' => 'Agotado', 'clase' => 'border-error/60 bg-error/10 text-error'],
@@ -15,23 +16,34 @@
     };
 @endphp
 
-<div class="mx-auto max-w-5xl space-y-8">
+<div class="mx-auto max-w-5xl space-y-8"
+     x-data="{ activa: '{{ $principal?->path ?? '' }}' }">
 
     {{-- Migas --}}
     <nav class="flex items-center gap-2 font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
-        <span>Catálogo</span>
+        <a href="{{ url('/') }}" class="transition hover:text-on-surface">Inicio</a>
         <span>/</span>
         <span class="text-on-surface-variant">{{ $producto->categoria?->nombre ?? 'Sin categoría' }}</span>
+        <span>/</span>
+        <span class="text-on-surface">{{ $producto->nombre }}</span>
     </nav>
 
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
 
-        {{-- Imagen --}}
+        {{-- Galería --}}
         <div class="overflow-hidden rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 backdrop-blur-xl">
-            @if ($imagen)
-                <img src="{{ asset('storage/'.$imagen->path) }}"
-                     alt="{{ $imagen->alt ?? $producto->nombre }}"
-                     class="aspect-square w-full object-cover">
+            @if ($principal)
+                <template x-if="activa">
+                    <img x-bind:src="'{{ asset('storage') }}/' + activa"
+                         alt="{{ $principal->alt ?? $producto->nombre }}"
+                         class="aspect-square w-full object-cover">
+                </template>
+
+                <template x-if="! activa">
+                    <div class="flex aspect-square w-full items-center justify-center bg-surface-container-low">
+                        <span class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Sin imagen</span>
+                    </div>
+                </template>
             @else
                 <div class="flex aspect-square w-full items-center justify-center bg-surface-container-low">
                     <div class="flex flex-col items-center gap-3 text-outline">
@@ -46,12 +58,18 @@
                 </div>
             @endif
 
-            @if ($producto->imagenesGaleria->count() > 1)
+            @if ($imagenes->count() > 1)
                 <div class="grid grid-cols-4 gap-2 border-t border-outline-variant/30 p-3">
-                    @foreach ($producto->imagenesGaleria as $miniatura)
-                        <img src="{{ asset('storage/'.$miniatura->path) }}"
-                             alt="{{ $miniatura->alt ?? $producto->nombre }}"
-                             class="aspect-square w-full rounded-obsidian object-cover">
+                    @foreach ($imagenes as $miniatura)
+                        <button type="button"
+                                x-on:click="activa = '{{ $miniatura->path }}'"
+                                x-bind:class="activa === '{{ $miniatura->path }}' ? 'border-primary-container' : 'border-outline-variant/30'"
+                                class="overflow-hidden rounded-obsidian border transition hover:border-primary-container/60"
+                                aria-label="Ver imagen {{ $loop->iteration }}">
+                            <img src="{{ $miniatura->urlThumbnail() }}"
+                                 alt="{{ $miniatura->alt ?? $producto->nombre }}"
+                                 class="aspect-square w-full object-cover">
+                        </button>
                     @endforeach
                 </div>
             @endif
@@ -87,6 +105,11 @@
                 <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">
                     Stock disponible: {{ (int) $producto->stock }} u.
                 </p>
+
+                <a href="mailto:ventas@pixelstore.com?subject={{ rawurlencode('Consulta: '.$producto->nombre) }}"
+                   class="mt-4 inline-flex items-center gap-2 rounded-obsidian-lg bg-primary-container px-4 py-2.5 text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90">
+                    Consultar disponibilidad
+                </a>
             </div>
 
             <div>
@@ -101,6 +124,14 @@
                 <h2 class="font-headline-sm text-headline-sm text-on-surface">Especificaciones técnicas</h2>
                 <p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">
                     La tabla de especificaciones se publica cuando el catálogo técnico esté completo (HU-2.4).
+                </p>
+            </div>
+
+            {{-- Similares: se completan en HU-2.5 --}}
+            <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
+                <h2 class="font-headline-sm text-headline-sm text-on-surface">Productos similares</h2>
+                <p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">
+                    Las recomendaciones por categoría se publican en HU-2.5.
                 </p>
             </div>
         </div>

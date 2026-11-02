@@ -42,4 +42,17 @@ class ProductoImagen extends Model
     {
         return asset('storage/'.$this->path);
     }
+
+    /**
+     * Ruta del thumbnail generado al subir (misma carpeta, subcarpeta thumbs/).
+     */
+    public function pathThumbnail(): string
+    {
+        return dirname($this->path).'/thumbs/'.basename($this->path);
+    }
+
+    public function urlThumbnail(): string
+    {
+        return asset('storage/'.$this->pathThumbnail());
+    }
 }
