@@ -6,7 +6,9 @@
 @section('content')
 <div class="-mx-6 -my-6 min-h-full bg-surface" x-data="carrito()"
      data-descuento-maximo="{{ $descuentoMaximo }}"
-     data-url-store="{{ route('admin.ventas.store') }}">
+     data-url-store="{{ route('admin.ventas.store') }}"
+     data-url-clientes="{{ route('admin.clientes.buscar') }}"
+     data-url-cliente-store="{{ route('admin.clientes.store') }}">
 
     {{-- Barra superior --}}
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
@@ -118,6 +120,62 @@
         {{-- PANEL DE PAGO --}}
         <aside class="lg:col-span-1">
             <div class="lg:sticky lg:top-6 space-y-6">
+
+                {{-- Cliente de la venta (HU-5.5) --}}
+                <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface">Cliente</h3>
+                        <button type="button" x-on:click="abrirModalCliente()"
+                                class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-primary-container transition hover:text-primary-container/80">
+                            Cliente rápido
+                        </button>
+                    </div>
+
+                    {{-- Cliente seleccionado --}}
+                    <template x-if="cliente">
+                        <div class="mt-3 flex items-center justify-between gap-2 rounded-obsidian border border-primary-container/40 bg-primary-container/10 px-3 py-2">
+                            <div class="min-w-0">
+                                <p class="truncate font-label-md text-label-md text-on-surface"
+                                   x-text="'Cliente: ' + cliente.nombre"></p>
+                                <p class="truncate font-body-sm text-body-sm text-on-surface-variant"
+                                   x-text="cliente.nit_ci || cliente.telefono || 'Sin NIT/CI'"></p>
+                            </div>
+                            <button type="button" x-on:click="limpiarCliente()" aria-label="Quitar cliente"
+                                    class="shrink-0 text-body-md text-on-surface-variant transition hover:text-error">
+                                ×
+                            </button>
+                        </div>
+                    </template>
+
+                    {{-- Buscador --}}
+                    <template x-if="! cliente">
+                        <div class="mt-3">
+                            <label for="cliente-busqueda" class="sr-only">Buscar cliente</label>
+                            <input id="cliente-busqueda" type="search" x-model="busquedaCliente"
+                                   x-on:input.debounce.300ms="buscarClientes()"
+                                   placeholder="Nombre, NIT/CI o teléfono"
+                                   class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface placeholder:text-outline focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+
+                            <p x-show="buscandoCliente" x-cloak class="mt-2 font-body-sm text-body-sm text-outline">
+                                Buscando…
+                            </p>
+
+                            <ul x-show="resultadosCliente.length > 0" x-cloak
+                                class="mt-2 max-h-48 space-y-1 overflow-y-auto">
+                                <template x-for="resultado in resultadosCliente" :key="resultado.id">
+                                    <li>
+                                        <button type="button" x-on:click="seleccionarCliente(resultado)"
+                                                class="flex w-full items-center justify-between gap-3 rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-left transition hover:border-primary-container/40">
+                                            <span class="truncate font-body-md text-body-md text-on-surface" x-text="resultado.nombre"></span>
+                                            <span class="shrink-0 font-label-sm text-label-sm text-outline"
+                                                  x-text="resultado.nit_ci || resultado.telefono || ''"></span>
+                                        </button>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                </div>
 
                 <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
                     <h3 class="font-headline-sm text-headline-sm text-on-surface">Resumen</h3>
@@ -274,6 +332,77 @@
             </div>
         </aside>
     </div>
+
+    {{-- Modal de alta rápida de cliente (HU-5.5) --}}
+    <div x-show="modalCliente" x-cloak
+         x-on:keydown.escape.window="modalCliente = false"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div class="w-full max-w-lg rounded-obsidian-xl border border-outline-variant/30 bg-surface-container p-6 shadow-2xl">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                        Venta rápida
+                    </p>
+                    <h3 class="mt-1 font-headline-sm text-headline-sm text-on-surface">Cliente rápido</h3>
+                </div>
+                <button type="button" x-on:click="modalCliente = false" aria-label="Cerrar"
+                        class="text-body-lg text-on-surface-variant transition hover:text-error">
+                    ×
+                </button>
+            </div>
+
+            <form class="mt-5 space-y-4" x-on:submit.prevent="guardarClienteRapido()">
+                <div>
+                    <label for="rapido-nombre" class="mb-1.5 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                        Nombre <span class="text-error">*</span>
+                    </label>
+                    <input id="rapido-nombre" type="text" x-model="nuevoCliente.nombre"
+                           class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="rapido-nit" class="mb-1.5 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                            NIT / CI
+                        </label>
+                        <input id="rapido-nit" type="text" x-model="nuevoCliente.nit_ci"
+                               class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                    </div>
+                    <div>
+                        <label for="rapido-telefono" class="mb-1.5 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                            Teléfono
+                        </label>
+                        <input id="rapido-telefono" type="text" x-model="nuevoCliente.telefono"
+                               class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="rapido-email" class="mb-1.5 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                        Email
+                    </label>
+                    <input id="rapido-email" type="email" x-model="nuevoCliente.email"
+                           class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                </div>
+
+                <div x-show="errorCliente" x-cloak
+                     class="rounded-obsidian border border-error/40 bg-error/10 px-3 py-2 font-body-sm text-body-sm text-error"
+                     x-text="errorCliente"></div>
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" x-on:click="modalCliente = false"
+                            class="rounded-obsidian-lg border border-outline-variant/30 bg-surface-container-low px-4 py-2 text-body-md text-on-surface-variant transition hover:text-on-surface">
+                        Cancelar
+                    </button>
+                    <button type="submit" x-bind:disabled="guardandoCliente"
+                            class="rounded-obsidian-lg bg-primary-container px-4 py-2 text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90 disabled:cursor-not-allowed disabled:opacity-40">
+                        <span x-show="! guardandoCliente">Guardar cliente</span>
+                        <span x-show="guardandoCliente" x-cloak>Guardando…</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -292,10 +421,24 @@
             errorGeneral: null,
             ventaConfirmada: null,
 
+            // HU-5.5: cliente de la venta.
+            cliente: null,
+            busquedaCliente: '',
+            resultadosCliente: [],
+            buscandoCliente: false,
+            modalCliente: false,
+            guardandoCliente: false,
+            nuevoCliente: { nombre: '', telefono: '', nit_ci: '', email: '' },
+            errorCliente: null,
+            urlClientes: '',
+            urlClienteStore: '',
+
             init() {
                 // Límite de descuento del rol, inyectado desde Blade.
                 this.descuentoMaximo = Number(this.$el.dataset.descuentoMaximo) || 0;
                 this.urlStore = this.$el.dataset.urlStore || '';
+                this.urlClientes = this.$el.dataset.urlClientes || '';
+                this.urlClienteStore = this.$el.dataset.urlClienteStore || '';
                 this.operacionId = this.operacionActual();
 
                 this.cargar();
@@ -419,6 +562,98 @@
                 this.pagos.splice(index, 1);
             },
 
+            async buscarClientes() {
+                const termino = (this.busquedaCliente || '').trim();
+
+                if (termino.length < 2) {
+                    this.resultadosCliente = [];
+
+                    return;
+                }
+
+                this.buscandoCliente = true;
+
+                try {
+                    const respuesta = await fetch(this.urlClientes + '?q=' + encodeURIComponent(termino), {
+                        headers: { 'Accept': 'application/json' },
+                    });
+
+                    const cuerpo = await respuesta.json().catch(() => ({}));
+
+                    this.resultadosCliente = respuesta.ok ? (cuerpo.data || []) : [];
+                } catch (error) {
+                    this.resultadosCliente = [];
+                } finally {
+                    this.buscandoCliente = false;
+                }
+            },
+
+            seleccionarCliente(cliente) {
+                this.cliente = cliente;
+                this.busquedaCliente = '';
+                this.resultadosCliente = [];
+            },
+
+            limpiarCliente() {
+                this.cliente = null;
+            },
+
+            abrirModalCliente() {
+                this.nuevoCliente = { nombre: '', telefono: '', nit_ci: '', email: '' };
+                this.errorCliente = null;
+                this.modalCliente = true;
+            },
+
+            async guardarClienteRapido() {
+                if (this.guardandoCliente) {
+                    return;
+                }
+
+                this.guardandoCliente = true;
+                this.errorCliente = null;
+
+                const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+                try {
+                    const respuesta = await fetch(this.urlClienteStore, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                        },
+                        body: JSON.stringify({
+                            nombre: this.nuevoCliente.nombre,
+                            telefono: this.nuevoCliente.telefono || null,
+                            nit_ci: this.nuevoCliente.nit_ci || null,
+                            email: this.nuevoCliente.email || null,
+                            activo: true,
+                        }),
+                    });
+
+                    const cuerpo = await respuesta.json().catch(() => ({}));
+
+                    if (respuesta.status === 201) {
+                        this.seleccionarCliente(cuerpo.data);
+                        this.modalCliente = false;
+
+                        return;
+                    }
+
+                    if (respuesta.status === 422) {
+                        this.errorCliente = Object.values(cuerpo.errors || {}).flat().join(' ') || 'Revisá los datos del cliente.';
+
+                        return;
+                    }
+
+                    this.errorCliente = cuerpo.message || 'No se pudo crear el cliente.';
+                } catch (error) {
+                    this.errorCliente = 'No se pudo conectar con el servidor.';
+                } finally {
+                    this.guardandoCliente = false;
+                }
+            },
+
             operacionActual() {
                 const guardada = sessionStorage.getItem(this.operacionKey);
 
@@ -465,7 +700,10 @@
                                 metodo: pago.metodo,
                                 monto: pago.monto,
                             })),
-                            meta: { operacion_id: this.operacionId },
+                            meta: {
+                                operacion_id: this.operacionId,
+                                cliente_id: this.cliente?.id ?? null,
+                            },
                             descuento_porcentaje: this.porcentajeParaEnviar,
                         }),
                     });

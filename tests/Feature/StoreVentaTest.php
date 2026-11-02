@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Categoria;
+use App\Models\Cliente;
 use App\Models\Marca;
 use App\Models\Producto;
 use App\Models\User;
@@ -153,6 +154,48 @@ class StoreVentaTest extends TestCase
             'id' => $venta['id'],
             'total' => 1000,
             'descuento' => 0,
+        ]);
+    }
+
+    public function test_venta_con_cliente_id_persiste_el_cliente(): void
+    {
+        $cliente = Cliente::create([
+            'nombre' => 'Cliente POS',
+            'nit_ci' => '7788990',
+            'telefono' => '+591 70055566',
+            'activo' => true,
+        ]);
+
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'meta' => [
+                    'operacion_id' => (string) Str::uuid(),
+                    'cliente_id' => $cliente->id,
+                ],
+            ])
+        );
+
+        $response->assertCreated();
+
+        $this->assertDatabaseHas('ventas', [
+            'id' => $response->json('venta.id'),
+            'cliente_id' => $cliente->id,
+        ]);
+    }
+
+    public function test_venta_sin_cliente_id_permite_confirmar(): void
+    {
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload()
+        );
+
+        $response->assertCreated();
+
+        $this->assertDatabaseHas('ventas', [
+            'id' => $response->json('venta.id'),
+            'cliente_id' => null,
         ]);
     }
 

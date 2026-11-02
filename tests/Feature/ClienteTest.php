@@ -161,6 +161,27 @@ class ClienteTest extends TestCase
         $this->assertDatabaseMissing('clientes', ['nombre' => 'No autorizado']);
     }
 
+    public function test_cliente_rapido_crea_y_devuelve_el_cliente(): void
+    {
+        // El modal "Cliente rápido" del POS consume JSON y espera 201.
+        $response = $this->actingAs($this->vendedor)->postJson(route('admin.clientes.store'), [
+            'nombre' => 'Cliente Rápido POS',
+            'nit_ci' => '4455667',
+            'telefono' => '+591 70099988',
+            'email' => 'rapido.pos@example.com',
+            'activo' => true,
+        ]);
+
+        $response->assertCreated();
+        $response->assertJsonPath('data.nombre', 'Cliente Rápido POS');
+
+        $this->assertDatabaseHas('clientes', [
+            'id' => $response->json('data.id'),
+            'nombre' => 'Cliente Rápido POS',
+            'nit_ci' => '4455667',
+        ]);
+    }
+
     public function test_buscar_productos_para_pos(): void
     {
         $categoria = Categoria::create(['nombre' => 'Categoría POS', 'tipo' => 'Componente']);

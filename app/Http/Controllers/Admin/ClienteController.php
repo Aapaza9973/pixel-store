@@ -42,11 +42,17 @@ class ClienteController extends Controller
         return view('admin.clientes.create');
     }
 
-    public function store(StoreClienteRequest $request): RedirectResponse
+    public function store(StoreClienteRequest $request): RedirectResponse|JsonResponse
     {
-        DB::transaction(function () use ($request) {
-            Cliente::create($request->validated());
-        });
+        $cliente = DB::transaction(fn () => Cliente::create($request->validated()));
+
+        // El modal "Cliente rápido" del POS consume la respuesta JSON.
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Cliente creado exitosamente.',
+                'data' => $cliente->only(['id', 'nombre', 'nit_ci', 'telefono', 'email']),
+            ], 201);
+        }
 
         return redirect()
             ->route('admin.clientes.index')
