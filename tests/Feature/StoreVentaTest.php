@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Marca;
+use App\Models\NumeroSerie;
 use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
@@ -197,6 +198,72 @@ class StoreVentaTest extends TestCase
             'id' => $response->json('venta.id'),
             'cliente_id' => null,
         ]);
+    }
+
+    private function crearSerie(string $numero, string $estado = 'disponible'): NumeroSerie
+    {
+        return NumeroSerie::create([
+            'producto_id' => $this->producto->id,
+            'numero_serie' => $numero,
+            'estado' => $estado,
+            'fecha_ingreso' => now(),
+        ]);
+    }
+
+    public function test_venta_con_numero_serie_id_marca_la_serie_como_vendida(): void
+    {
+        $serie = $this->crearSerie('SN-POS-001');
+
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'items' => [[
+                    'producto_id' => $this->producto->id,
+                    'cantidad' => 1,
+                    'numero_serie_id' => $serie->id,
+                ]],
+            ])
+        );
+
+        $response->assertCreated();
+
+        $serie->refresh();
+        $this->assertSame('vendido', $serie->estado);
+        $this->assertSame($response->json('venta.id'), $serie->venta_id);
+        $this->assertNotNull($serie->fecha_venta);
+    }
+
+    public function test_endpoint_series_devuelve_solo_disponibles(): void
+    {
+        $this->crearSerie('SN-DISPONIBLE-1');
+        $this->crearSerie('SN-VENDIDA-1', 'vendido');
+
+        $response = $this->actingAs($this->vendedor)
+            ->getJson(route('admin.productos.series', $this->producto));
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.numero_serie', 'SN-DISPONIBLE-1');
+    }
+
+    public function test_venta_sin_numero_serie_id_sigue_funcionando(): void
+    {
+        $serie = $this->crearSerie('SN-OPCIONAL-1');
+
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload()
+        );
+
+        $response->assertCreated();
+
+        $this->assertDatabaseHas('detalle_ventas', [
+            'venta_id' => $response->json('venta.id'),
+            'producto_id' => $this->producto->id,
+            'numero_serie_id' => null,
+        ]);
+
+        $this->assertSame('disponible', $serie->fresh()->estado);
     }
 
     public function test_stock_insuficiente_devuelve_409(): void

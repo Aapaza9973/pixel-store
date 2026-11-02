@@ -8,7 +8,8 @@
      data-descuento-maximo="{{ $descuentoMaximo }}"
      data-url-store="{{ route('admin.ventas.store') }}"
      data-url-clientes="{{ route('admin.clientes.buscar') }}"
-     data-url-cliente-store="{{ route('admin.clientes.store') }}">
+     data-url-cliente-store="{{ route('admin.clientes.store') }}"
+     data-url-series="{{ route('admin.productos.series', ['producto' => '__producto__']) }}">
 
     {{-- Barra superior --}}
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
@@ -81,7 +82,31 @@
                             <tbody class="divide-y divide-outline-variant/15">
                                 <template x-for="(item, index) in items" :key="item.producto_id">
                                     <tr class="transition hover:bg-primary-container/[0.04]">
-                                        <td class="px-5 py-3.5 text-on-surface" x-text="item.nombre"></td>
+                                        <td class="px-5 py-3.5 text-on-surface">
+                                            <div x-text="item.nombre"></div>
+
+                                            {{-- Número de serie (HU-5.6) --}}
+                                            <template x-if="item.maneja_numero_serie">
+                                                <div class="mt-1 flex items-center gap-2">
+                                                    <template x-if="item.numero_serie_id">
+                                                        <span class="inline-flex items-center gap-1 rounded-obsidian border border-primary-container/40 bg-primary-container/10 px-2 py-0.5 font-label-sm text-label-sm text-primary-container">
+                                                            <span x-text="item.numero_serie || ('SN #' + item.numero_serie_id)"></span>
+                                                            <button type="button" x-on:click="quitarSerie(index)"
+                                                                    aria-label="Quitar número de serie"
+                                                                    class="text-on-surface-variant transition hover:text-error">
+                                                                ×
+                                                            </button>
+                                                        </span>
+                                                    </template>
+
+                                                    <button type="button" x-show="! item.numero_serie_id"
+                                                            x-on:click="abrirSeries(index)"
+                                                            class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-outline transition hover:text-primary-container">
+                                                        Elegir serie
+                                                    </button>
+                                                </div>
+                                            </template>
+                                        </td>
                                         <td class="px-5 py-3.5 text-right font-label-md text-label-md tabular-nums text-on-surface-variant"
                                             x-text="money(item.precio)"></td>
                                         <td class="px-5 py-3.5">
@@ -333,6 +358,51 @@
         </aside>
     </div>
 
+    {{-- Modal de selección de número de serie (HU-5.6) --}}
+    <div x-show="serieModal.abierto" x-cloak
+         x-on:keydown.escape.window="serieModal.abierto = false"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div class="w-full max-w-md rounded-obsidian-xl border border-outline-variant/30 bg-surface-container p-6 shadow-2xl">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                        Número de serie
+                    </p>
+                    <h3 class="mt-1 font-headline-sm text-headline-sm text-on-surface">
+                        Elegir serie
+                    </h3>
+                </div>
+                <button type="button" x-on:click="serieModal.abierto = false" aria-label="Cerrar"
+                        class="text-body-lg text-on-surface-variant transition hover:text-error">
+                    ×
+                </button>
+            </div>
+
+            <p x-show="serieModal.cargando" x-cloak class="mt-4 font-body-sm text-body-sm text-outline">
+                Cargando series…
+            </p>
+
+            <p x-show="serieModal.error" x-cloak class="mt-4 font-body-sm text-body-sm text-error"
+               x-text="serieModal.error"></p>
+
+            <p x-show="! serieModal.cargando && ! serieModal.error && serieModal.series.length === 0" x-cloak
+               class="mt-4 font-body-sm text-body-sm text-on-surface-variant">
+                Este producto no tiene series disponibles.
+            </p>
+
+            <ul x-show="serieModal.series.length > 0" x-cloak class="mt-4 max-h-64 space-y-1 overflow-y-auto">
+                <template x-for="serie in serieModal.series" :key="serie.id">
+                    <li>
+                        <button type="button" x-on:click="elegirSerie(serie)"
+                                class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-left font-label-md text-label-md tabular-nums text-on-surface transition hover:border-primary-container/40">
+                            <span x-text="serie.numero_serie"></span>
+                        </button>
+                    </li>
+                </template>
+            </ul>
+        </div>
+    </div>
+
     {{-- Modal de alta rápida de cliente (HU-5.5) --}}
     <div x-show="modalCliente" x-cloak
          x-on:keydown.escape.window="modalCliente = false"
@@ -433,12 +503,17 @@
             urlClientes: '',
             urlClienteStore: '',
 
+            // HU-5.6: número de serie por línea.
+            urlSeries: '',
+            serieModal: { abierto: false, itemIndex: null, cargando: false, series: [], error: null },
+
             init() {
                 // Límite de descuento del rol, inyectado desde Blade.
                 this.descuentoMaximo = Number(this.$el.dataset.descuentoMaximo) || 0;
                 this.urlStore = this.$el.dataset.urlStore || '';
                 this.urlClientes = this.$el.dataset.urlClientes || '';
                 this.urlClienteStore = this.$el.dataset.urlClienteStore || '';
+                this.urlSeries = this.$el.dataset.urlSeries || '';
                 this.operacionId = this.operacionActual();
 
                 this.cargar();
@@ -526,6 +601,9 @@
                     precio: precio,
                     cantidad: cantidad,
                     subtotal: precio * cantidad,
+                    maneja_numero_serie: Boolean(producto.maneja_numero_serie),
+                    numero_serie_id: null,
+                    numero_serie: null,
                 });
             },
 
@@ -652,6 +730,60 @@
                 } finally {
                     this.guardandoCliente = false;
                 }
+            },
+
+            async abrirSeries(index) {
+                const item = this.items[index];
+
+                if (! item) {
+                    return;
+                }
+
+                this.serieModal = { abierto: true, itemIndex: index, cargando: true, series: [], error: null };
+
+                try {
+                    const url = this.urlSeries.replace('__producto__', item.producto_id);
+                    const respuesta = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                    const cuerpo = await respuesta.json().catch(() => ({}));
+
+                    if (! respuesta.ok) {
+                        this.serieModal.error = cuerpo.message || 'No se pudieron cargar las series.';
+
+                        return;
+                    }
+
+                    this.serieModal.series = cuerpo.data || [];
+                } catch (error) {
+                    this.serieModal.error = 'No se pudo conectar con el servidor.';
+                } finally {
+                    this.serieModal.cargando = false;
+                }
+            },
+
+            elegirSerie(serie) {
+                const index = this.serieModal.itemIndex;
+                const item = this.items[index];
+
+                if (! item) {
+                    return;
+                }
+
+                item.numero_serie_id = serie.id;
+                item.numero_serie = serie.numero_serie;
+                this.items.splice(index, 1, item);
+                this.serieModal.abierto = false;
+            },
+
+            quitarSerie(index) {
+                const item = this.items[index];
+
+                if (! item) {
+                    return;
+                }
+
+                item.numero_serie_id = null;
+                item.numero_serie = null;
+                this.items.splice(index, 1, item);
             },
 
             operacionActual() {

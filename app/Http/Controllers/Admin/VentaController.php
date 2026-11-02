@@ -84,6 +84,26 @@ class VentaController extends Controller
     }
 
     /**
+     * Series disponibles de un producto para el selector del POS (HU-5.6).
+     */
+    public function series(Producto $producto): JsonResponse
+    {
+        $this->authorize('viewAny', Producto::class);
+
+        $series = $producto->numerosSerie()
+            ->disponibles()
+            ->orderBy('numero_serie')
+            ->get(['id', 'numero_serie']);
+
+        return response()->json([
+            'data' => $series->map(fn ($serie) => [
+                'id' => $serie->id,
+                'numero_serie' => $serie->numero_serie,
+            ]),
+        ]);
+    }
+
+    /**
      * Búsqueda de productos por nombre, SKU o código de barras (HU-5.3).
      */
     public function buscarProductos(Request $request): JsonResponse
@@ -106,6 +126,7 @@ class VentaController extends Controller
                 'sku' => $producto->sku,
                 'precio_unitario' => (float) $producto->precio_unitario,
                 'stock' => (int) $producto->stock,
+                'maneja_numero_serie' => (bool) $producto->maneja_numero_serie,
                 'categoria' => $producto->categoria?->nombre,
                 'marca' => $producto->marca?->nombre,
             ]),
