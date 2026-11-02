@@ -4,10 +4,16 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\DomainException;
 use App\Exceptions\PagoInsuficienteException;
 use App\Exceptions\SerieNoDisponibleException;
 use App\Exceptions\StockInsuficienteException;
+use App\Models\DetalleVenta;
+use App\Models\LogAuditoria;
+use App\Models\Pago;
+use App\Models\Producto;
 use App\Models\Venta;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Servicio de confirmación de ventas.
@@ -24,33 +30,262 @@ use App\Models\Venta;
  *   - ventas (con operacion_id)
  *   - detalle_ventas (no "venta_detalle")
  *   - pagos (no "venta_pagos"), metodo en Efectivo/Tarjeta/Transferencia/QR/Otro
- *
- * La lógica completa se implementa en Día 4-5 (HU-5.13).
  */
 class VentaService
 {
+    public function __construct(
+        private readonly NumeroSerieService $numerosSerie,
+        private readonly InventoryService $inventario,
+    ) {}
+
     /**
      * Confirma una venta de forma atómica e idempotente.
      *
-     * Flujo previsto (Día 4-5):
-     *   1. Abrir una única DB::transaction.
-     *   2. Si existe una venta con el mismo operacion_id, devolverla (idempotencia).
-     *   3. Bloquear los productos implicados con lockForUpdate ordenados por producto_id.
-     *   4. Validar stock de cada producto bajo el lock.
-     *   5. Validar cada número de serie (NumeroSerieService) dentro de la transacción.
-     *   6. Crear venta + detalle_ventas + pagos, descontar stock vía InventoryService.
-     *   7. Validar que la suma de pagos cubre el total.
-     *
-     * @param  array<int, array{producto_id:int, cantidad:int, numero_serie_id:?int}>  $items
-     * @param  array<int, array{metodo:'Efectivo'|'Tarjeta'|'Transferencia'|'QR'|'Otro', monto:float, referencia:?string}>  $pagos
+     * @param  array<int, array{producto_id:int, cantidad:int, numero_serie_id?:?int, ubicacion_id?:?int}>  $items
+     * @param  array<int, array{metodo:'Efectivo'|'Tarjeta'|'Transferencia'|'QR'|'Otro', monto:float, referencia?:?string}>  $pagos
      * @param  array{cliente_id:?int, vendedor_id:int, operacion_id:string}  $meta
      *
      * @throws StockInsuficienteException
      * @throws SerieNoDisponibleException
      * @throws PagoInsuficienteException
+     * @throws DomainException
      */
     public function confirmar(array $items, array $pagos, array $meta): Venta
     {
-        throw new \RuntimeException('VentaService::confirmar se implementa en Día 4-5 (HU-5.13).');
+        // R-VD-RF-06: idempotencia fuera de la transacción (early return).
+        $existente = Venta::where('operacion_id', $meta['operacion_id'])->first();
+
+        if ($existente !== null) {
+            return $existente->load(['detalles', 'pagos']);
+        }
+
+        $this->validarEntrada($items, $pagos);
+
+        // R-VD-RF-01: una única transacción para toda la operación.
+        return DB::transaction(function () use ($items, $pagos, $meta) {
+            // R-VD-RF-02: bloqueo pesimista en orden estable por producto_id
+            // para que dos ventas concurrentes no se bloqueen en cruz.
+            $productos = $this->bloquearProductos($items);
+
+            $cantidades = $this->cantidadesPorProducto($items);
+
+            // R-VD-RF-03: la validación ocurre bajo el mismo lock que la escritura.
+            foreach ($cantidades as $productoId => $cantidad) {
+                $producto = $productos[$productoId];
+
+                if ($producto->stock < $cantidad) {
+                    throw new StockInsuficienteException(
+                        "Stock insuficiente para {$producto->nombre}. "
+                        ."Disponible: {$producto->stock}, solicitado: {$cantidad}."
+                    );
+                }
+            }
+
+            $total = $this->calcularTotal($items, $productos);
+
+            // R-VD-RF-04: falla de negocio, nunca 500.
+            $totalPagado = round(array_sum(array_map(
+                static fn (array $pago): float => (float) $pago['monto'],
+                $pagos
+            )), 2);
+
+            if ($totalPagado + 0.001 < $total) {
+                throw new PagoInsuficienteException(
+                    'El monto pagado no cubre el total de la venta. '
+                    ."Total: {$total}, pagado: {$totalPagado}."
+                );
+            }
+
+            // R-VD-RF-07: los números de serie se validan dentro de la transacción.
+            $series = $this->validarSeries($items);
+
+            $venta = Venta::create([
+                'operacion_id' => $meta['operacion_id'],
+                'fecha' => now(),
+                'user_id' => $meta['vendedor_id'],
+                'cliente_id' => $meta['cliente_id'] ?? null,
+                'total' => $total,
+                'estado' => 'Pagado',
+            ]);
+
+            foreach ($items as $item) {
+                $producto = $productos[$item['producto_id']];
+
+                DetalleVenta::create([
+                    'venta_id' => $venta->id,
+                    'producto_id' => $producto->id,
+                    'numero_serie_id' => $item['numero_serie_id'] ?? null,
+                    'cantidad' => $item['cantidad'],
+                    'precio_unitario' => $producto->precio_unitario,
+                ]);
+            }
+
+            foreach ($pagos as $pago) {
+                Pago::create([
+                    'venta_id' => $venta->id,
+                    'monto' => $pago['monto'],
+                    'metodo' => $pago['metodo'],
+                    'estado' => 'Completado',
+                    'referencia' => $pago['referencia'] ?? null,
+                ]);
+            }
+
+            // El stock se descuenta después de persistir la venta para que el
+            // motivo del movimiento pueda referenciar el comprobante.
+            foreach ($items as $item) {
+                $this->inventario->ajustarStock(
+                    $productos[$item['producto_id']],
+                    -(int) $item['cantidad'],
+                    'venta',
+                    "Venta #{$venta->id}",
+                    $item['ubicacion_id'] ?? null,
+                    $meta['vendedor_id']
+                );
+            }
+
+            foreach ($series as $serie) {
+                $serie->update([
+                    'estado' => 'vendido',
+                    'venta_id' => $venta->id,
+                    'cliente_id' => $meta['cliente_id'] ?? null,
+                    'fecha_venta' => now(),
+                ]);
+            }
+
+            LogAuditoria::create([
+                'user_id' => $meta['vendedor_id'],
+                'accion' => 'crear_venta',
+                'modelo' => Venta::class,
+                'modelo_id' => $venta->id,
+                'datos_anteriores' => null,
+                'datos_nuevos' => [
+                    'total' => $total,
+                    'operacion_id' => $meta['operacion_id'],
+                    'cliente_id' => $meta['cliente_id'] ?? null,
+                    'items' => count($items),
+                    'pagos' => count($pagos),
+                ],
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return $venta->load(['detalles', 'pagos']);
+        });
+    }
+
+    /**
+     * Bloquea los productos implicados en orden ascendente de id.
+     *
+     * @param  array<int, array{producto_id:int}>  $items
+     * @return array<int, Producto>
+     */
+    private function bloquearProductos(array $items): array
+    {
+        $ids = collect($items)
+            ->pluck('producto_id')
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        $productos = [];
+
+        foreach ($ids as $id) {
+            $producto = Producto::whereKey($id)->lockForUpdate()->first();
+
+            if ($producto === null) {
+                throw new StockInsuficienteException('El producto solicitado no existe.');
+            }
+
+            $productos[(int) $id] = $producto;
+        }
+
+        return $productos;
+    }
+
+    /**
+     * Agrupa las cantidades por producto: una venta puede traer dos líneas del
+     * mismo producto y el stock debe validarse contra la suma.
+     *
+     * @param  array<int, array{producto_id:int, cantidad:int}>  $items
+     * @return array<int, int>
+     */
+    private function cantidadesPorProducto(array $items): array
+    {
+        $cantidades = [];
+
+        foreach ($items as $item) {
+            $productoId = (int) $item['producto_id'];
+            $cantidades[$productoId] = ($cantidades[$productoId] ?? 0) + (int) $item['cantidad'];
+        }
+
+        return $cantidades;
+    }
+
+    /**
+     * @param  array<int, array{producto_id:int, cantidad:int}>  $items
+     * @param  array<int, Producto>  $productos
+     */
+    private function calcularTotal(array $items, array $productos): float
+    {
+        $total = 0.0;
+
+        foreach ($items as $item) {
+            $precio = (float) $productos[(int) $item['producto_id']]->precio_unitario;
+            $total += $precio * (int) $item['cantidad'];
+        }
+
+        return round($total, 2);
+    }
+
+    /**
+     * @param  array<int, array{producto_id:int, numero_serie_id?:?int}>  $items
+     * @return array<int, \App\Models\NumeroSerie>
+     */
+    private function validarSeries(array $items): array
+    {
+        $series = [];
+
+        foreach ($items as $item) {
+            if (empty($item['numero_serie_id'])) {
+                continue;
+            }
+
+            $series[] = $this->numerosSerie->validarParaVenta(
+                (int) $item['numero_serie_id'],
+                (int) $item['producto_id']
+            );
+        }
+
+        return $series;
+    }
+
+    /**
+     * Restricciones de forma: cantidades y montos estrictamente positivos.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @param  array<int, array<string, mixed>>  $pagos
+     */
+    private function validarEntrada(array $items, array $pagos): void
+    {
+        if ($items === []) {
+            throw new DomainException('La venta debe incluir al menos un producto.');
+        }
+
+        foreach ($items as $item) {
+            if ((int) ($item['cantidad'] ?? 0) <= 0) {
+                throw new DomainException('La cantidad de cada producto debe ser mayor que cero.');
+            }
+        }
+
+        if ($pagos === []) {
+            throw new PagoInsuficienteException('La venta debe registrar al menos un pago.');
+        }
+
+        foreach ($pagos as $pago) {
+            if ((float) ($pago['monto'] ?? 0) <= 0) {
+                throw new PagoInsuficienteException('El monto de cada pago debe ser mayor que cero.');
+            }
+        }
     }
 }
