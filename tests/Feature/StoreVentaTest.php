@@ -156,6 +156,41 @@ class StoreVentaTest extends TestCase
         ]);
     }
 
+    public function test_stock_insuficiente_devuelve_409(): void
+    {
+        $this->producto->update(['stock' => 1]);
+
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'items' => [['producto_id' => $this->producto->id, 'cantidad' => 2]],
+                'pagos' => [['metodo' => 'Efectivo', 'monto' => 2000]],
+            ])
+        );
+
+        $response->assertStatus(409);
+        $response->assertJsonStructure(['message', 'code']);
+        $response->assertJsonPath('code', 'stock_insuficiente');
+
+        $this->assertDatabaseCount('ventas', 0);
+        $this->assertSame(1, (int) $this->producto->fresh()->stock);
+    }
+
+    public function test_usuario_sin_permiso_no_puede_confirmar(): void
+    {
+        $inventario = User::factory()->create(['activo' => true]);
+        $inventario->assignRole('Inventario');
+
+        $response = $this->actingAs($inventario)->postJson(
+            route('admin.ventas.store'),
+            $this->payload()
+        );
+
+        $response->assertForbidden();
+        $this->assertDatabaseCount('ventas', 0);
+        $this->assertSame(5, (int) $this->producto->fresh()->stock);
+    }
+
     public function test_reintento_con_mismo_operacion_id_no_duplica_venta_ni_descuento(): void
     {
         $payload = $this->payload([

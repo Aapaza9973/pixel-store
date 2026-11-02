@@ -92,6 +92,13 @@ class VentaService
             // cliente no puede alterar la base de cálculo.
             $porcentaje = round((float) ($meta['descuento_porcentaje'] ?? 0), 2);
             $subtotal = $this->calcularTotal($items, $productos);
+
+            // Defensa en profundidad: el controller valida 0..100, pero el
+            // servicio es público y un caller directo no debe poder inflar el total.
+            if ($porcentaje < 0 || $porcentaje > 100) {
+                throw new DomainException('El descuento debe estar entre 0 y 100 %.');
+            }
+
             $descuento = round($subtotal * $porcentaje / 100, 2);
             $total = round(max($subtotal - $descuento, 0), 2);
 
