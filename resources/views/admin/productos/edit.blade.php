@@ -187,5 +187,83 @@
             </a>
         </div>
     </form>
+
+    {{-- Sprint 2: galería de imágenes (formulario aparte del CRUD de producto). --}}
+    <div class="mt-6 bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5"
+         x-data="{
+             previews: [],
+             previsualizar(event) {
+                 this.previews = Array.from(event.target.files || []).map((archivo) => URL.createObjectURL(archivo));
+             }
+         }">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                Imágenes del producto
+            </h3>
+            <span class="text-xs text-slate-500">{{ $producto->imagenesGaleria->count() }} imagen(es)</span>
+        </div>
+
+        @if ($producto->imagenesGaleria->isNotEmpty())
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                @foreach ($producto->imagenesGaleria as $imagen)
+                    <div class="relative group rounded-lg overflow-hidden border border-slate-800 bg-slate-800">
+                        <img src="{{ asset('storage/'.$imagen->path) }}"
+                             alt="{{ $imagen->alt ?? $producto->nombre }}"
+                             class="aspect-square w-full object-cover">
+
+                        @if ($imagen->es_principal)
+                            <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-blue-600 text-white">
+                                Principal
+                            </span>
+                        @endif
+
+                        <form method="POST"
+                              action="{{ route('admin.productos.imagenes.destroy', [$producto, $imagen]) }}"
+                              onsubmit="return confirm('¿Eliminar esta imagen?')"
+                              class="absolute bottom-1.5 right-1.5">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                    class="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-slate-900/90 text-red-400 hover:text-red-300 transition">
+                                Quitar
+                            </button>
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <p class="text-sm text-slate-500">Todavía no hay imágenes cargadas.</p>
+        @endif
+
+        <form method="POST" action="{{ route('admin.productos.imagenes.store', $producto) }}"
+              enctype="multipart/form-data" class="space-y-3">
+            @csrf
+
+            <div>
+                <label for="imagenes" class="block text-sm font-medium text-slate-300 mb-1.5">
+                    Subir imágenes <span class="text-slate-500 text-xs">(hasta 5, máx. 4 MB c/u)</span>
+                </label>
+                <input type="file" name="imagenes[]" id="imagenes" multiple accept="image/*"
+                       x-on:change="previsualizar($event)"
+                       class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-sm focus:border-blue-500 focus:outline-none">
+                @error('imagenes') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                @error('imagenes.*') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+            </div>
+
+            <template x-if="previews.length > 0">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    <template x-for="(src, index) in previews" :key="index">
+                        <img :src="src" alt="Previsualización"
+                             class="aspect-square w-full rounded-lg object-cover border border-slate-700">
+                    </template>
+                </div>
+            </template>
+
+            <button type="submit"
+                    class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition">
+                Subir imágenes
+            </button>
+        </form>
+    </div>
 </div>
 @endsection

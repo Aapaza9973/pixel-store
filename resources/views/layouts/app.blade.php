@@ -126,23 +126,31 @@
 
             {{-- User info --}}
             <div class="border-t border-outline-variant/30 p-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-semibold text-body-sm">
-                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                @auth
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-semibold text-body-sm">
+                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-body-sm font-medium text-on-surface truncate">{{ auth()->user()->name }}</p>
+                            <p class="font-label-sm text-label-sm text-outline truncate">
+                                {{ auth()->user()->getRoleNames()->first() ?? 'Sin rol' }}
+                            </p>
+                        </div>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-body-sm font-medium text-on-surface truncate">{{ auth()->user()->name }}</p>
-                        <p class="font-label-sm text-label-sm text-outline truncate">
-                            {{ auth()->user()->getRoleNames()->first() ?? 'Sin rol' }}
-                        </p>
-                    </div>
-                </div>
-                <form method="POST" action="{{ route('logout') }}" data-logout-form class="mt-3">
-                    @csrf
-                    <button type="submit" class="w-full text-left font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition">
-                        Cerrar sesión
-                    </button>
-                </form>
+                    <form method="POST" action="{{ route('logout') }}" data-logout-form class="mt-3">
+                        @csrf
+                        <button type="submit" class="w-full text-left font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition">
+                            Cerrar sesión
+                        </button>
+                    </form>
+                @else
+                    {{-- El catálogo público usa este layout hasta que exista layouts.public. --}}
+                    <a href="{{ route('login') }}"
+                       class="inline-flex items-center font-label-sm text-label-sm uppercase tracking-[0.18em] text-on-surface-variant transition hover:text-on-surface">
+                        Iniciar sesión
+                    </a>
+                @endauth
             </div>
         </aside>
 

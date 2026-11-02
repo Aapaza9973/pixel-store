@@ -256,5 +256,34 @@
         </div>
     @endcan
 
+    {{-- Sprint 2: galería de imágenes --}}
+    <x-card title="Imágenes" subtitle="Galería del producto">
+        @if ($producto->imagenesGaleria->isNotEmpty())
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                @foreach ($producto->imagenesGaleria as $imagen)
+                    <div class="relative rounded-lg overflow-hidden border border-slate-800 bg-slate-800">
+                        <img src="{{ asset('storage/'.$imagen->path) }}"
+                             alt="{{ $imagen->alt ?? $producto->nombre }}"
+                             class="aspect-square w-full object-cover">
+                        @if ($imagen->es_principal)
+                            <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-blue-600 text-white">
+                                Principal
+                            </span>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <p class="text-sm text-slate-500">Este producto todavía no tiene imágenes cargadas.</p>
+        @endif
+
+        @can('editar productos')
+            <a href="{{ route('admin.productos.edit', $producto) }}"
+               class="inline-flex mt-4 text-sm text-blue-400 hover:text-blue-300 font-medium transition">
+                Administrar imágenes
+            </a>
+        @endcan
+    </x-card>
+
 </div>
 @endsection

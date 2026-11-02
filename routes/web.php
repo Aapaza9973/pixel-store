@@ -3,11 +3,13 @@
 use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\InventarioController;
 use App\Http\Controllers\Admin\ProductoController;
+use App\Http\Controllers\Admin\ProductoImagenController;
 use App\Http\Controllers\Admin\ProveedorController;
 use App\Http\Controllers\Admin\UbicacionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VentaController;
 use App\Http\Controllers\AlertaController;
+use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ProfileController;
@@ -21,6 +23,9 @@ Route::get('/', function () {
 // SPIKE: prototipo de landing publica. NO es la home real.
 // Ver docs/rediseno/00-plan.md. Eliminar antes de produccion.
 Route::get('/preview', [PreviewController::class, 'index'])->name('preview');
+
+// Catálogo público (Sprint 2). Layout público definitivo: Día 2+.
+Route::get('/producto/{slug}', [CatalogoController::class, 'show'])->name('catalogo.producto');
 
 Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -64,6 +69,11 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
 
             Route::resource('proveedores', ProveedorController::class)
                 ->parameters(['proveedores' => 'proveedor']);
+
+            Route::post('productos/{producto}/imagenes', [ProductoImagenController::class, 'store'])
+                ->name('productos.imagenes.store');
+            Route::delete('productos/{producto}/imagenes/{imagen}', [ProductoImagenController::class, 'destroy'])
+                ->name('productos.imagenes.destroy');
 
             Route::middleware('inventario.access')->group(function () {
                 Route::get('inventario', [InventarioController::class, 'index'])
