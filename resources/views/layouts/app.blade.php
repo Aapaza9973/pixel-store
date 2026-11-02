@@ -80,6 +80,14 @@
                 @endcan
 
 
+                @can('ver proveedores')
+                    @if (Route::has('admin.proveedores.index'))
+                        <x-nav-link :href="route('admin.proveedores.index')" :active="request()->routeIs('admin.proveedores.*')" icon="tag">
+                            Proveedores
+                        </x-nav-link>
+                    @endif
+                @endcan
+
                 @can('ver marcas')
                     <x-nav-link :href="'#'" :active="request()->routeIs('marcas.*')" icon="bookmark">
                         Marcas

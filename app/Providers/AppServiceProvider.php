@@ -46,6 +46,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(AlertaStock::class, \App\Policies\AlertaStockPolicy::class);
         Gate::policy(\App\Models\Ubicacion::class, \App\Policies\UbicacionPolicy::class);
         Gate::policy(\App\Models\User::class, \App\Policies\UserPolicy::class);
+        Gate::policy(\App\Models\Proveedor::class, \App\Policies\ProveedorPolicy::class);
 
         // Auditoría de cambios CRUD sobre usuarios (tarea 1.1.15)
         User::observe(UserObserver::class);

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\InventarioController;
 use App\Http\Controllers\Admin\ProductoController;
+use App\Http\Controllers\Admin\ProveedorController;
 use App\Http\Controllers\Admin\UbicacionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VentaController;
@@ -60,6 +61,9 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
 
             Route::get('ventas/nueva', [VentaController::class, 'create'])
                 ->name('ventas.create');
+
+            Route::resource('proveedores', ProveedorController::class)
+                ->parameters(['proveedores' => 'proveedor']);
 
             Route::middleware('inventario.access')->group(function () {
                 Route::get('inventario', [InventarioController::class, 'index'])
