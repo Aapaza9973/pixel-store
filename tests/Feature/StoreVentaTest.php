@@ -8,6 +8,7 @@ use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Marca;
 use App\Models\NumeroSerie;
+use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
@@ -264,6 +265,46 @@ class StoreVentaTest extends TestCase
         ]);
 
         $this->assertSame('disponible', $serie->fresh()->estado);
+    }
+
+    public function test_multi_pago_suma_correcta_permite_confirmar(): void
+    {
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'pagos' => [
+                    ['metodo' => 'Efectivo', 'monto' => 600],
+                    ['metodo' => 'Tarjeta', 'monto' => 400, 'referencia' => 'POS-123'],
+                ],
+            ])
+        );
+
+        $response->assertCreated();
+
+        $ventaId = $response->json('venta.id');
+
+        $this->assertSame(2, Pago::where('venta_id', $ventaId)->count());
+        $this->assertSame(1000.0, (float) Pago::where('venta_id', $ventaId)->sum('monto'));
+        $this->assertSame('POS-123', Pago::where('venta_id', $ventaId)->where('metodo', 'Tarjeta')->value('referencia'));
+    }
+
+    public function test_multi_pago_con_suma_insuficiente_devuelve_422(): void
+    {
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'pagos' => [
+                    ['metodo' => 'Efectivo', 'monto' => 600],
+                    ['metodo' => 'QR', 'monto' => 300],
+                ],
+            ])
+        );
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('code', 'pago_insuficiente');
+
+        $this->assertDatabaseCount('ventas', 0);
+        $this->assertSame(5, (int) $this->producto->fresh()->stock);
     }
 
     public function test_stock_insuficiente_devuelve_409(): void

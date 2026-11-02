@@ -260,50 +260,59 @@
                         </p>
                     </template>
 
-                    <ul class="mt-3 space-y-2">
+                    <ul x-show="pagos.length > 0" x-cloak class="mt-3 space-y-2">
                         <template x-for="(pago, index) in pagos" :key="index">
-                            <li class="flex items-center justify-between rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2">
-                                <span class="font-label-md text-label-md text-on-surface-variant" x-text="pago.metodo"></span>
-                                <div class="flex items-center gap-3">
-                                    <span class="font-label-md text-label-md tabular-nums text-on-surface" x-text="money(pago.monto)"></span>
-                                    <button type="button" class="text-body-sm text-error transition hover:text-error/80"
-                                            x-on:click="eliminarPago(index)">
-                                        Quitar
+                            <li class="space-y-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2">
+                                <div class="flex items-center gap-2">
+                                    <select x-model="pago.metodo" aria-label="Método de pago"
+                                            class="w-32 rounded-obsidian border border-outline-variant/30 bg-surface-container-lowest px-2 py-1.5 font-body-sm text-body-sm text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                                        <option>Efectivo</option>
+                                        <option>Tarjeta</option>
+                                        <option>Transferencia</option>
+                                        <option>QR</option>
+                                        <option>Otro</option>
+                                    </select>
+
+                                    <input type="number" min="0" step="0.01" x-model.number="pago.monto"
+                                           aria-label="Monto del pago"
+                                           class="min-w-0 flex-1 rounded-obsidian border border-outline-variant/30 bg-surface-container-lowest px-2 py-1.5 text-right font-label-md text-label-md tabular-nums text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+
+                                    <button type="button" x-on:click="eliminarPago(index)"
+                                            aria-label="Quitar pago"
+                                            class="shrink-0 text-body-md text-on-surface-variant transition hover:text-error">
+                                        ×
                                     </button>
                                 </div>
+
+                                <input type="text" x-model="pago.referencia"
+                                       placeholder="Referencia (opcional)"
+                                       aria-label="Referencia del pago"
+                                       class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-lowest px-2 py-1.5 font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
                             </li>
                         </template>
                     </ul>
 
-                    <form class="mt-4 space-y-3" x-on:submit.prevent="agregarPago(nuevoPago.metodo, nuevoPago.monto)">
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label for="metodo-pago" class="block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline mb-1">
-                                    Método
-                                </label>
-                                <select id="metodo-pago" x-model="nuevoPago.metodo"
-                                        class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
-                                    <option>Efectivo</option>
-                                    <option>Tarjeta</option>
-                                    <option>Transferencia</option>
-                                    <option>QR</option>
-                                    <option>Otro</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="monto-pago" class="block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline mb-1">
-                                    Monto
-                                </label>
-                                <input id="monto-pago" type="number" min="0" step="0.01" x-model.number="nuevoPago.monto"
-                                       class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-label-md text-label-md tabular-nums text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
-                            </div>
-                        </div>
+                    <div class="mt-3 flex items-center gap-2">
+                        <select x-model="nuevoPago.metodo" aria-label="Método sugerido"
+                                class="w-32 rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-2 py-2 font-body-sm text-body-sm text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                            <option>Efectivo</option>
+                            <option>Tarjeta</option>
+                            <option>Transferencia</option>
+                            <option>QR</option>
+                            <option>Otro</option>
+                        </select>
 
-                        <button type="submit"
-                                class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-4 py-2 text-body-md text-on-surface-variant transition hover:border-primary-container/40 hover:text-on-surface">
-                            Agregar pago
+                        <button type="button" x-on:click="agregarPago()"
+                                class="flex-1 rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-4 py-2 text-body-md text-on-surface-variant transition hover:border-primary-container/40 hover:text-on-surface">
+                            + Agregar pago
                         </button>
-                    </form>
+                    </div>
+
+                    <button type="button" x-on:click="pagoExacto()"
+                            x-bind:disabled="saldoPendiente <= 0"
+                            class="mt-2 w-full rounded-obsidian border border-primary-container/40 bg-primary-container/10 px-4 py-2 font-label-md text-label-md text-primary-container transition hover:bg-primary-container/20 disabled:cursor-not-allowed disabled:border-outline-variant/30 disabled:bg-transparent disabled:text-outline">
+                        Pago exacto
+                    </button>
 
                     <dl class="mt-4 space-y-2 border-t border-outline-variant/15 pt-3 font-body-md text-body-md">
                         <div class="flex items-center justify-between">
@@ -313,7 +322,7 @@
                         <div class="flex items-center justify-between">
                             <dt class="text-on-surface-variant">Saldo pendiente</dt>
                             <dd class="tabular-nums" x-text="money(saldoPendiente)"
-                                x-bind:class="saldoPendiente > 0 ? 'text-amber-400' : 'text-emerald-400'"></dd>
+                                x-bind:class="faltaPago ? 'text-amber-400' : 'text-emerald-400'"></dd>
                         </div>
                     </dl>
                 </div>
@@ -349,7 +358,7 @@
 
                     <button type="button" x-on:click="confirmarVenta()"
                             class="w-full rounded-obsidian-lg bg-primary-container px-4 py-3 text-body-md font-medium text-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-primary-container/90 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-                            x-bind:disabled="items.length === 0 || pagos.length === 0 || enviando">
+                            x-bind:disabled="items.length === 0 || pagos.length === 0 || enviando || faltaPago">
                         <span x-show="! enviando">Confirmar venta</span>
                         <span x-show="enviando" x-cloak>Confirmando…</span>
                     </button>
@@ -506,6 +515,7 @@
             // HU-5.6: número de serie por línea.
             urlSeries: '',
             serieModal: { abierto: false, itemIndex: null, cargando: false, series: [], error: null },
+            silenciarBanner: false,
 
             init() {
                 // Límite de descuento del rol, inyectado desde Blade.
@@ -518,9 +528,18 @@
 
                 this.cargar();
 
-                this.$watch('items', () => this.persistir());
-                this.$watch('pagos', () => this.persistir());
-                this.$watch('descuento', () => this.persistir());
+                // deep: las filas de pago y de carrito se editan en el lugar.
+                this.$watch('items', () => {
+                    this.persistir();
+                    this.limpiarBanner();
+                }, { deep: true });
+
+                this.$watch('pagos', () => {
+                    this.persistir();
+                    this.limpiarBanner();
+                }, { deep: true });
+
+                this.$watch('descuento', () => this.persistir(), { deep: true });
             },
 
             get subtotal() {
@@ -562,6 +581,11 @@
 
             get saldoPendiente() {
                 return Math.max(this.total - this.totalPagado, 0);
+            },
+
+            // Comparación en centavos: evita falsos pendientes por redondeo.
+            get faltaPago() {
+                return Math.round(this.saldoPendiente * 100) > 0;
             },
 
             // El servidor recibe porcentaje, nunca monto.
@@ -625,15 +649,18 @@
                 this.items.splice(index, 1, item);
             },
 
-            agregarPago(metodo, monto) {
-                const importe = Number(monto) || 0;
+            agregarPago() {
+                this.pagos.push({ metodo: this.nuevoPago.metodo || 'Efectivo', monto: 0, referencia: '' });
+            },
 
-                if (importe <= 0) {
+            pagoExacto() {
+                const saldo = Number(this.saldoPendiente.toFixed(2));
+
+                if (saldo <= 0) {
                     return;
                 }
 
-                this.pagos.push({ metodo: metodo, monto: importe });
-                this.nuevoPago.monto = 0;
+                this.pagos.push({ metodo: this.nuevoPago.metodo || 'Efectivo', monto: saldo, referencia: '' });
             },
 
             eliminarPago(index) {
@@ -786,6 +813,14 @@
                 this.items.splice(index, 1, item);
             },
 
+            limpiarBanner() {
+                if (this.silenciarBanner) {
+                    return;
+                }
+
+                this.ventaConfirmada = null;
+            },
+
             operacionActual() {
                 const guardada = sessionStorage.getItem(this.operacionKey);
 
@@ -843,12 +878,19 @@
                     const cuerpo = await respuesta.json().catch(() => ({}));
 
                     if (respuesta.status === 201) {
-                        // Número y TOTAL del servidor: evita drift de redondeo.
-                        this.ventaConfirmada = cuerpo.venta;
+                        // El carrito se limpia, pero el banner debe sobrevivir:
+                        // los watchers de items/pagos lo borrarían.
+                        this.silenciarBanner = true;
                         this.items = [];
                         this.pagos = [];
                         this.descuento = { tipo: '%', valor: 0 };
                         this.operacionId = this.nuevaOperacion();
+
+                        await this.$nextTick();
+
+                        this.silenciarBanner = false;
+                        // Número y TOTAL del servidor: evita drift de redondeo.
+                        this.ventaConfirmada = cuerpo.venta;
 
                         return;
                     }
