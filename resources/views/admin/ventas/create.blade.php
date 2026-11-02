@@ -5,7 +5,8 @@
 
 @section('content')
 <div class="-mx-6 -my-6 min-h-full bg-surface" x-data="carrito()"
-     data-descuento-maximo="{{ $descuentoMaximo }}">
+     data-descuento-maximo="{{ $descuentoMaximo }}"
+     data-url-store="{{ route('admin.ventas.store') }}">
 
     {{-- Barra superior --}}
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
@@ -234,11 +235,42 @@
                     </dl>
                 </div>
 
-                <button type="button"
-                        class="w-full rounded-obsidian-lg bg-primary-container px-4 py-3 text-body-md font-medium text-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-primary-container/90 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-                        x-bind:disabled="items.length === 0">
-                    Continuar al pago
-                </button>
+                {{-- Confirmación: POST real a admin.ventas.store --}}
+                <div class="space-y-3">
+                    <template x-if="ventaConfirmada">
+                        <div class="rounded-obsidian-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                            <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-emerald-400">
+                                Venta confirmada
+                            </p>
+                            <p class="mt-1 font-headline-sm text-headline-sm text-on-surface"
+                               x-text="'Venta #' + ventaConfirmada.id"></p>
+                            <p class="mt-1 font-body-md text-body-md tabular-nums text-emerald-400"
+                               x-text="'Total cobrado: ' + money(ventaConfirmada.total)"></p>
+                        </div>
+                    </template>
+
+                    <div x-show="errorGeneral" x-cloak
+                         class="rounded-obsidian border border-error/40 bg-error/10 px-3 py-2 font-body-sm text-body-sm text-error"
+                         x-text="errorGeneral"></div>
+
+                    <ul x-show="erroresCampos.length > 0" x-cloak
+                        class="space-y-1 rounded-obsidian border border-error/40 bg-error/10 px-3 py-2 font-body-sm text-body-sm text-error">
+                        <template x-for="mensaje in erroresCampos" :key="mensaje">
+                            <li x-text="mensaje"></li>
+                        </template>
+                    </ul>
+
+                    <p x-show="pagos.length === 0" x-cloak class="font-body-sm text-body-sm text-outline">
+                        Continuar al pago requiere registrar al menos un pago.
+                    </p>
+
+                    <button type="button" x-on:click="confirmarVenta()"
+                            class="w-full rounded-obsidian-lg bg-primary-container px-4 py-3 text-body-md font-medium text-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-primary-container/90 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                            x-bind:disabled="items.length === 0 || pagos.length === 0 || enviando">
+                        <span x-show="! enviando">Confirmar venta</span>
+                        <span x-show="enviando" x-cloak>Confirmando…</span>
+                    </button>
+                </div>
             </div>
         </aside>
     </div>
@@ -253,10 +285,18 @@
             descuentoMaximo: 0,
             descuento: { tipo: '%', valor: 0 },
             storageKey: 'pos.carrito.v1',
+            operacionKey: 'pos.operacion.v1',
+            urlStore: '',
+            enviando: false,
+            errores: {},
+            errorGeneral: null,
+            ventaConfirmada: null,
 
             init() {
                 // Límite de descuento del rol, inyectado desde Blade.
                 this.descuentoMaximo = Number(this.$el.dataset.descuentoMaximo) || 0;
+                this.urlStore = this.$el.dataset.urlStore || '';
+                this.operacionId = this.operacionActual();
 
                 this.cargar();
 
@@ -304,6 +344,25 @@
 
             get saldoPendiente() {
                 return Math.max(this.total - this.totalPagado, 0);
+            },
+
+            // El servidor recibe porcentaje, nunca monto.
+            get porcentajeParaEnviar() {
+                const valor = Number(this.descuento.valor) || 0;
+
+                if (valor <= 0 || this.subtotal <= 0) {
+                    return 0;
+                }
+
+                const porcentaje = this.descuento.tipo === '%'
+                    ? valor
+                    : (valor / this.subtotal) * 100;
+
+                return Math.round(Math.min(Math.max(porcentaje, 0), 100) * 100) / 100;
+            },
+
+            get erroresCampos() {
+                return Object.values(this.errores || {}).flat();
             },
 
             agregarItem(producto) {
@@ -358,6 +417,93 @@
 
             eliminarPago(index) {
                 this.pagos.splice(index, 1);
+            },
+
+            operacionActual() {
+                const guardada = sessionStorage.getItem(this.operacionKey);
+
+                return guardada || this.nuevaOperacion();
+            },
+
+            nuevaOperacion() {
+                const token = window.crypto && window.crypto.randomUUID
+                    ? window.crypto.randomUUID()
+                    : 'pos-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+
+                sessionStorage.setItem(this.operacionKey, token);
+
+                return token;
+            },
+
+            async confirmarVenta() {
+                if (this.enviando || this.items.length === 0 || this.pagos.length === 0) {
+                    return;
+                }
+
+                this.enviando = true;
+                this.errores = {};
+                this.errorGeneral = null;
+                this.ventaConfirmada = null;
+
+                const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+                try {
+                    const respuesta = await fetch(this.urlStore, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                        },
+                        body: JSON.stringify({
+                            items: this.items.map((item) => ({
+                                producto_id: item.producto_id,
+                                cantidad: item.cantidad,
+                                numero_serie_id: item.numero_serie_id || null,
+                            })),
+                            pagos: this.pagos.map((pago) => ({
+                                metodo: pago.metodo,
+                                monto: pago.monto,
+                            })),
+                            meta: { operacion_id: this.operacionId },
+                            descuento_porcentaje: this.porcentajeParaEnviar,
+                        }),
+                    });
+
+                    const cuerpo = await respuesta.json().catch(() => ({}));
+
+                    if (respuesta.status === 201) {
+                        // Número y TOTAL del servidor: evita drift de redondeo.
+                        this.ventaConfirmada = cuerpo.venta;
+                        this.items = [];
+                        this.pagos = [];
+                        this.descuento = { tipo: '%', valor: 0 };
+                        this.operacionId = this.nuevaOperacion();
+
+                        return;
+                    }
+
+                    if (respuesta.status === 422) {
+                        this.errores = cuerpo.errors || {};
+                        this.errorGeneral = cuerpo.errors
+                            ? (cuerpo.message || 'Revisá los datos de la venta.')
+                            : (cuerpo.message || 'No se pudo confirmar la venta.');
+
+                        return;
+                    }
+
+                    if (respuesta.status === 409) {
+                        this.errorGeneral = cuerpo.message || 'El producto ya no está disponible.';
+
+                        return;
+                    }
+
+                    this.errorGeneral = cuerpo.message || 'No se pudo confirmar la venta.';
+                } catch (error) {
+                    this.errorGeneral = 'No se pudo conectar con el servidor. Reintentá la operación.';
+                } finally {
+                    this.enviando = false;
+                }
             },
 
             cargar() {

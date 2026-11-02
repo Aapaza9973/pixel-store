@@ -1,0 +1,185 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use App\Models\Categoria;
+use App\Models\Marca;
+use App\Models\Producto;
+use App\Models\User;
+use App\Models\Venta;
+use Database\Seeders\RoleSeeder;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Str;
+use Tests\TestCase;
+
+class StoreVentaTest extends TestCase
+{
+    use DatabaseTransactions;
+
+    private User $vendedor;
+
+    private Producto $producto;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(RoleSeeder::class);
+
+        $this->vendedor = User::where('email', 'vendedor@pixelstore.com')->firstOrFail();
+
+        $categoria = Categoria::create(['nombre' => 'Categoría Store Venta', 'tipo' => 'Componente']);
+        $marca = Marca::create(['nombre' => 'Marca Store Venta']);
+
+        $this->producto = Producto::create([
+            'categoria_id' => $categoria->id,
+            'marca_id' => $marca->id,
+            'nombre' => 'Monitor Store Venta',
+            'precio_unitario' => 1000,
+            'stock' => 5,
+            'umbral_alerta' => 1,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $cambios
+     * @return array<string, mixed>
+     */
+    private function payload(array $cambios = []): array
+    {
+        $base = [
+            'items' => [
+                ['producto_id' => $this->producto->id, 'cantidad' => 1],
+            ],
+            'pagos' => [
+                ['metodo' => 'Efectivo', 'monto' => 1000],
+            ],
+            'meta' => [
+                'operacion_id' => (string) Str::uuid(),
+            ],
+        ];
+
+        // array_replace_recursive mezclaría los items índice por índice, así
+        // que se reemplazan las claves de primer nivel explícitamente.
+        return array_merge($base, $cambios);
+    }
+
+    public function test_descuento_dentro_del_limite_se_aplica_y_persiste(): void
+    {
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'descuento_porcentaje' => 10,
+                'pagos' => [['metodo' => 'Efectivo', 'monto' => 900]],
+            ])
+        );
+
+        $response->assertCreated();
+
+        $venta = $response->json('venta');
+
+        // El total es el que devuelve el servidor: 1000 - 10% = 900.
+        $this->assertSame(900.0, (float) $venta['total']);
+        $this->assertSame(100.0, (float) $venta['descuento']);
+        $this->assertSame(10.0, (float) $venta['descuento_porcentaje']);
+
+        $this->assertDatabaseHas('ventas', [
+            'id' => $venta['id'],
+            'total' => 900,
+            'descuento' => 100,
+            'descuento_porcentaje' => 10,
+            'autorizado_por' => null,
+        ]);
+
+        $this->assertSame(4, (int) $this->producto->fresh()->stock);
+    }
+
+    public function test_descuento_sobre_el_limite_del_rol_devuelve_422(): void
+    {
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'descuento_porcentaje' => 15,
+                'pagos' => [['metodo' => 'Efectivo', 'monto' => 850]],
+            ])
+        );
+
+        $response->assertStatus(422);
+        $this->assertStringContainsString('autorización', (string) $response->json('message'));
+
+        $this->assertSame(0, Venta::count());
+        $this->assertSame(5, (int) $this->producto->fresh()->stock);
+    }
+
+    public function test_descuento_porcentaje_fuera_de_rango_devuelve_422(): void
+    {
+        $excedido = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload(['descuento_porcentaje' => 150])
+        );
+
+        $excedido->assertStatus(422);
+        $excedido->assertJsonValidationErrors('descuento_porcentaje');
+
+        $negativo = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload(['descuento_porcentaje' => -5])
+        );
+
+        $negativo->assertStatus(422);
+        $negativo->assertJsonValidationErrors('descuento_porcentaje');
+
+        $this->assertSame(0, Venta::count());
+    }
+
+    public function test_venta_sin_descuento_usa_el_subtotal_como_total(): void
+    {
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload()
+        );
+
+        $response->assertCreated();
+
+        $venta = $response->json('venta');
+
+        $this->assertSame(1000.0, (float) $venta['total']);
+        $this->assertSame(0.0, (float) $venta['descuento']);
+        $this->assertSame(0.0, (float) $venta['descuento_porcentaje']);
+
+        $this->assertDatabaseHas('ventas', [
+            'id' => $venta['id'],
+            'total' => 1000,
+            'descuento' => 0,
+        ]);
+    }
+
+    public function test_reintento_con_mismo_operacion_id_no_duplica_venta_ni_descuento(): void
+    {
+        $payload = $this->payload([
+            'descuento_porcentaje' => 10,
+            'pagos' => [['metodo' => 'Efectivo', 'monto' => 900]],
+        ]);
+
+        $primera = $this->actingAs($this->vendedor)->postJson(route('admin.ventas.store'), $payload);
+        $segunda = $this->actingAs($this->vendedor)->postJson(route('admin.ventas.store'), $payload);
+
+        $primera->assertCreated();
+        $segunda->assertCreated();
+
+        $this->assertSame(
+            $primera->json('venta.id'),
+            $segunda->json('venta.id'),
+            'El reintento debe devolver la misma venta.'
+        );
+
+        $this->assertSame(1, Venta::count());
+        $this->assertSame(900.0, (float) $segunda->json('venta.total'));
+
+        $venta = Venta::firstOrFail();
+        $this->assertSame('100.00', $venta->descuento);
+        $this->assertSame(4, (int) $this->producto->fresh()->stock);
+    }
+}

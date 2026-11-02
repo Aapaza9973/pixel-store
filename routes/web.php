@@ -67,6 +67,9 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
 
             Route::get('ventas/nueva', [VentaController::class, 'create'])
                 ->name('ventas.create');
+
+            Route::post('ventas', [VentaController::class, 'store'])
+                ->name('ventas.store');
             Route::get('ventas/buscar-productos', [VentaController::class, 'buscarProductos'])
                 ->middleware('throttle:60,1')
                 ->name('ventas.buscar-productos');

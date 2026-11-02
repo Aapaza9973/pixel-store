@@ -41,9 +41,12 @@ class VentaService
     /**
      * Confirma una venta de forma atómica e idempotente.
      *
+     * El descuento llega como porcentaje (`descuento_porcentaje`): el monto del
+     * descuento y el total se recalculan acá con los precios de la base.
+     *
      * @param  array<int, array{producto_id:int, cantidad:int, numero_serie_id?:?int, ubicacion_id?:?int}>  $items
      * @param  array<int, array{metodo:'Efectivo'|'Tarjeta'|'Transferencia'|'QR'|'Otro', monto:float, referencia?:?string}>  $pagos
-     * @param  array{cliente_id:?int, vendedor_id:int, operacion_id:string}  $meta
+     * @param  array{cliente_id?:?int, vendedor_id:int, operacion_id:string, descuento_porcentaje?:float|int|string, autorizado_por?:?int}  $meta
      *
      * @throws StockInsuficienteException
      * @throws SerieNoDisponibleException
@@ -53,16 +56,20 @@ class VentaService
     public function confirmar(array $items, array $pagos, array $meta): Venta
     {
         // R-VD-RF-06: idempotencia fuera de la transacción (early return).
-        $existente = Venta::where('operacion_id', $meta['operacion_id'])->first();
+        $operacionId = (string) ($meta['operacion_id'] ?? '');
 
-        if ($existente !== null) {
-            return $existente->load(['detalles', 'pagos']);
+        if ($operacionId !== '') {
+            $existente = Venta::where('operacion_id', $operacionId)->first();
+
+            if ($existente !== null) {
+                return $existente->load(['detalles', 'pagos']);
+            }
         }
 
         $this->validarEntrada($items, $pagos);
 
         // R-VD-RF-01: una única transacción para toda la operación.
-        return DB::transaction(function () use ($items, $pagos, $meta) {
+        return DB::transaction(function () use ($items, $pagos, $meta, $operacionId) {
             // R-VD-RF-02: bloqueo pesimista en orden estable por producto_id
             // para que dos ventas concurrentes no se bloqueen en cruz.
             $productos = $this->bloquearProductos($items);
@@ -81,7 +88,12 @@ class VentaService
                 }
             }
 
-            $total = $this->calcularTotal($items, $productos);
+            // El descuento llega como porcentaje (nunca como monto): así el
+            // cliente no puede alterar la base de cálculo.
+            $porcentaje = round((float) ($meta['descuento_porcentaje'] ?? 0), 2);
+            $subtotal = $this->calcularTotal($items, $productos);
+            $descuento = round($subtotal * $porcentaje / 100, 2);
+            $total = round(max($subtotal - $descuento, 0), 2);
 
             // R-VD-RF-04: falla de negocio, nunca 500.
             // Se acepta pago de más: `suma(pagos) >= total` es válido porque en
@@ -102,11 +114,14 @@ class VentaService
             $series = $this->validarSeries($items);
 
             $venta = Venta::create([
-                'operacion_id' => $meta['operacion_id'],
+                'operacion_id' => $operacionId !== '' ? $operacionId : null,
                 'fecha' => now(),
                 'user_id' => $meta['vendedor_id'],
                 'cliente_id' => $meta['cliente_id'] ?? null,
                 'total' => $total,
+                'descuento' => $descuento,
+                'descuento_porcentaje' => $porcentaje,
+                'autorizado_por' => $meta['autorizado_por'] ?? null,
                 'estado' => 'Pagado',
             ]);
 
@@ -162,7 +177,9 @@ class VentaService
                 'datos_anteriores' => null,
                 'datos_nuevos' => [
                     'total' => $total,
-                    'operacion_id' => $meta['operacion_id'],
+                    'descuento' => $descuento,
+                    'descuento_porcentaje' => $porcentaje,
+                    'operacion_id' => $operacionId !== '' ? $operacionId : null,
                     'cliente_id' => $meta['cliente_id'] ?? null,
                     'items' => count($items),
                     'pagos' => count($pagos),
