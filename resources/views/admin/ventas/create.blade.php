@@ -1,0 +1,328 @@
+@extends('layouts.app')
+
+@section('title', 'Nueva venta')
+@section('subtitle', 'Punto de venta')
+
+@section('content')
+<div class="-mx-6 -my-6 min-h-full bg-surface" x-data="carrito()">
+
+    {{-- Barra superior --}}
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
+        <div>
+            <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                POS · Venta
+            </p>
+            <h2 class="mt-1 font-headline-md text-headline-md text-on-surface">
+                Nueva venta
+            </h2>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <span class="inline-flex items-center gap-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 font-label-md text-label-md text-on-surface-variant tabular-nums">
+                <span class="h-1.5 w-1.5 rounded-full bg-tertiary"></span>
+                <span x-text="items.length"></span> ítems
+            </span>
+
+            <a href="{{ route('admin.productos.index') }}"
+               class="inline-flex items-center gap-2 rounded-obsidian-lg border border-outline-variant/30 bg-surface-container-low px-4 py-2 text-body-md text-on-surface-variant transition hover:border-primary-container/40 hover:text-on-surface">
+                Buscar producto
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 p-6 lg:grid-cols-3">
+
+        {{-- CARRITO --}}
+        <section class="lg:col-span-2">
+            <div class="overflow-hidden rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 backdrop-blur-xl">
+                <div class="flex items-center justify-between border-b border-outline-variant/30 px-5 py-4">
+                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Carrito</h3>
+                    <span class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline"
+                          x-text="items.length + ' línea(s)'"></span>
+                </div>
+
+                {{-- Estado vacío --}}
+                <template x-if="items.length === 0">
+                    <div class="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-obsidian-lg border border-outline-variant/30 bg-surface-container-low text-outline">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 006 19h11M9 22a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z"/>
+                            </svg>
+                        </div>
+                        <p class="font-headline-sm text-headline-sm text-on-surface">El carrito está vacío</p>
+                        <p class="max-w-sm font-body-sm text-body-sm text-on-surface-variant">
+                            Agregá productos para comenzar la venta. La búsqueda con lector de código de barras llega en el Día 2.
+                        </p>
+                        <a href="{{ route('admin.productos.index') }}"
+                           class="mt-2 inline-flex items-center gap-2 rounded-obsidian-lg bg-primary-container px-4 py-2.5 text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90">
+                            Buscar producto
+                        </a>
+                    </div>
+                </template>
+
+                {{-- Líneas --}}
+                <template x-if="items.length > 0">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-body-md">
+                            <thead class="bg-surface-container-low">
+                                <tr>
+                                    <th class="px-5 py-3 text-left font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Producto</th>
+                                    <th class="px-5 py-3 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Precio</th>
+                                    <th class="px-5 py-3 text-center font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Cantidad</th>
+                                    <th class="px-5 py-3 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Subtotal</th>
+                                    <th class="px-5 py-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-outline-variant/15">
+                                <template x-for="(item, index) in items" :key="item.producto_id">
+                                    <tr class="transition hover:bg-primary-container/[0.04]">
+                                        <td class="px-5 py-3.5 text-on-surface" x-text="item.nombre"></td>
+                                        <td class="px-5 py-3.5 text-right font-label-md text-label-md tabular-nums text-on-surface-variant"
+                                            x-text="money(item.precio)"></td>
+                                        <td class="px-5 py-3.5">
+                                            <div class="flex items-center justify-center gap-1">
+                                                <button type="button"
+                                                        class="h-7 w-7 rounded-obsidian border border-outline-variant/30 text-on-surface-variant transition hover:border-primary-container/40 hover:text-on-surface"
+                                                        x-on:click="cambiarCantidad(index, item.cantidad - 1)"
+                                                        aria-label="Restar una unidad">−</button>
+                                                <input type="number" min="1" x-model.number="item.cantidad"
+                                                       x-on:change="cambiarCantidad(index, item.cantidad)"
+                                                       class="w-16 rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-2 py-1 text-center font-label-md text-label-md tabular-nums text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                                                <button type="button"
+                                                        class="h-7 w-7 rounded-obsidian border border-outline-variant/30 text-on-surface-variant transition hover:border-primary-container/40 hover:text-on-surface"
+                                                        x-on:click="cambiarCantidad(index, item.cantidad + 1)"
+                                                        aria-label="Sumar una unidad">+</button>
+                                            </div>
+                                        </td>
+                                        <td class="px-5 py-3.5 text-right font-label-md text-label-md tabular-nums text-on-surface"
+                                            x-text="money(item.subtotal)"></td>
+                                        <td class="px-5 py-3.5 text-right">
+                                            <button type="button"
+                                                    class="text-body-sm text-error transition hover:text-error/80"
+                                                    x-on:click="eliminarItem(index)">
+                                                Quitar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        {{-- PANEL DE PAGO --}}
+        <aside class="lg:col-span-1">
+            <div class="lg:sticky lg:top-6 space-y-6">
+
+                <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
+                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Resumen</h3>
+
+                    <dl class="mt-4 space-y-2 font-body-md text-body-md">
+                        <div class="flex items-center justify-between">
+                            <dt class="text-on-surface-variant">Subtotal</dt>
+                            <dd class="tabular-nums text-on-surface" x-text="money(subtotal)"></dd>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-outline-variant/15 pt-3">
+                            <dt class="font-headline-sm text-headline-sm text-on-surface">Total</dt>
+                            <dd class="font-headline-sm text-headline-sm tabular-nums text-on-surface" x-text="money(total)"></dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface">Pagos</h3>
+                        <span class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline"
+                              x-text="pagos.length + ' registro(s)'"></span>
+                    </div>
+
+                    <template x-if="pagos.length === 0">
+                        <p class="mt-3 font-body-sm text-body-sm text-on-surface-variant">
+                            Todavía no registraste pagos.
+                        </p>
+                    </template>
+
+                    <ul class="mt-3 space-y-2">
+                        <template x-for="(pago, index) in pagos" :key="index">
+                            <li class="flex items-center justify-between rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2">
+                                <span class="font-label-md text-label-md text-on-surface-variant" x-text="pago.metodo"></span>
+                                <div class="flex items-center gap-3">
+                                    <span class="font-label-md text-label-md tabular-nums text-on-surface" x-text="money(pago.monto)"></span>
+                                    <button type="button" class="text-body-sm text-error transition hover:text-error/80"
+                                            x-on:click="eliminarPago(index)">
+                                        Quitar
+                                    </button>
+                                </div>
+                            </li>
+                        </template>
+                    </ul>
+
+                    <form class="mt-4 space-y-3" x-on:submit.prevent="agregarPago(nuevoPago.metodo, nuevoPago.monto)">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="metodo-pago" class="block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline mb-1">
+                                    Método
+                                </label>
+                                <select id="metodo-pago" x-model="nuevoPago.metodo"
+                                        class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                                    <option>Efectivo</option>
+                                    <option>Tarjeta</option>
+                                    <option>Transferencia</option>
+                                    <option>QR</option>
+                                    <option>Otro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="monto-pago" class="block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline mb-1">
+                                    Monto
+                                </label>
+                                <input id="monto-pago" type="number" min="0" step="0.01" x-model.number="nuevoPago.monto"
+                                       class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-label-md text-label-md tabular-nums text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-4 py-2 text-body-md text-on-surface-variant transition hover:border-primary-container/40 hover:text-on-surface">
+                            Agregar pago
+                        </button>
+                    </form>
+
+                    <dl class="mt-4 space-y-2 border-t border-outline-variant/15 pt-3 font-body-md text-body-md">
+                        <div class="flex items-center justify-between">
+                            <dt class="text-on-surface-variant">Total pagado</dt>
+                            <dd class="tabular-nums text-on-surface" x-text="money(totalPagado)"></dd>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <dt class="text-on-surface-variant">Saldo pendiente</dt>
+                            <dd class="tabular-nums" x-text="money(saldoPendiente)"
+                                x-bind:class="saldoPendiente > 0 ? 'text-amber-400' : 'text-emerald-400'"></dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <button type="button"
+                        class="w-full rounded-obsidian-lg bg-primary-container px-4 py-3 text-body-md font-medium text-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-primary-container/90 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                        x-bind:disabled="items.length === 0">
+                    Continuar al pago
+                </button>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    window.carrito = function () {
+        return {
+            items: [],
+            pagos: [],
+            nuevoPago: { metodo: 'Efectivo', monto: 0 },
+            storageKey: 'pos.carrito.v1',
+
+            init() {
+                this.cargar();
+
+                this.$watch('items', () => this.persistir());
+                this.$watch('pagos', () => this.persistir());
+            },
+
+            get subtotal() {
+                return this.items.reduce((suma, item) => suma + (Number(item.subtotal) || 0), 0);
+            },
+
+            get total() {
+                return this.subtotal;
+            },
+
+            get totalPagado() {
+                return this.pagos.reduce((suma, pago) => suma + (Number(pago.monto) || 0), 0);
+            },
+
+            get saldoPendiente() {
+                return Math.max(this.total - this.totalPagado, 0);
+            },
+
+            agregarItem(producto) {
+                const existente = this.items.find((item) => item.producto_id === producto.producto_id);
+
+                if (existente) {
+                    this.cambiarCantidad(this.items.indexOf(existente), existente.cantidad + (Number(producto.cantidad) || 1));
+
+                    return;
+                }
+
+                const cantidad = Math.max(Number(producto.cantidad) || 1, 1);
+                const precio = Number(producto.precio) || 0;
+
+                this.items.push({
+                    producto_id: producto.producto_id,
+                    nombre: producto.nombre,
+                    precio: precio,
+                    cantidad: cantidad,
+                    subtotal: precio * cantidad,
+                });
+            },
+
+            eliminarItem(index) {
+                this.items.splice(index, 1);
+            },
+
+            cambiarCantidad(index, cantidad) {
+                const item = this.items[index];
+
+                if (! item) {
+                    return;
+                }
+
+                const nueva = Math.max(parseInt(cantidad, 10) || 1, 1);
+                item.cantidad = nueva;
+                item.subtotal = (Number(item.precio) || 0) * nueva;
+
+                this.items.splice(index, 1, item);
+            },
+
+            agregarPago(metodo, monto) {
+                const importe = Number(monto) || 0;
+
+                if (importe <= 0) {
+                    return;
+                }
+
+                this.pagos.push({ metodo: metodo, monto: importe });
+                this.nuevoPago.monto = 0;
+            },
+
+            eliminarPago(index) {
+                this.pagos.splice(index, 1);
+            },
+
+            cargar() {
+                try {
+                    const guardado = JSON.parse(sessionStorage.getItem(this.storageKey) || 'null');
+
+                    if (guardado) {
+                        this.items = Array.isArray(guardado.items) ? guardado.items : [];
+                        this.pagos = Array.isArray(guardado.pagos) ? guardado.pagos : [];
+                    }
+                } catch (error) {
+                    this.items = [];
+                    this.pagos = [];
+                }
+            },
+
+            persistir() {
+                sessionStorage.setItem(this.storageKey, JSON.stringify({
+                    items: this.items,
+                    pagos: this.pagos,
+                }));
+            },
+
+            money(valor) {
+                return 'Bs ' + (Number(valor) || 0).toFixed(2);
+            },
+        };
+    };
+</script>
+@endsection

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\InventarioController;
 use App\Http\Controllers\Admin\ProductoController;
 use App\Http\Controllers\Admin\UbicacionController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VentaController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PreviewController;
@@ -56,6 +57,9 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
                 ->name('usuarios.reset-password');
             Route::get('usuarios/{user}/historial', [UserController::class, 'historial'])
                 ->name('usuarios.historial');
+
+            Route::get('ventas/nueva', [VentaController::class, 'create'])
+                ->name('ventas.create');
 
             Route::middleware('inventario.access')->group(function () {
                 Route::get('inventario', [InventarioController::class, 'index'])
