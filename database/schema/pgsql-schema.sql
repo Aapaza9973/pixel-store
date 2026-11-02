@@ -52,6 +52,8 @@ CREATE TABLE roles (
     id          BIGSERIAL PRIMARY KEY,
     name        VARCHAR(255) NOT NULL,
     guard_name  VARCHAR(255) NOT NULL DEFAULT 'web',
+    -- Sprint 2: descuento máximo autorizado por rol (porcentaje).
+    descuento_maximo DECIMAL(5,2) NOT NULL DEFAULT 0,
     created_at  TIMESTAMP NOT NULL DEFAULT now(),
     updated_at  TIMESTAMP NOT NULL DEFAULT now(),
     UNIQUE (name, guard_name)
@@ -98,6 +100,8 @@ CREATE TABLE clientes (
     nit_ci        VARCHAR(20) NULL,
     direccion     VARCHAR(255) NULL,
     es_frecuente  BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Sprint 2: baja lógica de clientes.
+    activo        BOOLEAN NOT NULL DEFAULT TRUE,
     created_at    TIMESTAMP NOT NULL DEFAULT now(),
     updated_at    TIMESTAMP NOT NULL DEFAULT now()
 );
@@ -127,6 +131,8 @@ CREATE TABLE productos (
     categoria_id          BIGINT NOT NULL,
     marca_id              BIGINT NULL,
     nombre                VARCHAR(255) NOT NULL UNIQUE,
+    -- Sprint 2: slug para la ficha pública /producto/{slug}.
+    slug                  VARCHAR(255) NULL UNIQUE,
     descripcion           TEXT NULL,
     precio_unitario       DECIMAL(10,2) NOT NULL,
     costo                 DECIMAL(10,2) NULL,
@@ -250,6 +256,10 @@ CREATE TABLE proveedores (
     direccion     VARCHAR(255) NULL,
     tipo          enum_proveedor_tipo NOT NULL,
     condiciones   TEXT NULL,
+    -- Sprint 2: datos comerciales del proveedor.
+    plazos_pago        VARCHAR(100) NULL,
+    tiempo_entrega     VARCHAR(100) NULL,
+    descuento_habitual DECIMAL(5,2) NOT NULL DEFAULT 0,
     activo        BOOLEAN NOT NULL DEFAULT TRUE,
     created_at    TIMESTAMP NOT NULL DEFAULT now(),
     updated_at    TIMESTAMP NOT NULL DEFAULT now()
@@ -258,6 +268,9 @@ CREATE TABLE proveedores (
 CREATE TABLE ordenes_compra (
     id            BIGSERIAL PRIMARY KEY,
     numero        VARCHAR(20) NOT NULL UNIQUE,
+    -- Sprint 2: fechas propias de la orden (fecha sigue siendo el timestamp de creación).
+    fecha_emision DATE NULL,
+    fecha_entrega DATE NULL,
     proveedor_id  BIGINT NOT NULL,
     user_id       BIGINT NOT NULL,
     fecha         TIMESTAMP NOT NULL DEFAULT now(),
@@ -284,6 +297,8 @@ CREATE TABLE orden_compra_items (
 
 CREATE TABLE ventas (
     id                     BIGSERIAL PRIMARY KEY,
+    -- Sprint 2 (R-VD-RF-06): clave de idempotencia de la confirmación.
+    operacion_id           UUID NULL UNIQUE,
     fecha                  TIMESTAMP NOT NULL DEFAULT now(),
     user_id                BIGINT NOT NULL,
     cliente_id             BIGINT NULL,
@@ -364,8 +379,25 @@ CREATE TABLE alertas_stock (
     updated_at    TIMESTAMP NOT NULL DEFAULT now()
 );
 
+-- Sprint 2: cabecera de devolución (antes la tabla era por línea).
 CREATE TABLE devoluciones (
+    id              BIGSERIAL PRIMARY KEY,
+    operacion_id    UUID NOT NULL UNIQUE,
+    venta_id        BIGINT NOT NULL,
+    user_id         BIGINT NOT NULL,
+    motivo          TEXT NOT NULL,
+    estado          VARCHAR(20) NOT NULL DEFAULT 'pendiente'
+                    CHECK (estado IN ('pendiente','aprobada','rechazada')),
+    total_devuelto  DECIMAL(12,2) NOT NULL DEFAULT 0,
+    created_at      TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_devoluciones_estado ON devoluciones (estado);
+
+-- Sprint 2: líneas de devolución (renombrada desde `devoluciones`).
+CREATE TABLE devolucion_detalles (
     id                BIGSERIAL PRIMARY KEY,
+    devolucion_id     BIGINT NULL,
     venta_id          BIGINT NOT NULL,
     producto_id       BIGINT NOT NULL,
     numero_serie_id   BIGINT NULL,
@@ -377,6 +409,34 @@ CREATE TABLE devoluciones (
     created_at        TIMESTAMP NOT NULL DEFAULT now(),
     updated_at        TIMESTAMP NOT NULL DEFAULT now()
 );
+
+-- Sprint 2: galería de imágenes de producto.
+CREATE TABLE producto_imagenes (
+    id            BIGSERIAL PRIMARY KEY,
+    producto_id   BIGINT NOT NULL,
+    path          VARCHAR(500) NOT NULL,
+    alt           VARCHAR(255) NULL,
+    orden         SMALLINT NOT NULL DEFAULT 0,
+    es_principal  BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at    TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at    TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE INDEX producto_imagenes_producto_id_orden_index ON producto_imagenes (producto_id, orden);
+-- Solo una imagen principal por producto.
+CREATE UNIQUE INDEX producto_imagenes_principal_unique ON producto_imagenes (producto_id) WHERE es_principal = TRUE;
+
+-- Sprint 2: auditoría de descuentos autorizados por un admin.
+CREATE TABLE autorizaciones_descuento (
+    id          BIGSERIAL PRIMARY KEY,
+    venta_id    BIGINT NOT NULL,
+    admin_id    BIGINT NOT NULL,
+    monto       DECIMAL(12,2) NOT NULL,
+    motivo      VARCHAR(255) NULL,
+    ip          VARCHAR(45) NULL,
+    created_at  TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_autorizaciones_descuento_venta ON autorizaciones_descuento (venta_id);
 
 CREATE TABLE cierres_caja (
     id                    BIGSERIAL PRIMARY KEY,
@@ -581,10 +641,19 @@ ALTER TABLE movimientos_stock ADD CONSTRAINT fk_ms_user      FOREIGN KEY (user_i
 
 ALTER TABLE alertas_stock ADD CONSTRAINT fk_as_producto FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE;
 
-ALTER TABLE devoluciones ADD CONSTRAINT fk_dev_venta         FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE;
-ALTER TABLE devoluciones ADD CONSTRAINT fk_dev_producto      FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE RESTRICT;
-ALTER TABLE devoluciones ADD CONSTRAINT fk_dev_numero_serie  FOREIGN KEY (numero_serie_id) REFERENCES numeros_serie(id) ON DELETE SET NULL;
-ALTER TABLE devoluciones ADD CONSTRAINT fk_dev_user          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE devoluciones ADD CONSTRAINT devoluciones_venta_id_foreign FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE RESTRICT;
+ALTER TABLE devoluciones ADD CONSTRAINT devoluciones_user_id_foreign  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT;
+
+ALTER TABLE devolucion_detalles ADD CONSTRAINT devolucion_detalles_devolucion_id_foreign FOREIGN KEY (devolucion_id) REFERENCES devoluciones(id) ON DELETE SET NULL;
+ALTER TABLE devolucion_detalles ADD CONSTRAINT fk_dev_venta         FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE;
+ALTER TABLE devolucion_detalles ADD CONSTRAINT fk_dev_producto      FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE RESTRICT;
+ALTER TABLE devolucion_detalles ADD CONSTRAINT fk_dev_numero_serie  FOREIGN KEY (numero_serie_id) REFERENCES numeros_serie(id) ON DELETE SET NULL;
+ALTER TABLE devolucion_detalles ADD CONSTRAINT fk_dev_user          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE producto_imagenes ADD CONSTRAINT producto_imagenes_producto_id_foreign FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE;
+
+ALTER TABLE autorizaciones_descuento ADD CONSTRAINT autorizaciones_descuento_venta_id_foreign FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE;
+ALTER TABLE autorizaciones_descuento ADD CONSTRAINT autorizaciones_descuento_admin_id_foreign FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE RESTRICT;
 
 ALTER TABLE cierres_caja ADD CONSTRAINT fk_cc_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
@@ -609,6 +678,8 @@ ALTER TABLE logs_auditoria ADD CONSTRAINT fk_la_user FOREIGN KEY (user_id) REFER
 -- =====================================================
 CREATE INDEX idx_clientes_email        ON clientes (email);
 CREATE INDEX idx_clientes_nit_ci       ON clientes (nit_ci);
+-- Sprint 2: unicidad de NIT/CI ignorando NULL (evita duplicados reales).
+CREATE UNIQUE INDEX clientes_nit_ci_unique ON clientes (nit_ci) WHERE nit_ci IS NOT NULL;
 CREATE INDEX idx_ventas_fecha          ON ventas (fecha);
 CREATE INDEX idx_productos_categoria   ON productos (categoria_id);
 CREATE INDEX idx_productos_marca       ON productos (marca_id);
