@@ -7,9 +7,11 @@ namespace App\Services;
 use App\Models\Role;
 
 /**
- * Reglas de descuento por rol.
+ * Reglas de descuento por rol (HU-5.10).
  *
- * Skeleton del Día 1. La implementación completa va en Día 2 (Brandon).
+ * El límite vive en `roles.descuento_maximo` y se expresa en porcentaje sobre
+ * la base de la venta. La autorización de un administrador para superar el
+ * límite (HU-5.11) queda para el Sprint 3.
  */
 class DescuentoService
 {
@@ -24,6 +26,21 @@ class DescuentoService
      */
     public function validar(Role|string $rol, float $montoDescuento, float $montoBase): bool
     {
-        throw new \RuntimeException('DescuentoService::validar se implementa en Día 2 (Brandon).');
+        $rolObj = is_string($rol) ? Role::findByName($rol) : $rol;
+
+        // Sin base no hay porcentaje que comparar.
+        if ($montoBase <= 0) {
+            return true;
+        }
+
+        if ($montoDescuento <= 0) {
+            return true;
+        }
+
+        $maximo = (float) $rolObj->descuento_maximo;
+        $porcentaje = ($montoDescuento / $montoBase) * 100;
+
+        // Tolerancia para no rechazar por redondeo de centavos.
+        return $porcentaje <= $maximo + 0.0001;
     }
 }

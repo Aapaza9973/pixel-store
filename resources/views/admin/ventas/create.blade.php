@@ -4,7 +4,8 @@
 @section('subtitle', 'Punto de venta')
 
 @section('content')
-<div class="-mx-6 -my-6 min-h-full bg-surface" x-data="carrito()">
+<div class="-mx-6 -my-6 min-h-full bg-surface" x-data="carrito()"
+     data-descuento-maximo="{{ $descuentoMaximo }}">
 
     {{-- Barra superior --}}
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
@@ -125,11 +126,41 @@
                             <dt class="text-on-surface-variant">Subtotal</dt>
                             <dd class="tabular-nums text-on-surface" x-text="money(subtotal)"></dd>
                         </div>
+                        <div class="flex items-center justify-between">
+                            <dt class="text-on-surface-variant">Descuento</dt>
+                            <dd class="tabular-nums text-on-surface" x-text="'- ' + money(descuentoAplicado)"></dd>
+                        </div>
                         <div class="flex items-center justify-between border-t border-outline-variant/15 pt-3">
                             <dt class="font-headline-sm text-headline-sm text-on-surface">Total</dt>
                             <dd class="font-headline-sm text-headline-sm tabular-nums text-on-surface" x-text="money(total)"></dd>
                         </div>
                     </dl>
+
+                    {{-- Descuento por rol (HU-5.10) --}}
+                    <div class="mt-5 border-t border-outline-variant/15 pt-4">
+                        <div class="flex items-center justify-between">
+                            <label for="descuento-valor" class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                                Descuento
+                            </label>
+                            <span class="font-label-sm text-label-sm text-outline"
+                                  x-text="'Máximo ' + descuentoMaximo + '%'"></span>
+                        </div>
+
+                        <div class="mt-2 grid grid-cols-3 gap-2">
+                            <select id="descuento-tipo" x-model="descuento.tipo"
+                                    class="rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                                <option value="%">%</option>
+                                <option value="Bs">Bs</option>
+                            </select>
+                            <input id="descuento-valor" type="number" min="0" step="0.01" x-model.number="descuento.valor"
+                                   class="col-span-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-label-md text-label-md tabular-nums text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                        </div>
+
+                        <p x-show="descuentoExcedeLimite" x-cloak
+                           class="mt-2 font-body-sm text-body-sm text-amber-400">
+                            Descuento requiere autorización de administrador.
+                        </p>
+                    </div>
                 </div>
 
                 <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
@@ -219,21 +250,52 @@
             items: [],
             pagos: [],
             nuevoPago: { metodo: 'Efectivo', monto: 0 },
+            descuentoMaximo: 0,
+            descuento: { tipo: '%', valor: 0 },
             storageKey: 'pos.carrito.v1',
 
             init() {
+                // Límite de descuento del rol, inyectado desde Blade.
+                this.descuentoMaximo = Number(this.$el.dataset.descuentoMaximo) || 0;
+
                 this.cargar();
 
                 this.$watch('items', () => this.persistir());
                 this.$watch('pagos', () => this.persistir());
+                this.$watch('descuento', () => this.persistir());
             },
 
             get subtotal() {
                 return this.items.reduce((suma, item) => suma + (Number(item.subtotal) || 0), 0);
             },
 
+            get descuentoMonto() {
+                const valor = Number(this.descuento.valor) || 0;
+
+                if (valor <= 0) {
+                    return 0;
+                }
+
+                return this.descuento.tipo === '%'
+                    ? this.subtotal * (valor / 100)
+                    : valor;
+            },
+
+            get descuentoPorcentaje() {
+                return this.subtotal > 0 ? (this.descuentoMonto / this.subtotal) * 100 : 0;
+            },
+
+            get descuentoExcedeLimite() {
+                return this.descuentoPorcentaje > this.descuentoMaximo + 0.0001;
+            },
+
+            // Sin autorización de admin (HU-5.11) el descuento no se aplica.
+            get descuentoAplicado() {
+                return this.descuentoExcedeLimite ? 0 : this.descuentoMonto;
+            },
+
             get total() {
-                return this.subtotal;
+                return Math.max(this.subtotal - this.descuentoAplicado, 0);
             },
 
             get totalPagado() {
@@ -305,6 +367,13 @@
                     if (guardado) {
                         this.items = Array.isArray(guardado.items) ? guardado.items : [];
                         this.pagos = Array.isArray(guardado.pagos) ? guardado.pagos : [];
+
+                        if (guardado.descuento) {
+                            this.descuento = {
+                                tipo: guardado.descuento.tipo === 'Bs' ? 'Bs' : '%',
+                                valor: Number(guardado.descuento.valor) || 0,
+                            };
+                        }
                     }
                 } catch (error) {
                     this.items = [];
@@ -316,6 +385,7 @@
                 sessionStorage.setItem(this.storageKey, JSON.stringify({
                     items: this.items,
                     pagos: this.pagos,
+                    descuento: this.descuento,
                 }));
             },
 
