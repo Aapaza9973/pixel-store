@@ -1,7 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Exceptions;
 
-use DomainException;
+/**
+ * Stock insuficiente para completar una salida de inventario o una venta.
+ */
+class StockInsuficienteException extends DomainException
+{
+    public function getStatusCode(): int
+    {
+        return 409;
+    }
 
-class StockInsuficienteException extends DomainException {}
+    public function getUserMessage(): string
+    {
+        return 'El producto ya no está disponible';
+    }
+
+    public function getErrorCode(): string
+    {
+        return 'stock_insuficiente';
+    }
+}
