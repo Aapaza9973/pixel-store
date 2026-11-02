@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Exceptions\DomainException;
 use App\Exceptions\PagoInsuficienteException;
 use App\Exceptions\SerieNoDisponibleException;
 use App\Exceptions\StockInsuficienteException;
@@ -184,6 +185,26 @@ class VentaServiceTest extends TestCase
         $this->assertSame('vendido', $serie->estado);
         $this->assertSame($venta->id, $serie->venta_id);
         $this->assertNotNull($serie->fecha_venta);
+    }
+
+    public function test_confirmar_rechaza_descuento_fuera_de_rango(): void
+    {
+        // El FormRequest valida 0..100; este test cubre el clamp defensivo del
+        // servicio para callers directos (comandos, jobs, API).
+        foreach ([-10, 150] as $porcentaje) {
+            [$items, $pagos, $meta] = $this->datos(meta: ['descuento_porcentaje' => $porcentaje]);
+
+            try {
+                $this->service->confirmar($items, $pagos, $meta);
+                $this->fail("Se esperaba DomainException para el descuento {$porcentaje}%.");
+            } catch (DomainException $e) {
+                $this->assertStringContainsString('0 y 100', $e->getMessage());
+                $this->assertSame(422, $e->getStatusCode());
+            }
+
+            $this->assertDatabaseCount('ventas', 0);
+            $this->assertSame(5, (int) $this->producto->fresh()->stock);
+        }
     }
 
     public function test_confirmar_usa_lockforupdate_ordenado(): void
