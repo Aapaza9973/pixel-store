@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoriaController;
+use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\InventarioController;
 use App\Http\Controllers\Admin\ProductoController;
 use App\Http\Controllers\Admin\ProductoImagenController;
@@ -66,6 +67,16 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
 
             Route::get('ventas/nueva', [VentaController::class, 'create'])
                 ->name('ventas.create');
+            Route::get('ventas/buscar-productos', [VentaController::class, 'buscarProductos'])
+                ->middleware('throttle:60,1')
+                ->name('ventas.buscar-productos');
+
+            // Debe declararse antes del resource: si no, "buscar" cae en show.
+            Route::get('clientes/buscar', [ClienteController::class, 'buscar'])
+                ->name('clientes.buscar');
+
+            Route::resource('clientes', ClienteController::class)
+                ->parameters(['clientes' => 'cliente']);
 
             Route::resource('proveedores', ProveedorController::class)
                 ->parameters(['proveedores' => 'proveedor']);

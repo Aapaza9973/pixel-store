@@ -80,6 +80,14 @@
                 @endcan
 
 
+                @can('ver clientes')
+                    @if (Route::has('admin.clientes.index'))
+                        <x-nav-link :href="route('admin.clientes.index')" :active="request()->routeIs('admin.clientes.*')" icon="users">
+                            Clientes
+                        </x-nav-link>
+                    @endif
+                @endcan
+
                 @can('ver proveedores')
                     @if (Route::has('admin.proveedores.index'))
                         <x-nav-link :href="route('admin.proveedores.index')" :active="request()->routeIs('admin.proveedores.*')" icon="tag">
