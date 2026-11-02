@@ -64,7 +64,7 @@ class RoleSeeder extends Seeder
         // Cajero
         $cajero = Role::firstOrCreate(['name' => 'Cajero', 'guard_name' => 'web']);
         $cajero->syncPermissions([
-            'ver productos', 'ver clientes', 'crear clientes', 'editar clientes',
+            'ver productos', 'ver clientes', 'editar clientes',
             'ver ventas', 'crear ventas', 'ver caja', 'crear caja',
         ]);
 

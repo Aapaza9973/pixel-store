@@ -60,6 +60,61 @@ class ProveedorCondicionesTest extends TestCase
         $this->assertDatabaseMissing('proveedores', ['nombre' => 'Proveedor Inválido']);
     }
 
+    public function test_editar_proveedor_actualiza_los_datos_comerciales(): void
+    {
+        $proveedor = Proveedor::create([
+            'nombre' => 'Andes Comercial SRL',
+            'tipo' => 'Distribuidor',
+            'plazos_pago' => '30 días',
+            'tiempo_entrega' => '10 días hábiles',
+            'descuento_habitual' => 5,
+            'activo' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin)->put(route('admin.proveedores.update', $proveedor), [
+            'nombre' => 'Andes Comercial SRL',
+            'tipo' => 'Distribuidor',
+            'plazos_pago' => '60 días',
+            'tiempo_entrega' => '3 días hábiles',
+            'descuento_habitual' => 9.5,
+            'activo' => '1',
+        ]);
+
+        $response->assertRedirect(route('admin.proveedores.index'));
+        $response->assertSessionHas('success');
+
+        $proveedor->refresh();
+        $this->assertSame('60 días', $proveedor->plazos_pago);
+        $this->assertSame('3 días hábiles', $proveedor->tiempo_entrega);
+        $this->assertSame('9.50', $proveedor->descuento_habitual);
+    }
+
+    public function test_put_parcial_preserva_las_condiciones_comerciales(): void
+    {
+        $proveedor = Proveedor::create([
+            'nombre' => 'Tecno Bolivia',
+            'tipo' => 'Mayorista',
+            'plazos_pago' => '30 días',
+            'tiempo_entrega' => '5 días hábiles',
+            'descuento_habitual' => 12.5,
+            'activo' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin)->put(route('admin.proveedores.update', $proveedor), [
+            'nombre' => 'Tecno Bolivia Renombrada',
+            'tipo' => 'Mayorista',
+            'activo' => '1',
+        ]);
+
+        $response->assertRedirect(route('admin.proveedores.index'));
+
+        $proveedor->refresh();
+        $this->assertSame('Tecno Bolivia Renombrada', $proveedor->nombre);
+        $this->assertSame('30 días', $proveedor->plazos_pago);
+        $this->assertSame('5 días hábiles', $proveedor->tiempo_entrega);
+        $this->assertSame('12.50', $proveedor->descuento_habitual);
+    }
+
     public function test_show_muestra_condiciones_comerciales(): void
     {
         $proveedor = Proveedor::create([

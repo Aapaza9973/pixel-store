@@ -26,7 +26,7 @@ class SessionExtendTest extends TestCase
         $response
             ->assertOk()
             ->assertJson([
-                'status'   => 'extended',
+                'status' => 'extended',
                 'lifetime' => (int) config('session.lifetime'),
             ])
             ->assertJsonStructure(['status', 'lifetime', 'expires_at', 'csrf_token']);

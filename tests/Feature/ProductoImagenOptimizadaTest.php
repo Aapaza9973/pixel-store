@@ -87,6 +87,26 @@ class ProductoImagenOptimizadaTest extends TestCase
         $this->assertLessThanOrEqual(400, $alto);
     }
 
+    public function test_galeria_usa_el_original_si_falta_el_thumbnail(): void
+    {
+        // Imágenes legacy: la fila existe pero no hay archivo en thumbs/.
+        foreach (['legacy-uno.jpg', 'legacy-dos.jpg'] as $orden => $archivo) {
+            ProductoImagen::create([
+                'producto_id' => $this->producto->id,
+                'path' => 'productos/'.$this->producto->id.'/'.$archivo,
+                'orden' => $orden + 1,
+                'es_principal' => $orden === 0,
+            ]);
+        }
+
+        $response = $this->get(route('catalogo.producto', $this->producto->slug));
+
+        $response->assertOk();
+        $response->assertSee('productos/'.$this->producto->id.'/legacy-uno.jpg', false);
+        $response->assertSee('productos/'.$this->producto->id.'/legacy-dos.jpg', false);
+        $response->assertDontSee('/thumbs/', false);
+    }
+
     public function test_catalogo_muestra_galeria(): void
     {
         $primera = ProductoImagen::create([

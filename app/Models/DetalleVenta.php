@@ -17,7 +17,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $numero_serie_id
  * @property int $cantidad
  * @property string $precio_unitario
- * @property string $descuento_item
+ * @property string $descuento_item Descuento por línea. Queda en 0 hasta que
+ *                                  exista descuento a nivel de item: hoy el descuento se aplica al total de
+ *                                  la venta, no por línea.
  */
 class DetalleVenta extends Model
 {

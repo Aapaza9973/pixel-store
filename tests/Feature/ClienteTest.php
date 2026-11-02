@@ -20,7 +20,7 @@ class ClienteTest extends TestCase
 
     private User $vendedor;
 
-    private User $inventario;
+    private User $cajero;
 
     protected function setUp(): void
     {
@@ -30,7 +30,7 @@ class ClienteTest extends TestCase
 
         $this->admin = User::where('email', 'admin@pixelstore.com')->firstOrFail();
         $this->vendedor = User::where('email', 'vendedor@pixelstore.com')->firstOrFail();
-        $this->inventario = User::where('email', 'inventario@pixelstore.com')->firstOrFail();
+        $this->cajero = User::where('email', 'cajero@pixelstore.com')->firstOrFail();
     }
 
     /**
@@ -152,8 +152,8 @@ class ClienteTest extends TestCase
 
     public function test_cliente_sin_permiso_no_puede_crear(): void
     {
-        // Inventario solo tiene "ver clientes": no puede crear.
-        $response = $this->actingAs($this->inventario)->post(route('admin.clientes.store'), [
+        // El Cajero atiende en caja: ve y edita clientes, pero no los crea.
+        $response = $this->actingAs($this->cajero)->post(route('admin.clientes.store'), [
             'nombre' => 'No autorizado',
         ]);
 

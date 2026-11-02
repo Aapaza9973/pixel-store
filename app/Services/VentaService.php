@@ -84,6 +84,8 @@ class VentaService
             $total = $this->calcularTotal($items, $productos);
 
             // R-VD-RF-04: falla de negocio, nunca 500.
+            // Se acepta pago de más: `suma(pagos) >= total` es válido porque en
+            // efectivo puede haber vuelto. Solo se rechaza cuando falta dinero.
             $totalPagado = round(array_sum(array_map(
                 static fn (array $pago): float => (float) $pago['monto'],
                 $pagos

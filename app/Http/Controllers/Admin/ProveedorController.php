@@ -15,6 +15,13 @@ use Illuminate\View\View;
 
 class ProveedorController extends Controller
 {
+    /**
+     * Campos comerciales opcionales que un PUT parcial no debe borrar.
+     *
+     * @var list<string>
+     */
+    private const CAMPOS_COMERCIALES = ['plazos_pago', 'tiempo_entrega', 'descuento_habitual'];
+
     public function __construct()
     {
         $this->authorizeResource(Proveedor::class, 'proveedor');
@@ -67,8 +74,18 @@ class ProveedorController extends Controller
 
     public function update(UpdateProveedorRequest $request, Proveedor $proveedor): RedirectResponse
     {
-        DB::transaction(function () use ($request, $proveedor) {
-            $proveedor->update($request->validated());
+        $datos = $request->validated();
+
+        // PUT parcial: si el request no trae las condiciones comerciales, se
+        // conservan las actuales en lugar de vaciarlas por omisión.
+        foreach (self::CAMPOS_COMERCIALES as $campo) {
+            if (! $request->has($campo)) {
+                unset($datos[$campo]);
+            }
+        }
+
+        DB::transaction(function () use ($datos, $proveedor) {
+            $proveedor->update($datos);
         });
 
         return redirect()
