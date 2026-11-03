@@ -137,7 +137,7 @@ class VentaPosTest extends TestCase
         // PHP no ejecuta JS; esta aserción pinea el contrato del payload para
         // que borrar referencia del map rompa la suite.
         $response->assertSee('referencia:', false);
-        $response->assertSee('pago.referencia', false);
+        $response->assertSee("(pago.referencia || '')", false);
     }
 
     public function test_pos_incluye_wiring_del_buscador(): void
@@ -147,6 +147,6 @@ class VentaPosTest extends TestCase
         $response->assertOk();
         $response->assertSee('data-url-buscar-productos', false);
         $response->assertSee('id="producto-busqueda"', false);
-        $response->assertSee('buscarProductos()', false);
+        $response->assertSee('debounce.300ms="buscarProductos()"', false);
     }
 }
