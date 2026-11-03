@@ -104,6 +104,11 @@
                     </p>
                 </div>
 
+                {{-- Tope de stock del carrito (R4) --}}
+                <div x-show="avisoStock" x-cloak
+                     class="border-b border-amber-500/40 bg-amber-500/10 px-5 py-3 font-body-sm text-body-sm text-amber-400"
+                     x-text="avisoStock"></div>
+
                 {{-- Estado vacío --}}
                 <template x-if="items.length === 0">
                     <div class="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
@@ -561,6 +566,7 @@
             errores: {},
             errorGeneral: null,
             ventaConfirmada: null,
+            avisoStock: null,
 
             // HU-5.5: cliente de la venta.
             cliente: null,
@@ -695,6 +701,7 @@
                     precio: precio,
                     cantidad: cantidad,
                     subtotal: precio * cantidad,
+                    stock: Number(producto.stock ?? 0),
                     maneja_numero_serie: Boolean(producto.maneja_numero_serie),
                     numero_serie_id: null,
                     numero_serie: null,
@@ -703,6 +710,7 @@
 
             eliminarItem(index) {
                 this.items.splice(index, 1);
+                this.avisoStock = null;
             },
 
             async buscarProductos() {
@@ -774,7 +782,20 @@
                     return;
                 }
 
-                const nueva = Math.max(parseInt(cantidad, 10) || 1, 1);
+                let nueva = Math.max(parseInt(cantidad, 10) || 1, 1);
+
+                // Tope de stock (R4). Un stock 0 o ausente se trata como
+                // desconocido para no bloquear carritos viejos de sessionStorage;
+                // la autoridad final sigue siendo el 409 de VentaService.
+                const tope = item.stock == null ? null : Number(item.stock);
+
+                if (tope !== null && tope > 0 && nueva > tope) {
+                    nueva = tope;
+                    this.avisoStock = 'Solo quedan ' + tope + ' unidades de ' + item.nombre + '.';
+                } else if (this.avisoStock) {
+                    this.avisoStock = null;
+                }
+
                 item.cantidad = nueva;
                 item.subtotal = (Number(item.precio) || 0) * nueva;
 
@@ -1062,7 +1083,12 @@
                     const guardado = JSON.parse(sessionStorage.getItem(this.storageKey) || 'null');
 
                     if (guardado) {
-                        this.items = Array.isArray(guardado.items) ? guardado.items : [];
+                        // Los carritos previos a R4 no guardan stock: queda en null
+                        // y el clamp no aplica (compatibilidad).
+                        this.items = (Array.isArray(guardado.items) ? guardado.items : []).map((item) => ({
+                            ...item,
+                            stock: Number.isFinite(item.stock) ? Number(item.stock) : null,
+                        }));
                         this.pagos = Array.isArray(guardado.pagos) ? guardado.pagos : [];
 
                         if (guardado.descuento) {

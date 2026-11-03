@@ -128,6 +128,29 @@ class VentaPosTest extends TestCase
         $response->assertJsonPath('data.1.maneja_numero_serie', false);
     }
 
+    public function test_pos_incluye_tope_de_stock_en_el_carrito(): void
+    {
+        $response = $this->actingAs($this->vendedor)->get(route('admin.ventas.create'));
+
+        $response->assertOk();
+
+        // PHP no ejecuta Alpine; se pinea el wiring del clamp. La autoridad
+        // final sigue siendo el 409 de VentaService (ya testeado).
+        $response->assertSee('avisoStock', false);
+        $response->assertSee('Solo quedan', false);
+    }
+
+    public function test_pos_guarda_stock_en_la_linea_del_carrito(): void
+    {
+        $response = $this->actingAs($this->vendedor)->get(route('admin.ventas.create'));
+
+        $response->assertOk();
+
+        // PHP no ejecuta Alpine; se pinea el wiring del clamp. La autoridad
+        // final sigue siendo el 409 de VentaService (ya testeado).
+        $response->assertSee('stock: Number(producto.stock', false);
+    }
+
     public function test_pos_envia_referencia_de_pago_al_confirmar(): void
     {
         $response = $this->actingAs($this->vendedor)->get(route('admin.ventas.create'));
