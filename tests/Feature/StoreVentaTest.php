@@ -12,8 +12,10 @@ use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
+use App\Services\VentaService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -400,5 +402,47 @@ class StoreVentaTest extends TestCase
         $this->actingAs($cliente)
             ->getJson(route('admin.productos.series', $this->producto))
             ->assertForbidden();
+    }
+
+    public function test_ventas_operacion_id_tiene_indice_unico(): void
+    {
+        // Garantiza la idempotencia a nivel DB, no solo en el guard de PHP.
+        $indice = collect(DB::select(
+            "select indexname, indexdef from pg_indexes where tablename = 'ventas'"
+        ))->first(fn (object $i): bool => str_contains($i->indexdef, 'UNIQUE')
+            && str_contains($i->indexdef, 'operacion_id'));
+
+        $this->assertNotNull($indice, 'ventas.operacion_id debe tener un índice UNIQUE.');
+        $this->assertStringContainsString('operacion_id', $indice->indexdef);
+    }
+
+    public function test_idempotencia_100_reintentos_crea_una_sola_venta(): void
+    {
+        $servicio = app(VentaService::class);
+
+        $items = [['producto_id' => $this->producto->id, 'cantidad' => 1]];
+        $pagos = [['metodo' => 'Efectivo', 'monto' => 1000]];
+        $meta = [
+            'cliente_id' => null,
+            'vendedor_id' => $this->vendedor->id,
+            'operacion_id' => (string) Str::uuid(),
+        ];
+
+        $inicio = microtime(true);
+        $primera = $servicio->confirmar($items, $pagos, $meta);
+
+        for ($i = 0; $i < 99; $i++) {
+            $this->assertSame($primera->id, $servicio->confirmar($items, $pagos, $meta)->id);
+        }
+
+        $transcurrido = microtime(true) - $inicio;
+
+        $this->assertDatabaseCount('ventas', 1);
+        $this->assertSame(4, (int) $this->producto->fresh()->stock);
+        $this->assertSame(1000.0, (float) Venta::firstOrFail()->total);
+        $this->assertSame(1, Pago::count());
+
+        // El reintento es un early return de una query: no debe pesar.
+        $this->assertLessThan(2.0, $transcurrido, "100 reintentos tardaron {$transcurrido}s.");
     }
 }
