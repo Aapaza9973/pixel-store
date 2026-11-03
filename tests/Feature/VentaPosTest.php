@@ -61,6 +61,26 @@ class VentaPosTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
+    public function test_pos_muestra_buscador_de_productos(): void
+    {
+        $response = $this->actingAs($this->vendedor)->get(route('admin.ventas.create'));
+
+        $response->assertOk();
+        $response->assertSee('Buscar producto');
+        $response->assertSee('id="producto-busqueda"', false);
+        $response->assertSee('Nombre, SKU o código de barras');
+    }
+
+    public function test_buscar_productos_requiere_permiso_ver_productos(): void
+    {
+        $cliente = User::factory()->create(['activo' => true]);
+        $cliente->assignRole('Cliente');
+
+        $this->actingAs($cliente)
+            ->getJson(route('admin.ventas.buscar-productos', ['q' => 'Laptop']))
+            ->assertForbidden();
+    }
+
     public function test_pos_oculta_cliente_rapido_para_cajero(): void
     {
         // El Cajero atiende en caja: ve clientes, pero no los crea.

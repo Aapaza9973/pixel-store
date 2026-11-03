@@ -9,7 +9,8 @@
      data-url-store="{{ route('admin.ventas.store') }}"
      data-url-clientes="{{ route('admin.clientes.buscar') }}"
      data-url-cliente-store="{{ route('admin.clientes.store') }}"
-     data-url-series="{{ route('admin.productos.series', ['producto' => '__producto__']) }}">
+     data-url-series="{{ route('admin.productos.series', ['producto' => '__producto__']) }}"
+     data-url-buscar-productos="{{ route('admin.ventas.buscar-productos') }}">
 
     {{-- Barra superior --}}
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
@@ -28,10 +29,7 @@
                 <span x-text="items.length"></span> ítems
             </span>
 
-            <a href="{{ route('admin.productos.index') }}"
-               class="inline-flex items-center gap-2 rounded-obsidian-lg border border-outline-variant/30 bg-surface-container-low px-4 py-2 text-body-md text-on-surface-variant transition hover:border-primary-container/40 hover:text-on-surface">
-                Buscar producto
-            </a>
+
         </div>
     </div>
 
@@ -46,6 +44,66 @@
                           x-text="items.length + ' línea(s)'"></span>
                 </div>
 
+                {{-- Buscador de productos (HU-5.3) --}}
+                <div class="border-b border-outline-variant/30 px-5 py-4">
+                    <label for="producto-busqueda" class="mb-1.5 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                        Buscar producto
+                    </label>
+
+                    <div class="relative">
+                        <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-outline"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                  d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+                        </svg>
+
+                        <input id="producto-busqueda" type="search" x-ref="buscadorProducto"
+                               x-model="busquedaProducto"
+                               x-on:input.debounce.300ms="buscarProductos()"
+                               placeholder="Nombre, SKU o código de barras"
+                               autocomplete="off"
+                               class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low py-2 pl-9 pr-3 font-body-md text-body-md text-on-surface placeholder:text-outline focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                    </div>
+
+                    <p x-show="buscandoProducto" x-cloak class="mt-2 font-body-sm text-body-sm text-outline">
+                        Buscando…
+                    </p>
+
+                    <p x-show="errorProducto" x-cloak class="mt-2 font-body-sm text-body-sm text-error"
+                       x-text="errorProducto"></p>
+
+                    <ul x-show="resultadosProducto.length > 0" x-cloak
+                        class="mt-2 max-h-72 space-y-1 overflow-y-auto">
+                        <template x-for="producto in resultadosProducto" :key="producto.id">
+                            <li>
+                                <button type="button" x-on:click="agregarProductoBuscado(producto)"
+                                        x-bind:disabled="producto.stock < 1"
+                                        class="flex w-full items-center justify-between gap-3 rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-left transition hover:border-primary-container/40 disabled:cursor-not-allowed disabled:border-outline-variant/20 disabled:bg-transparent disabled:opacity-50">
+                                    <span class="min-w-0">
+                                        <span class="block truncate font-body-md text-body-md text-on-surface"
+                                              x-text="producto.nombre"></span>
+                                        <span class="block truncate font-label-sm text-label-sm text-outline"
+                                              x-text="[producto.sku, producto.categoria].filter(Boolean).join(' · ')"></span>
+                                    </span>
+
+                                    <span class="shrink-0 text-right">
+                                        <span class="block font-label-md text-label-md tabular-nums text-on-surface"
+                                              x-text="money(producto.precio_unitario)"></span>
+                                        <span class="block font-label-sm text-label-sm"
+                                              x-bind:class="producto.stock < 1 ? 'text-error' : 'text-emerald-400'"
+                                              x-text="producto.stock < 1 ? 'Sin stock' : producto.stock + ' en stock'"></span>
+                                    </span>
+                                </button>
+                            </li>
+                        </template>
+                    </ul>
+
+                    <p x-show="busquedaProducto.trim().length >= 2 && ! buscandoProducto && ! errorProducto && resultadosProducto.length === 0"
+                       x-cloak class="mt-2 font-body-sm text-body-sm text-on-surface-variant">
+                        Sin resultados para esa búsqueda.
+                    </p>
+                </div>
+
                 {{-- Estado vacío --}}
                 <template x-if="items.length === 0">
                     <div class="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
@@ -57,12 +115,12 @@
                         </div>
                         <p class="font-headline-sm text-headline-sm text-on-surface">El carrito está vacío</p>
                         <p class="max-w-sm font-body-sm text-body-sm text-on-surface-variant">
-                            Agregá productos para comenzar la venta. La búsqueda con lector de código de barras llega en el Día 2.
+                            Buscá un producto por nombre, SKU o código de barras para agregarlo a la venta.
                         </p>
-                        <a href="{{ route('admin.productos.index') }}"
-                           class="mt-2 inline-flex items-center gap-2 rounded-obsidian-lg bg-primary-container px-4 py-2.5 text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90">
+                        <button type="button" x-on:click="enfocarBuscador()"
+                                class="mt-2 inline-flex items-center gap-2 rounded-obsidian-lg bg-primary-container px-4 py-2.5 text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90">
                             Buscar producto
-                        </a>
+                        </button>
                     </div>
                 </template>
 
@@ -516,6 +574,13 @@
             urlClientes: '',
             urlClienteStore: '',
 
+            // HU-5.3: buscador de productos del POS.
+            urlBuscarProductos: '',
+            busquedaProducto: '',
+            resultadosProducto: [],
+            buscandoProducto: false,
+            errorProducto: null,
+
             // HU-5.6: número de serie por línea.
             urlSeries: '',
             serieModal: { abierto: false, itemIndex: null, cargando: false, series: [], error: null },
@@ -528,6 +593,7 @@
                 this.urlClientes = this.$el.dataset.urlClientes || '';
                 this.urlClienteStore = this.$el.dataset.urlClienteStore || '';
                 this.urlSeries = this.$el.dataset.urlSeries || '';
+                this.urlBuscarProductos = this.$el.dataset.urlBuscarProductos || '';
                 this.operacionId = this.operacionActual();
 
                 this.cargar();
@@ -637,6 +703,68 @@
 
             eliminarItem(index) {
                 this.items.splice(index, 1);
+            },
+
+            async buscarProductos() {
+                const termino = (this.busquedaProducto || '').trim();
+                this.errorProducto = null;
+
+                // Mismo umbral que el buscador de clientes: no se consulta por
+                // una sola letra.
+                if (termino.length < 2) {
+                    this.resultadosProducto = [];
+
+                    return;
+                }
+
+                this.buscandoProducto = true;
+
+                try {
+                    const respuesta = await fetch(this.urlBuscarProductos + '?q=' + encodeURIComponent(termino), {
+                        headers: { 'Accept': 'application/json' },
+                    });
+
+                    const cuerpo = await respuesta.json().catch(() => ({}));
+
+                    if (! respuesta.ok) {
+                        this.resultadosProducto = [];
+                        this.errorProducto = cuerpo.message || 'No se pudieron buscar productos.';
+
+                        return;
+                    }
+
+                    this.resultadosProducto = cuerpo.data || [];
+                } catch (error) {
+                    this.resultadosProducto = [];
+                    this.errorProducto = 'No se pudo conectar con el servidor.';
+                } finally {
+                    this.buscandoProducto = false;
+                }
+            },
+
+            agregarProductoBuscado(producto) {
+                if (! producto || Number(producto.stock) < 1) {
+                    return;
+                }
+
+                // agregarItem ya incrementa la cantidad si el producto está en
+                // el carrito, en vez de duplicar la fila.
+                this.agregarItem({
+                    producto_id: producto.id,
+                    nombre: producto.nombre,
+                    precio: producto.precio_unitario,
+                    cantidad: 1,
+                    maneja_numero_serie: producto.maneja_numero_serie,
+                });
+
+                this.busquedaProducto = '';
+                this.resultadosProducto = [];
+
+                this.$nextTick(() => this.enfocarBuscador());
+            },
+
+            enfocarBuscador() {
+                this.$refs.buscadorProducto?.focus();
             },
 
             cambiarCantidad(index, cantidad) {
