@@ -207,6 +207,70 @@ class VentaServiceTest extends TestCase
         }
     }
 
+    public function test_confirmar_valida_el_descuento_con_el_rol_recibido(): void
+    {
+        // Vendedor: 10 % de límite según RoleSeeder. Precio 100 → 15 % = 15.
+        [$items, $pagos, $meta] = $this->datos(
+            [],
+            [['metodo' => 'Efectivo', 'monto' => 85]],
+            ['descuento_porcentaje' => 15, 'rol_descuento' => 'Vendedor']
+        );
+
+        try {
+            $this->service->confirmar($items, $pagos, $meta);
+            $this->fail('Se esperaba DomainException por exceder el límite del rol.');
+        } catch (DomainException $e) {
+            $this->assertStringContainsString('autorización', $e->getMessage());
+            $this->assertSame(422, $e->getStatusCode());
+        }
+
+        $this->assertDatabaseCount('ventas', 0);
+        $this->assertSame(5, (int) $this->producto->fresh()->stock);
+
+        // El mismo caso con 10 % sí entra: el límite se aplica sobre el
+        // subtotal calculado bajo lock.
+        [$items, $pagos, $meta] = $this->datos(
+            [],
+            [['metodo' => 'Efectivo', 'monto' => 90]],
+            ['descuento_porcentaje' => 10, 'rol_descuento' => 'Vendedor']
+        );
+
+        $venta = $this->service->confirmar($items, $pagos, $meta);
+
+        $this->assertSame('90.00', $venta->total);
+        $this->assertDatabaseCount('ventas', 1);
+    }
+
+    public function test_confirmar_sin_rol_no_valida_limite_pero_si_clamp(): void
+    {
+        // Sin rol_descuento no hay límite por rol: caller interno de confianza.
+        [$items, $pagos, $meta] = $this->datos(
+            [],
+            [['metodo' => 'Efectivo', 'monto' => 90]],
+            ['descuento_porcentaje' => 10]
+        );
+
+        $venta = $this->service->confirmar($items, $pagos, $meta);
+
+        $this->assertSame('90.00', $venta->total);
+
+        // El clamp 0..100 sigue vigente aunque no haya rol.
+        [$items, $pagos, $meta] = $this->datos(
+            [],
+            [['metodo' => 'Efectivo', 'monto' => 0.01]],
+            ['descuento_porcentaje' => 150]
+        );
+
+        try {
+            $this->service->confirmar($items, $pagos, $meta);
+            $this->fail('Se esperaba DomainException por el clamp de descuento.');
+        } catch (DomainException $e) {
+            $this->assertStringContainsString('0 y 100', $e->getMessage());
+        }
+
+        $this->assertDatabaseCount('ventas', 1);
+    }
+
     public function test_confirmar_usa_lockforupdate_ordenado(): void
     {
         $segundo = Producto::create([

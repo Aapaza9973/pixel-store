@@ -11,7 +11,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreVentaRequest;
 use App\Models\Producto;
 use App\Models\Venta;
-use App\Services\DescuentoService;
 use App\Services\VentaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,7 +42,7 @@ class VentaController extends Controller
      * El cliente envía un porcentaje de descuento; el monto y el total los
      * calcula el servidor con los precios de la base.
      */
-    public function store(StoreVentaRequest $request, VentaService $ventas, DescuentoService $descuentos): JsonResponse
+    public function store(StoreVentaRequest $request, VentaService $ventas): JsonResponse
     {
         $datos = $request->validated();
         $items = $datos['items'];
@@ -51,16 +50,14 @@ class VentaController extends Controller
         $porcentaje = (float) ($datos['descuento_porcentaje'] ?? 0);
 
         try {
-            $subtotal = $this->subtotalDesdeBd($items);
-
-            $this->validarDescuento($request, $descuentos, $porcentaje, $subtotal);
-
             $venta = $ventas->confirmar($items, $pagos, [
                 'cliente_id' => $datos['meta']['cliente_id'] ?? null,
                 'vendedor_id' => $datos['meta']['vendedor_id'] ?? $request->user()->id,
                 'operacion_id' => $this->normalizarOperacionId($datos['meta']['operacion_id'] ?? null),
                 'descuento_porcentaje' => $porcentaje,
                 'autorizado_por' => $datos['autorizado_por'] ?? null,
+                // El límite aplica al rol AUTENTICADO, no a meta.vendedor_id.
+                'rol_descuento' => $request->user()->roles->first()?->name,
             ]);
         } catch (StockInsuficienteException|SerieNoDisponibleException $e) {
             return $this->respuestaDominio($e, 409);
@@ -155,52 +152,6 @@ class VentaController extends Controller
                 'marca' => $producto->marca?->nombre,
             ]),
         ]);
-    }
-
-    /**
-     * Subtotal con los precios vigentes en la base (no los del cliente).
-     *
-     * @param  array<int, array{producto_id:int, cantidad:int}>  $items
-     */
-    private function subtotalDesdeBd(array $items): float
-    {
-        $precios = Producto::whereIn('id', collect($items)->pluck('producto_id')->unique()->all())
-            ->pluck('precio_unitario', 'id');
-
-        $subtotal = 0.0;
-
-        foreach ($items as $item) {
-            $subtotal += (float) ($precios[$item['producto_id']] ?? 0) * (int) $item['cantidad'];
-        }
-
-        return round($subtotal, 2);
-    }
-
-    /**
-     * El límite de descuento aplica al rol AUTENTICADO, no a meta.vendedor_id.
-     *
-     * @throws DomainException
-     */
-    private function validarDescuento(
-        StoreVentaRequest $request,
-        DescuentoService $descuentos,
-        float $porcentaje,
-        float $subtotal
-    ): void {
-        if ($porcentaje <= 0) {
-            return;
-        }
-
-        $rol = $request->user()->roles->first()?->name;
-        $montoDescuento = round($subtotal * $porcentaje / 100, 2);
-
-        if ($rol === null || ! $descuentos->validar($rol, $montoDescuento, $subtotal)) {
-            throw new DomainException(sprintf(
-                'El descuento de %s %% supera el máximo permitido para tu rol. '
-                .'Requiere autorización de administrador.',
-                rtrim(rtrim(number_format($porcentaje, 2, '.', ''), '0'), '.')
-            ));
-        }
     }
 
     /**

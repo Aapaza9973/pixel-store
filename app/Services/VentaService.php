@@ -36,6 +36,7 @@ class VentaService
     public function __construct(
         private readonly NumeroSerieService $numerosSerie,
         private readonly InventoryService $inventario,
+        private readonly DescuentoService $descuento,
     ) {}
 
     /**
@@ -44,9 +45,15 @@ class VentaService
      * El descuento llega como porcentaje (`descuento_porcentaje`): el monto del
      * descuento y el total se recalculan acá con los precios de la base.
      *
+     * `meta['rol_descuento']`: si llega el rol del autenticado, el límite de
+     * descuento del rol se valida DENTRO de la transacción, con el mismo
+     * subtotal y el mismo monto que producen el total (cierra el TOCTOU del
+     * precio). Si es null no se valida límite: es un caller interno de
+     * confianza; el camino HTTP siempre pasa el rol del autenticado.
+     *
      * @param  array<int, array{producto_id:int, cantidad:int, numero_serie_id?:?int, ubicacion_id?:?int}>  $items
      * @param  array<int, array{metodo:'Efectivo'|'Tarjeta'|'Transferencia'|'QR'|'Otro', monto:float, referencia?:?string}>  $pagos
-     * @param  array{cliente_id?:?int, vendedor_id:int, operacion_id:string, descuento_porcentaje?:float|int|string, autorizado_por?:?int}  $meta
+     * @param  array{cliente_id?:?int, vendedor_id:int, operacion_id:string, descuento_porcentaje?:float|int|string, autorizado_por?:?int, rol_descuento?:?string}  $meta
      *
      * @throws StockInsuficienteException
      * @throws SerieNoDisponibleException
@@ -100,6 +107,24 @@ class VentaService
             }
 
             $descuento = round($subtotal * $porcentaje / 100, 2);
+
+            // D1: el límite del rol se valida acá adentro, con el MISMO $subtotal
+            // y el MISMO $descuento que producen $total. Antes el controller
+            // validaba con un subtotal leído fuera de la transacción, así que un
+            // cambio de precio en el medio dejaba validar con una base y aplicar
+            // con otra (TOCTOU).
+            $rolDescuento = $meta['rol_descuento'] ?? null;
+
+            if ($porcentaje > 0
+                && $rolDescuento !== null
+                && ! $this->descuento->validar($rolDescuento, $descuento, $subtotal)) {
+                throw new DomainException(sprintf(
+                    'El descuento de %s %% supera el máximo permitido para tu rol. '
+                    .'Requiere autorización de administrador.',
+                    rtrim(rtrim(number_format($porcentaje, 2, '.', ''), '0'), '.')
+                ));
+            }
+
             $total = round(max($subtotal - $descuento, 0), 2);
 
             // R-VD-RF-04: falla de negocio, nunca 500.
