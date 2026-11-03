@@ -150,10 +150,12 @@
                 <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
                     <div class="flex items-center justify-between gap-3">
                         <h3 class="font-headline-sm text-headline-sm text-on-surface">Cliente</h3>
-                        <button type="button" x-on:click="abrirModalCliente()"
-                                class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-primary-container transition hover:text-primary-container/80">
-                            Cliente rápido
-                        </button>
+                        @can('crear clientes')
+                            <button type="button" x-on:click="abrirModalCliente()"
+                                    class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-primary-container transition hover:text-primary-container/80">
+                                Cliente rápido
+                            </button>
+                        @endcan
                     </div>
 
                     {{-- Cliente seleccionado --}}
@@ -413,6 +415,7 @@
     </div>
 
     {{-- Modal de alta rápida de cliente (HU-5.5) --}}
+    @can('crear clientes')
     <div x-show="modalCliente" x-cloak
          x-on:keydown.escape.window="modalCliente = false"
          class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -482,6 +485,7 @@
             </form>
         </div>
     </div>
+    @endcan
 </div>
 
 <script>
@@ -751,6 +755,12 @@
                         return;
                     }
 
+                    if (respuesta.status === 403) {
+                        this.errorCliente = 'No tenés permiso para crear clientes. Consultá con un administrador.';
+
+                        return;
+                    }
+
                     this.errorCliente = cuerpo.message || 'No se pudo crear el cliente.';
                 } catch (error) {
                     this.errorCliente = 'No se pudo conectar con el servidor.';
@@ -866,6 +876,7 @@
                             pagos: this.pagos.map((pago) => ({
                                 metodo: pago.metodo,
                                 monto: pago.monto,
+                                referencia: (pago.referencia || '').trim() || null,
                             })),
                             meta: {
                                 operacion_id: this.operacionId,

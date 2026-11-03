@@ -368,4 +368,37 @@ class StoreVentaTest extends TestCase
         $this->assertSame('100.00', $venta->descuento);
         $this->assertSame(4, (int) $this->producto->fresh()->stock);
     }
+
+    public function test_multi_pago_persiste_la_referencia(): void
+    {
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'pagos' => [
+                    ['metodo' => 'Efectivo', 'monto' => 600],
+                    ['metodo' => 'Tarjeta', 'monto' => 400, 'referencia' => 'POS-123'],
+                ],
+            ])
+        );
+
+        $response->assertCreated();
+
+        $this->assertDatabaseHas('pagos', [
+            'venta_id' => $response->json('venta.id'),
+            'metodo' => 'Tarjeta',
+            'referencia' => 'POS-123',
+        ]);
+    }
+
+    public function test_endpoint_series_rechaza_sin_permiso(): void
+    {
+        // El rol Cliente no tiene "ver productos": el endpoint que alimenta el
+        // selector de series no debe exponer inventario.
+        $cliente = User::factory()->create(['activo' => true]);
+        $cliente->assignRole('Cliente');
+
+        $this->actingAs($cliente)
+            ->getJson(route('admin.productos.series', $this->producto))
+            ->assertForbidden();
+    }
 }

@@ -117,7 +117,7 @@ class VentaController extends Controller
             ->when($termino !== '', fn ($query) => $query->buscar($termino))
             ->orderBy('nombre')
             ->limit(10)
-            ->get(['id', 'nombre', 'sku', 'precio_unitario', 'stock', 'categoria_id', 'marca_id']);
+            ->get(['id', 'nombre', 'sku', 'precio_unitario', 'stock', 'maneja_numero_serie', 'categoria_id', 'marca_id']);
 
         return response()->json([
             'data' => $productos->map(fn (Producto $producto) => [

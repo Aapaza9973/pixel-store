@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\Categoria;
+use App\Models\Producto;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -57,5 +59,52 @@ class VentaPosTest extends TestCase
         $response = $this->get(route('admin.ventas.create'));
 
         $response->assertRedirect(route('login'));
+    }
+
+    public function test_pos_oculta_cliente_rapido_para_cajero(): void
+    {
+        // El Cajero atiende en caja: ve clientes, pero no los crea.
+        $cajero = User::where('email', 'cajero@pixelstore.com')->firstOrFail();
+
+        $this->actingAs($this->vendedor)
+            ->get(route('admin.ventas.create'))
+            ->assertOk()
+            ->assertSee('Cliente rápido');
+
+        $this->actingAs($cajero)
+            ->get(route('admin.ventas.create'))
+            ->assertOk()
+            ->assertDontSee('Cliente rápido');
+    }
+
+    public function test_buscar_productos_incluye_maneja_numero_serie(): void
+    {
+        $categoria = Categoria::create(['nombre' => 'Categoría POS Serie', 'tipo' => 'Componente']);
+
+        Producto::create([
+            'categoria_id' => $categoria->id,
+            'nombre' => 'Laptop POS Serie',
+            'precio_unitario' => 5000,
+            'stock' => 3,
+            'umbral_alerta' => 1,
+            'maneja_numero_serie' => true,
+        ]);
+
+        Producto::create([
+            'categoria_id' => $categoria->id,
+            'nombre' => 'Mouse POS Serie',
+            'precio_unitario' => 100,
+            'stock' => 10,
+            'umbral_alerta' => 1,
+            'maneja_numero_serie' => false,
+        ]);
+
+        $response = $this->actingAs($this->vendedor)
+            ->getJson(route('admin.ventas.buscar-productos', ['q' => 'POS Serie']));
+
+        $response->assertOk();
+        // El endpoint ordena por nombre: Laptop antes que Mouse.
+        $response->assertJsonPath('data.0.maneja_numero_serie', true);
+        $response->assertJsonPath('data.1.maneja_numero_serie', false);
     }
 }
