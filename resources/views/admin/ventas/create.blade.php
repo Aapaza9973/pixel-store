@@ -10,7 +10,8 @@
      data-url-clientes="{{ route('admin.clientes.buscar') }}"
      data-url-cliente-store="{{ route('admin.clientes.store') }}"
      data-url-series="{{ route('admin.productos.series', ['producto' => '__producto__']) }}"
-     data-url-buscar-productos="{{ route('admin.ventas.buscar-productos') }}">
+     data-url-buscar-productos="{{ route('admin.ventas.buscar-productos') }}"
+     data-url-comprobante="{{ route('admin.ventas.comprobante', ['venta' => '__venta__']) }}">
 
     {{-- Barra superior --}}
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
@@ -403,6 +404,11 @@
                                x-text="'Venta #' + ventaConfirmada.id"></p>
                             <p class="mt-1 font-body-md text-body-md tabular-nums text-emerald-400"
                                x-text="'Total cobrado: ' + money(ventaConfirmada.total)"></p>
+
+                            <a x-bind:href="urlComprobante" target="_blank" rel="noopener"
+                               class="mt-3 inline-flex items-center gap-2 rounded-obsidian border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 font-label-sm text-label-sm uppercase tracking-[0.14em] text-emerald-400 transition hover:bg-emerald-500/20">
+                                Ver comprobante
+                            </a>
                         </div>
                     </template>
 
@@ -582,6 +588,7 @@
 
             // HU-5.3: buscador de productos del POS.
             urlBuscarProductos: '',
+            urlComprobanteBase: '',
             busquedaProducto: '',
             resultadosProducto: [],
             buscandoProducto: false,
@@ -600,6 +607,7 @@
                 this.urlClienteStore = this.$el.dataset.urlClienteStore || '';
                 this.urlSeries = this.$el.dataset.urlSeries || '';
                 this.urlBuscarProductos = this.$el.dataset.urlBuscarProductos || '';
+                this.urlComprobanteBase = this.$el.dataset.urlComprobante || '';
                 this.operacionId = this.operacionActual();
 
                 this.cargar();
@@ -681,6 +689,16 @@
 
             get erroresCampos() {
                 return Object.values(this.errores || {}).flat();
+            },
+
+            // El banner se limpia al tocar el carrito, así que el link vive
+            // dentro del x-if y desaparece con él.
+            get urlComprobante() {
+                if (! this.ventaConfirmada || ! this.urlComprobanteBase) {
+                    return '#';
+                }
+
+                return this.urlComprobanteBase.replace('__venta__', this.ventaConfirmada.id);
             },
 
             agregarItem(producto) {

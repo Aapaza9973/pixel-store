@@ -71,6 +71,9 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::post('ventas', [VentaController::class, 'store'])
                 ->name('ventas.store');
 
+            Route::get('ventas/{venta}/comprobante', [VentaController::class, 'comprobante'])
+                ->name('ventas.comprobante');
+
             Route::get('productos/{producto}/series', [VentaController::class, 'series'])
                 ->name('productos.series');
             Route::get('ventas/buscar-productos', [VentaController::class, 'buscarProductos'])

@@ -84,6 +84,30 @@ class VentaController extends Controller
     }
 
     /**
+     * Comprobante imprimible de una venta (Día 3.3).
+     *
+     * Sin numeración correlativa todavía: el número visible se deriva del PK
+     * (#000123) para que el papel sea estable y reproducible.
+     */
+    public function comprobante(Venta $venta): View
+    {
+        abort_unless(auth()->user()?->can('ver ventas'), 403);
+
+        $venta->load([
+            'cliente',
+            'vendedor',
+            'autorizador',
+            'pagos',
+            'detalles.producto',
+            'detalles.numeroSerie',
+        ]);
+
+        $numero = '#'.str_pad((string) $venta->id, 6, '0', STR_PAD_LEFT);
+
+        return view('admin.ventas.comprobante', compact('venta', 'numero'));
+    }
+
+    /**
      * Series disponibles de un producto para el selector del POS (HU-5.6).
      */
     public function series(Producto $producto): JsonResponse
