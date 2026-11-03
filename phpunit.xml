@@ -10,6 +10,44 @@
         </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
+            <!-- Estos archivos viven en el suite `gate`. Se excluyen acá para
+                 que la suite completa no los corra dos veces.
+                 Ver docs/07-testing.md. -->
+            <exclude>tests/Feature/UserManagementTest.php</exclude>
+            <exclude>tests/Feature/UserPolicyTest.php</exclude>
+            <exclude>tests/Feature/UserObserverTest.php</exclude>
+            <exclude>tests/Feature/UserHistorialTest.php</exclude>
+            <exclude>tests/Feature/UserPanelHomeTest.php</exclude>
+            <exclude>tests/Feature/StoreUserRequestTest.php</exclude>
+            <exclude>tests/Feature/UpdateUserRequestTest.php</exclude>
+            <exclude>tests/Feature/RoleAccessTest.php</exclude>
+            <exclude>tests/Feature/InventarioAccessTest.php</exclude>
+            <exclude>tests/Feature/MensajesContextualesTest.php</exclude>
+            <exclude>tests/Feature/AuditoriaLoginTest.php</exclude>
+            <exclude>tests/Feature/SessionExtendTest.php</exclude>
+            <exclude>tests/Feature/Auth/AuthenticationTest.php</exclude>
+            <exclude>tests/Feature/Auth/LoginRedirectTest.php</exclude>
+            <exclude>tests/Feature/Auth/LoginValidationTest.php</exclude>
+        </testsuite>
+        <!-- Gate ejecutable de HU-1.1 (usuarios) y HU-RF.4 (login/roles/acceso).
+             Es una lista cerrada: agregar un archivo acá es una decisión explícita.
+             Ver docs/07-testing.md. -->
+        <testsuite name="gate">
+            <file>tests/Feature/UserManagementTest.php</file>
+            <file>tests/Feature/UserPolicyTest.php</file>
+            <file>tests/Feature/UserObserverTest.php</file>
+            <file>tests/Feature/UserHistorialTest.php</file>
+            <file>tests/Feature/UserPanelHomeTest.php</file>
+            <file>tests/Feature/StoreUserRequestTest.php</file>
+            <file>tests/Feature/UpdateUserRequestTest.php</file>
+            <file>tests/Feature/RoleAccessTest.php</file>
+            <file>tests/Feature/InventarioAccessTest.php</file>
+            <file>tests/Feature/MensajesContextualesTest.php</file>
+            <file>tests/Feature/AuditoriaLoginTest.php</file>
+            <file>tests/Feature/SessionExtendTest.php</file>
+            <file>tests/Feature/Auth/AuthenticationTest.php</file>
+            <file>tests/Feature/Auth/LoginRedirectTest.php</file>
+            <file>tests/Feature/Auth/LoginValidationTest.php</file>
         </testsuite>
     </testsuites>
     <source>
