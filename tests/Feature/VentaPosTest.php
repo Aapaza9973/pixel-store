@@ -127,4 +127,26 @@ class VentaPosTest extends TestCase
         $response->assertJsonPath('data.0.maneja_numero_serie', true);
         $response->assertJsonPath('data.1.maneja_numero_serie', false);
     }
+
+    public function test_pos_envia_referencia_de_pago_al_confirmar(): void
+    {
+        $response = $this->actingAs($this->vendedor)->get(route('admin.ventas.create'));
+
+        $response->assertOk();
+
+        // PHP no ejecuta JS; esta aserción pinea el contrato del payload para
+        // que borrar referencia del map rompa la suite.
+        $response->assertSee('referencia:', false);
+        $response->assertSee('pago.referencia', false);
+    }
+
+    public function test_pos_incluye_wiring_del_buscador(): void
+    {
+        $response = $this->actingAs($this->vendedor)->get(route('admin.ventas.create'));
+
+        $response->assertOk();
+        $response->assertSee('data-url-buscar-productos', false);
+        $response->assertSee('id="producto-busqueda"', false);
+        $response->assertSee('buscarProductos()', false);
+    }
 }
