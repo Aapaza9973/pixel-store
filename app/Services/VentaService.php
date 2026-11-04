@@ -13,6 +13,7 @@ use App\Models\LogAuditoria;
 use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\Venta;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -75,153 +76,167 @@ class VentaService
 
         $this->validarEntrada($items, $pagos);
 
-        // R-VD-RF-01: una única transacción para toda la operación.
-        return DB::transaction(function () use ($items, $pagos, $meta, $operacionId) {
-            // R-VD-RF-02: bloqueo pesimista en orden estable por producto_id
-            // para que dos ventas concurrentes no se bloqueen en cruz.
-            $productos = $this->bloquearProductos($items);
+        try {
+            // R-VD-RF-01: una única transacción para toda la operación.
+            return DB::transaction(function () use ($items, $pagos, $meta, $operacionId) {
+                // R-VD-RF-02: bloqueo pesimista en orden estable por producto_id
+                // para que dos ventas concurrentes no se bloqueen en cruz.
+                $productos = $this->bloquearProductos($items);
 
-            $cantidades = $this->cantidadesPorProducto($items);
+                $cantidades = $this->cantidadesPorProducto($items);
 
-            // R-VD-RF-03: la validación ocurre bajo el mismo lock que la escritura.
-            foreach ($cantidades as $productoId => $cantidad) {
-                $producto = $productos[$productoId];
+                // R-VD-RF-03: la validación ocurre bajo el mismo lock que la escritura.
+                foreach ($cantidades as $productoId => $cantidad) {
+                    $producto = $productos[$productoId];
 
-                if ($producto->stock < $cantidad) {
-                    throw new StockInsuficienteException(
-                        "Stock insuficiente para {$producto->nombre}. "
-                        ."Disponible: {$producto->stock}, solicitado: {$cantidad}."
+                    if ($producto->stock < $cantidad) {
+                        throw new StockInsuficienteException(
+                            "Stock insuficiente para {$producto->nombre}. "
+                            ."Disponible: {$producto->stock}, solicitado: {$cantidad}."
+                        );
+                    }
+                }
+
+                // El descuento llega como porcentaje (nunca como monto): así el
+                // cliente no puede alterar la base de cálculo.
+                $porcentaje = round((float) ($meta['descuento_porcentaje'] ?? 0), 2);
+                $subtotal = $this->calcularTotal($items, $productos);
+
+                // Defensa en profundidad: el controller valida 0..100, pero el
+                // servicio es público y un caller directo no debe poder inflar el total.
+                if ($porcentaje < 0 || $porcentaje > 100) {
+                    throw new DomainException('El descuento debe estar entre 0 y 100 %.');
+                }
+
+                $descuento = round($subtotal * $porcentaje / 100, 2);
+
+                // D1: el límite del rol se valida acá adentro, con el MISMO $subtotal
+                // y el MISMO $descuento que producen $total. Antes el controller
+                // validaba con un subtotal leído fuera de la transacción, así que un
+                // cambio de precio en el medio dejaba validar con una base y aplicar
+                // con otra (TOCTOU).
+                $rolDescuento = $meta['rol_descuento'] ?? null;
+
+                if ($porcentaje > 0
+                    && $rolDescuento !== null
+                    && ! $this->descuento->validar($rolDescuento, $descuento, $subtotal)) {
+                    throw new DomainException(sprintf(
+                        'El descuento de %s %% supera el máximo permitido para tu rol. '
+                        .'Requiere autorización de administrador.',
+                        rtrim(rtrim(number_format($porcentaje, 2, '.', ''), '0'), '.')
+                    ));
+                }
+
+                $total = round(max($subtotal - $descuento, 0), 2);
+
+                // R-VD-RF-04: falla de negocio, nunca 500.
+                // Se acepta pago de más: `suma(pagos) >= total` es válido porque en
+                // efectivo puede haber vuelto. Solo se rechaza cuando falta dinero.
+                $totalPagado = round(array_sum(array_map(
+                    static fn (array $pago): float => (float) $pago['monto'],
+                    $pagos
+                )), 2);
+
+                if ($totalPagado + 0.001 < $total) {
+                    throw new PagoInsuficienteException(
+                        'El monto pagado no cubre el total de la venta. '
+                        ."Total: {$total}, pagado: {$totalPagado}."
                     );
                 }
-            }
 
-            // El descuento llega como porcentaje (nunca como monto): así el
-            // cliente no puede alterar la base de cálculo.
-            $porcentaje = round((float) ($meta['descuento_porcentaje'] ?? 0), 2);
-            $subtotal = $this->calcularTotal($items, $productos);
+                // R-VD-RF-07: los números de serie se validan dentro de la transacción.
+                $series = $this->validarSeries($items);
 
-            // Defensa en profundidad: el controller valida 0..100, pero el
-            // servicio es público y un caller directo no debe poder inflar el total.
-            if ($porcentaje < 0 || $porcentaje > 100) {
-                throw new DomainException('El descuento debe estar entre 0 y 100 %.');
-            }
-
-            $descuento = round($subtotal * $porcentaje / 100, 2);
-
-            // D1: el límite del rol se valida acá adentro, con el MISMO $subtotal
-            // y el MISMO $descuento que producen $total. Antes el controller
-            // validaba con un subtotal leído fuera de la transacción, así que un
-            // cambio de precio en el medio dejaba validar con una base y aplicar
-            // con otra (TOCTOU).
-            $rolDescuento = $meta['rol_descuento'] ?? null;
-
-            if ($porcentaje > 0
-                && $rolDescuento !== null
-                && ! $this->descuento->validar($rolDescuento, $descuento, $subtotal)) {
-                throw new DomainException(sprintf(
-                    'El descuento de %s %% supera el máximo permitido para tu rol. '
-                    .'Requiere autorización de administrador.',
-                    rtrim(rtrim(number_format($porcentaje, 2, '.', ''), '0'), '.')
-                ));
-            }
-
-            $total = round(max($subtotal - $descuento, 0), 2);
-
-            // R-VD-RF-04: falla de negocio, nunca 500.
-            // Se acepta pago de más: `suma(pagos) >= total` es válido porque en
-            // efectivo puede haber vuelto. Solo se rechaza cuando falta dinero.
-            $totalPagado = round(array_sum(array_map(
-                static fn (array $pago): float => (float) $pago['monto'],
-                $pagos
-            )), 2);
-
-            if ($totalPagado + 0.001 < $total) {
-                throw new PagoInsuficienteException(
-                    'El monto pagado no cubre el total de la venta. '
-                    ."Total: {$total}, pagado: {$totalPagado}."
-                );
-            }
-
-            // R-VD-RF-07: los números de serie se validan dentro de la transacción.
-            $series = $this->validarSeries($items);
-
-            $venta = Venta::create([
-                'operacion_id' => $operacionId !== '' ? $operacionId : null,
-                'fecha' => now(),
-                'user_id' => $meta['vendedor_id'],
-                'cliente_id' => $meta['cliente_id'] ?? null,
-                'total' => $total,
-                'descuento' => $descuento,
-                'descuento_porcentaje' => $porcentaje,
-                'autorizado_por' => $meta['autorizado_por'] ?? null,
-                'estado' => 'Pagado',
-            ]);
-
-            foreach ($items as $item) {
-                $producto = $productos[$item['producto_id']];
-
-                DetalleVenta::create([
-                    'venta_id' => $venta->id,
-                    'producto_id' => $producto->id,
-                    'numero_serie_id' => $item['numero_serie_id'] ?? null,
-                    'cantidad' => $item['cantidad'],
-                    'precio_unitario' => $producto->precio_unitario,
-                ]);
-            }
-
-            foreach ($pagos as $pago) {
-                Pago::create([
-                    'venta_id' => $venta->id,
-                    'monto' => $pago['monto'],
-                    'metodo' => $pago['metodo'],
-                    'estado' => 'Completado',
-                    'referencia' => $pago['referencia'] ?? null,
-                ]);
-            }
-
-            // El stock se descuenta después de persistir la venta para que el
-            // motivo del movimiento pueda referenciar el comprobante.
-            foreach ($items as $item) {
-                $this->inventario->ajustarStock(
-                    $productos[$item['producto_id']],
-                    -(int) $item['cantidad'],
-                    'venta',
-                    "Venta #{$venta->id}",
-                    $item['ubicacion_id'] ?? null,
-                    $meta['vendedor_id']
-                );
-            }
-
-            foreach ($series as $serie) {
-                $serie->update([
-                    'estado' => 'vendido',
-                    'venta_id' => $venta->id,
+                $venta = Venta::create([
+                    'operacion_id' => $operacionId !== '' ? $operacionId : null,
+                    'fecha' => now(),
+                    'user_id' => $meta['vendedor_id'],
                     'cliente_id' => $meta['cliente_id'] ?? null,
-                    'fecha_venta' => now(),
-                ]);
-            }
-
-            LogAuditoria::create([
-                'user_id' => $meta['vendedor_id'],
-                'accion' => 'crear_venta',
-                'modelo' => Venta::class,
-                'modelo_id' => $venta->id,
-                'datos_anteriores' => null,
-                'datos_nuevos' => [
                     'total' => $total,
                     'descuento' => $descuento,
                     'descuento_porcentaje' => $porcentaje,
-                    'operacion_id' => $operacionId !== '' ? $operacionId : null,
-                    'cliente_id' => $meta['cliente_id'] ?? null,
-                    'items' => count($items),
-                    'pagos' => count($pagos),
-                ],
-                'ip' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
+                    'autorizado_por' => $meta['autorizado_por'] ?? null,
+                    'estado' => 'Pagado',
+                ]);
 
-            return $venta->load(['detalles', 'pagos']);
-        });
+                foreach ($items as $item) {
+                    $producto = $productos[$item['producto_id']];
+
+                    DetalleVenta::create([
+                        'venta_id' => $venta->id,
+                        'producto_id' => $producto->id,
+                        'numero_serie_id' => $item['numero_serie_id'] ?? null,
+                        'cantidad' => $item['cantidad'],
+                        'precio_unitario' => $producto->precio_unitario,
+                    ]);
+                }
+
+                foreach ($pagos as $pago) {
+                    Pago::create([
+                        'venta_id' => $venta->id,
+                        'monto' => $pago['monto'],
+                        'metodo' => $pago['metodo'],
+                        'estado' => 'Completado',
+                        'referencia' => $pago['referencia'] ?? null,
+                    ]);
+                }
+
+                // El stock se descuenta después de persistir la venta para que el
+                // motivo del movimiento pueda referenciar el comprobante.
+                foreach ($items as $item) {
+                    $this->inventario->ajustarStock(
+                        $productos[$item['producto_id']],
+                        -(int) $item['cantidad'],
+                        'venta',
+                        "Venta #{$venta->id}",
+                        $item['ubicacion_id'] ?? null,
+                        $meta['vendedor_id']
+                    );
+                }
+
+                foreach ($series as $serie) {
+                    $serie->update([
+                        'estado' => 'vendido',
+                        'venta_id' => $venta->id,
+                        'cliente_id' => $meta['cliente_id'] ?? null,
+                        'fecha_venta' => now(),
+                    ]);
+                }
+
+                LogAuditoria::create([
+                    'user_id' => $meta['vendedor_id'],
+                    'accion' => 'crear_venta',
+                    'modelo' => Venta::class,
+                    'modelo_id' => $venta->id,
+                    'datos_anteriores' => null,
+                    'datos_nuevos' => [
+                        'total' => $total,
+                        'descuento' => $descuento,
+                        'descuento_porcentaje' => $porcentaje,
+                        'operacion_id' => $operacionId !== '' ? $operacionId : null,
+                        'cliente_id' => $meta['cliente_id'] ?? null,
+                        'items' => count($items),
+                        'pagos' => count($pagos),
+                    ],
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ]);
+
+                return $venta->load(['detalles', 'pagos']);
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            // La carrera entre el guard y el INSERT la resuelve el UNIQUE de la
+            // DB; acá se traduce a idempotencia en vez de 500.
+            if ($operacionId !== '') {
+                $existente = Venta::where('operacion_id', $operacionId)->first();
+
+                if ($existente !== null) {
+                    return $existente->load(['detalles', 'pagos']);
+                }
+            }
+
+            throw $e;
+        }
     }
 
     /**

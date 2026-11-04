@@ -297,4 +297,91 @@ class VentaServiceTest extends TestCase
         $this->assertSame(4, (int) $this->producto->fresh()->stock);
         $this->assertSame(1, (int) $segundo->fresh()->stock);
     }
+
+    public function test_reintento_con_colision_de_unique_devuelve_la_venta_existente(): void
+    {
+        // El guard del servicio lee una vez y recién después inserta: en
+        // producción dos requests pueden pasar el guard antes de que el primero
+        // commitee. Acá se fuerza esa ventana de forma determinística: un
+        // listener inserta la fila conflictiva desde otra conexión ya commiteada
+        // justo antes del INSERT del servicio.
+        $operacionId = (string) Str::uuid();
+        $conflictoId = null;
+
+        Venta::creating(function (Venta $venta) use ($operacionId, &$conflictoId): void {
+            if ($venta->operacion_id !== $operacionId || $conflictoId !== null) {
+                return;
+            }
+
+            $conflictoId = $this->insertarVentaDesdeOtraConexion($operacionId);
+        });
+
+        [$items, $pagos, $meta] = $this->datos(
+            [],
+            [['metodo' => 'Efectivo', 'monto' => 100]],
+            ['operacion_id' => $operacionId]
+        );
+
+        try {
+            $venta = $this->service->confirmar($items, $pagos, $meta);
+
+            $this->assertNotNull($conflictoId, 'El listener debió insertar la fila conflictiva.');
+            $this->assertSame($conflictoId, $venta->id);
+            $this->assertSame($operacionId, $venta->operacion_id);
+            $this->assertDatabaseCount('ventas', 1);
+
+            // El intento revirtió: el stock se descontó solo en la venta original.
+            $this->assertSame(5, (int) $this->producto->fresh()->stock);
+        } finally {
+            // La fila se commiteó desde otra conexión, así que DatabaseTransactions
+            // no la limpia: se borra a mano para no contaminar el resto de la suite.
+            if ($conflictoId !== null) {
+                $this->borrarVentaDesdeOtraConexion($conflictoId);
+            }
+        }
+    }
+
+    private function insertarVentaDesdeOtraConexion(string $operacionId): int
+    {
+        $pdo = $this->conexionSecundaria();
+
+        // La fila se inserta fuera de la transacción del test para simular la
+        // carrera real: su user_id todavía no está commiteado en la conexión
+        // principal, así que se desactivan los chequeos de FK en esta sesión.
+        // Es session-scoped y se descarta al cerrar la conexión.
+        $pdo->exec('SET session_replication_role = replica');
+
+        // 'Pagado' va como literal: el enum de Postgres no acepta un parámetro
+        // de texto sin cast explícito.
+        $insert = $pdo->prepare(
+            "INSERT INTO ventas (operacion_id, fecha, user_id, total, descuento, descuento_porcentaje, estado, created_at, updated_at)
+             VALUES (:operacion_id, now(), :user_id, 100, 0, 0, 'Pagado', now(), now())
+             RETURNING id"
+        );
+        $insert->execute([
+            'operacion_id' => $operacionId,
+            'user_id' => $this->vendedor->id,
+        ]);
+
+        return (int) $insert->fetchColumn();
+    }
+
+    private function borrarVentaDesdeOtraConexion(int $ventaId): void
+    {
+        $pdo = $this->conexionSecundaria();
+        $delete = $pdo->prepare('DELETE FROM ventas WHERE id = :id');
+        $delete->execute(['id' => $ventaId]);
+    }
+
+    private function conexionSecundaria(): \PDO
+    {
+        $config = config('database.connections.pgsql');
+
+        return new \PDO(
+            sprintf('pgsql:host=%s;port=%s;dbname=%s', $config['host'], $config['port'], $config['database']),
+            $config['username'],
+            $config['password'],
+            [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
+        );
+    }
 }
