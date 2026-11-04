@@ -174,4 +174,52 @@ class DevolucionSchemaTest extends TestCase
         $this->assertDatabaseHas('ventas', ['id' => $venta->id]);
         $this->assertDatabaseHas('devoluciones', ['id' => $devolucion->id]);
     }
+
+    public function test_linea_de_devolucion_no_puede_quedar_sin_cabecera(): void
+    {
+        $categoria = Categoria::create(['nombre' => 'Categoría Huérfanas', 'tipo' => 'Componente']);
+
+        $producto = Producto::create([
+            'categoria_id' => $categoria->id,
+            'nombre' => 'Monitor Huérfanas',
+            'precio_unitario' => 150,
+            'stock' => 3,
+            'umbral_alerta' => 1,
+        ]);
+
+        $venta = Venta::create([
+            'operacion_id' => (string) Str::uuid(),
+            'user_id' => $this->vendedor->id,
+            'total' => 150,
+            'descuento' => 0,
+            'descuento_porcentaje' => 0,
+            'estado' => 'Pagado',
+        ]);
+
+        // El NOT NULL se evalúa antes del trigger de la FK, así que la línea
+        // no necesita existir en detalle_ventas para llegar a la violación.
+        try {
+            DB::transaction(fn () => DevolucionDetalle::create([
+                'devolucion_id' => null,
+                'venta_id' => $venta->id,
+                'producto_id' => $producto->id,
+                'cantidad' => 1,
+                'motivo' => 'Sin cabecera',
+                'monto' => 150,
+            ]));
+
+            $this->fail('Se esperaba QueryException: la línea no puede quedar sin cabecera.');
+        } catch (QueryException $e) {
+            // 23502: not_null_violation.
+            $this->assertSame('23502', $e->getCode());
+        }
+
+        $this->assertDatabaseMissing('devolucion_detalles', ['motivo' => 'Sin cabecera']);
+
+        $confdeltype = DB::table('pg_constraint')
+            ->where('conname', 'devolucion_detalles_devolucion_id_foreign')
+            ->value('confdeltype');
+
+        $this->assertSame('c', $confdeltype, 'La FK debe borrar las líneas con la cabecera (CASCADE).');
+    }
 }
