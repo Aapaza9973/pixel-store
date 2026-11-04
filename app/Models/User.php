@@ -86,6 +86,14 @@ class User extends Authenticatable
         return $this->hasMany(MovimientoStock::class);
     }
 
+    /**
+     * Devoluciones registradas por este usuario.
+     */
+    public function devoluciones(): HasMany
+    {
+        return $this->hasMany(Devolucion::class, 'user_id');
+    }
+
     // TODO(sprint-2): crear modelo Venta
     // public function ventas(): HasMany
     // {

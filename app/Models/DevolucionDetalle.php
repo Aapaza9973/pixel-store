@@ -13,13 +13,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property int|null $devolucion_id
+ * @property int|null $venta_detalle_id
  * @property int $venta_id
  * @property int $producto_id
  * @property int|null $numero_serie_id
  * @property int $cantidad
  * @property string $motivo
  * @property string $estado
- * @property string|null $monto_reembolso
+ * @property string|null $monto Monto devuelto por esta línea
  */
 class DevolucionDetalle extends Model
 {
@@ -28,18 +29,23 @@ class DevolucionDetalle extends Model
     protected $table = 'devolucion_detalles';
 
     protected $fillable = [
-        'devolucion_id', 'venta_id', 'producto_id', 'numero_serie_id',
-        'cantidad', 'motivo', 'estado', 'monto_reembolso', 'user_id',
+        'devolucion_id', 'venta_detalle_id', 'venta_id', 'producto_id', 'numero_serie_id',
+        'cantidad', 'motivo', 'estado', 'monto', 'user_id',
     ];
 
     protected $casts = [
         'cantidad' => 'integer',
-        'monto_reembolso' => 'decimal:2',
+        'monto' => 'decimal:2',
     ];
 
     public function devolucion(): BelongsTo
     {
         return $this->belongsTo(Devolucion::class, 'devolucion_id');
+    }
+
+    public function ventaDetalle(): BelongsTo
+    {
+        return $this->belongsTo(DetalleVenta::class, 'venta_detalle_id');
     }
 
     public function venta(): BelongsTo

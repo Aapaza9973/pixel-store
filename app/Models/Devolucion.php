@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $venta_id
  * @property int $user_id
  * @property string $motivo
- * @property string $estado pendiente|aprobada|rechazada
+ * @property string $estado procesada|anulada (5.15 agrega parcial|total)
  * @property string $total_devuelto
  */
 class Devolucion extends Model
@@ -39,7 +39,7 @@ class Devolucion extends Model
         return $this->belongsTo(Venta::class, 'venta_id');
     }
 
-    public function usuario(): BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
@@ -49,8 +49,13 @@ class Devolucion extends Model
         return $this->hasMany(DevolucionDetalle::class, 'devolucion_id');
     }
 
-    public function estaAprobada(): bool
+    public function estaProcesada(): bool
     {
-        return $this->estado === 'aprobada';
+        return $this->estado === 'procesada';
+    }
+
+    public function estaAnulada(): bool
+    {
+        return $this->estado === 'anulada';
     }
 }
