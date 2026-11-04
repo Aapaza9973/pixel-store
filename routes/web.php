@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\DevolucionController;
 use App\Http\Controllers\Admin\InventarioController;
+use App\Http\Controllers\Admin\OrdenCompraController;
 use App\Http\Controllers\Admin\ProductoController;
 use App\Http\Controllers\Admin\ProductoImagenController;
 use App\Http\Controllers\Admin\ProveedorController;
@@ -113,6 +114,10 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
 
             Route::resource('proveedores', ProveedorController::class)
                 ->parameters(['proveedores' => 'proveedor']);
+
+            // 3.4.11-3.4.12: PDF de la orden de compra.
+            Route::get('compras/{orden}/pdf', [OrdenCompraController::class, 'pdf'])
+                ->name('compras.pdf');
 
             Route::post('productos/{producto}/imagenes', [ProductoImagenController::class, 'store'])
                 ->name('productos.imagenes.store');
