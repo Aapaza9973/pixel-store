@@ -108,11 +108,13 @@ class User extends Authenticatable
     //     return $this->hasMany(Venta::class);
     // }
 
-    // TODO(sprint-2): crear modelo CierreCaja
-    // public function cierresCaja(): HasMany
-    // {
-    //     return $this->hasMany(CierreCaja::class);
-    // }
+    /**
+     * Cierres de caja registrados por este usuario.
+     */
+    public function cierresCaja(): HasMany
+    {
+        return $this->hasMany(CierreCaja::class, 'user_id');
+    }
 
     // ============ SCOPES ============
 
