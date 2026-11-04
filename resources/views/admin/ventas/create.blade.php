@@ -321,7 +321,7 @@
 
                         <p x-show="autorizacionId" x-cloak class="mt-2 font-body-sm text-body-sm text-emerald-400">
                             Descuento autorizado<span x-show="autorizacionAdmin" x-text="' por ' + autorizacionAdmin"></span>.
-                            Se aplicará al confirmar la venta.
+                            Autorización registrada.
                         </p>
                     </div>
                 </div>

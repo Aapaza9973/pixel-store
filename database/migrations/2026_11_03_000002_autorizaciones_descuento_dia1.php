@@ -21,7 +21,10 @@ use Illuminate\Support\Facades\Schema;
  *  - `monto` -> `monto_descuento` DECIMAL(10,2) y `motivo` TEXT.
  *  - `venta_id` pasa a NULLABLE: todavía no hay venta cuando se autoriza.
  *  - UNIQUE parcial (operacion_id) WHERE venta_id IS NULL: una operación no
- *    puede tener dos autorizaciones pendientes.
+ *    puede tener dos autorizaciones pendientes. El índice NO cubre las ya
+ *    enlazadas a una venta; qué hacer con una segunda autorización para el
+ *    mismo `operacion_id` (reusarla o rechazarla) se define en 5.11.5, cuando
+ *    la confirmación enlaza la autorización con la venta.
  *
  * La tabla está vacía en las bases del repo (verificado), por eso las columnas
  * nuevas pueden ser NOT NULL sin backfill.

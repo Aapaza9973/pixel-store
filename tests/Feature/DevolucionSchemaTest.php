@@ -12,7 +12,9 @@ use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -109,5 +111,67 @@ class DevolucionSchemaTest extends TestCase
         $this->assertTrue($detalle->ventaDetalle->is($detalleVenta));
         $this->assertSame('150.00', $detalle->monto);
         $this->assertSame(1, $devolucion->fresh()->detalles()->count());
+    }
+
+    public function test_borrar_venta_con_devoluciones_es_rechazado(): void
+    {
+        $categoria = Categoria::create(['nombre' => 'Categoría Trazabilidad', 'tipo' => 'Componente']);
+
+        $producto = Producto::create([
+            'categoria_id' => $categoria->id,
+            'nombre' => 'Monitor Trazabilidad',
+            'precio_unitario' => 150,
+            'stock' => 3,
+            'umbral_alerta' => 1,
+        ]);
+
+        $venta = Venta::create([
+            'operacion_id' => (string) Str::uuid(),
+            'user_id' => $this->vendedor->id,
+            'total' => 150,
+            'descuento' => 0,
+            'descuento_porcentaje' => 0,
+            'estado' => 'Pagado',
+        ]);
+
+        $detalleVenta = DetalleVenta::create([
+            'venta_id' => $venta->id,
+            'producto_id' => $producto->id,
+            'cantidad' => 1,
+            'precio_unitario' => 150,
+        ]);
+
+        $devolucion = Devolucion::create([
+            'operacion_id' => (string) Str::uuid(),
+            'venta_id' => $venta->id,
+            'user_id' => $this->vendedor->id,
+            'motivo' => 'Producto con falla',
+            'estado' => 'procesada',
+            'total_devuelto' => 150,
+        ]);
+
+        DevolucionDetalle::create([
+            'devolucion_id' => $devolucion->id,
+            'venta_detalle_id' => $detalleVenta->id,
+            'venta_id' => $venta->id,
+            'producto_id' => $producto->id,
+            'cantidad' => 1,
+            'motivo' => 'Falla',
+            'monto' => 150,
+        ]);
+
+        // En Postgres, un DELETE que viola la FK aborta la transacción (25P02).
+        // DB::transaction usa un savepoint, así que después del catch la
+        // conexión sigue usable para las aserciones.
+        try {
+            DB::transaction(fn () => DB::table('ventas')->where('id', $venta->id)->delete());
+
+            $this->fail('Se esperaba QueryException: la venta tiene devoluciones.');
+        } catch (QueryException $e) {
+            $this->assertStringContainsString('foreign key', strtolower($e->getMessage()));
+        }
+
+        $this->assertDatabaseHas('ventas', ['id' => $venta->id]);
+        $this->assertDatabaseHas('devoluciones', ['id' => $devolucion->id]);
     }
 }

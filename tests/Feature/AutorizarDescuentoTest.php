@@ -106,6 +106,27 @@ class AutorizarDescuentoTest extends TestCase
         $this->assertDatabaseCount('autorizaciones_descuento', 0);
     }
 
+    public function test_admin_inactivo_no_puede_autorizar(): void
+    {
+        // Auth::validate() no mira `activo`: el chequeo vive en el endpoint.
+        $adminInactivo = User::factory()->create([
+            'email' => 'admin.inactivo@pixelstore.com',
+            'activo' => false,
+        ]);
+        $adminInactivo->assignRole('Admin');
+
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.autorizar-descuento'),
+            $this->payload(['email' => $adminInactivo->email])
+        );
+
+        $response->assertForbidden();
+        $this->assertStringContainsString('desactivado', (string) $response->json('message'));
+
+        $this->assertDatabaseCount('autorizaciones_descuento', 0);
+        $this->assertSame($this->vendedor->id, Auth::id());
+    }
+
     public function test_rate_limit_bloquea_tras_5_intentos(): void
     {
         $url = route('admin.ventas.autorizar-descuento');

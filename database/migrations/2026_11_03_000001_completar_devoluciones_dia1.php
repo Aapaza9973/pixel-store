@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\Schema;
  *  - líneas: `venta_detalle_id` -> detalle_ventas (RESTRICT: no se puede borrar
  *    una línea vendida si tiene devoluciones), `monto` e índices.
  *
+ * `devolucion_detalles.estado` sigue con el enum viejo
+ * (Pendiente/Aprobada/Rechazada) hasta 5.15, que define los estados
+ * parcial/total y unifica el estado de las líneas en `devoluciones`.
+ *
  * Es idempotente: todos los pasos están guardados por hasColumn/hasIndex o por
  * DROP ... IF EXISTS, así que puede correr sobre una base creada desde el dump
  * canónico o sobre una migrada.

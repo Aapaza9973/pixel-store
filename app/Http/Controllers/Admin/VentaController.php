@@ -111,6 +111,16 @@ class VentaController extends Controller
             ], 403);
         }
 
+        // Auth::validate() solo valida email+password: no mira `activo` (eso lo
+        // hace el middleware user.active, y solo para el usuario autenticado).
+        // Se chequea acá, después del rol, para que el mensaje sea informativo.
+        if (! $admin->activo) {
+            return response()->json([
+                'message' => 'El administrador está desactivado.',
+                'code' => 'admin_inactivo',
+            ], 403);
+        }
+
         $autorizacion = AutorizacionDescuento::create([
             'operacion_id' => $datos['operacion_id'],
             // La venta todavía no existe: se enlaza al confirmar (5.11.5).
