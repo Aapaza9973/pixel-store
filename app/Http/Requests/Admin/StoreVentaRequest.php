@@ -42,6 +42,8 @@ class StoreVentaRequest extends FormRequest
 
             'descuento_porcentaje' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'autorizado_por' => ['nullable', 'integer', 'exists:users,id'],
+            // Autorización pendiente (HU-5.11) que cubre el descuento pedido.
+            'autorizacion_id' => ['nullable', 'integer', 'exists:autorizaciones_descuento,id'],
         ];
     }
 
@@ -67,6 +69,8 @@ class StoreVentaRequest extends FormRequest
             'meta.cliente_id.exists' => 'El cliente seleccionado no existe.',
             'meta.vendedor_id.exists' => 'El vendedor seleccionado no existe.',
             'autorizado_por.exists' => 'El usuario autorizante no existe.',
+            'autorizacion_id.integer' => 'La autorización de descuento no es válida.',
+            'autorizacion_id.exists' => 'La autorización de descuento no existe.',
         ];
     }
 

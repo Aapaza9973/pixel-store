@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\AutorizacionDescuento;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Marca;
@@ -414,6 +415,132 @@ class StoreVentaTest extends TestCase
 
         $this->assertNotNull($indice, 'ventas.operacion_id debe tener un índice UNIQUE.');
         $this->assertStringContainsString('operacion_id', $indice->indexdef);
+    }
+
+    /**
+     * Crea la autorización pendiente como la deja 5.11.4 (POST autorizar-descuento).
+     */
+    private function crearAutorizacion(string $operacionId, float $porcentaje = 20, float $monto = 200): AutorizacionDescuento
+    {
+        $admin = User::where('email', 'admin@pixelstore.com')->firstOrFail();
+
+        return AutorizacionDescuento::create([
+            'operacion_id' => $operacionId,
+            'venta_id' => null,
+            'admin_id' => $admin->id,
+            'vendedor_id' => $this->vendedor->id,
+            'monto_descuento' => $monto,
+            'descuento_porcentaje' => $porcentaje,
+            'motivo' => 'Cliente frecuente',
+        ]);
+    }
+
+    public function test_descuento_autorizado_se_aplica_al_confirmar(): void
+    {
+        $operacionId = (string) Str::uuid();
+        $autorizacion = $this->crearAutorizacion($operacionId);
+        $admin = User::where('email', 'admin@pixelstore.com')->firstOrFail();
+
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'meta' => ['operacion_id' => $operacionId],
+                'descuento_porcentaje' => 20,
+                'pagos' => [['metodo' => 'Efectivo', 'monto' => 800]],
+                'autorizacion_id' => $autorizacion->id,
+            ])
+        );
+
+        $response->assertCreated();
+
+        $venta = Venta::findOrFail($response->json('venta.id'));
+
+        $this->assertSame('20.00', $venta->descuento_porcentaje);
+        $this->assertSame('200.00', $venta->descuento);
+        $this->assertSame(800.0, (float) $venta->total);
+        $this->assertSame($admin->id, (int) $venta->autorizado_por);
+        $this->assertSame($venta->id, (int) $autorizacion->fresh()->venta_id);
+    }
+
+    public function test_descuento_sobre_limite_sin_autorizacion_sigue_422(): void
+    {
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'descuento_porcentaje' => 20,
+                'pagos' => [['metodo' => 'Efectivo', 'monto' => 800]],
+                'autorizacion_id' => null,
+            ])
+        );
+
+        $response->assertStatus(422);
+        $this->assertStringContainsString(
+            'Requiere autorización de administrador',
+            (string) $response->json('message')
+        );
+
+        $this->assertSame(0, Venta::count());
+        $this->assertSame(5, (int) $this->producto->fresh()->stock);
+    }
+
+    public function test_autorizacion_de_otra_operacion_es_rechazada(): void
+    {
+        $autorizacion = $this->crearAutorizacion((string) Str::uuid());
+
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'meta' => ['operacion_id' => (string) Str::uuid()],
+                'descuento_porcentaje' => 20,
+                'pagos' => [['metodo' => 'Efectivo', 'monto' => 800]],
+                'autorizacion_id' => $autorizacion->id,
+            ])
+        );
+
+        $response->assertStatus(422);
+        $this->assertStringContainsString('otra operación', (string) $response->json('message'));
+
+        $this->assertSame(0, Venta::count());
+        $this->assertNull($autorizacion->fresh()->venta_id);
+        $this->assertSame(5, (int) $this->producto->fresh()->stock);
+    }
+
+    public function test_autorizacion_ya_usada_es_rechazada(): void
+    {
+        $operacionId = (string) Str::uuid();
+        $autorizacion = $this->crearAutorizacion($operacionId);
+
+        $payload = $this->payload([
+            'meta' => ['operacion_id' => $operacionId],
+            'descuento_porcentaje' => 20,
+            'pagos' => [['metodo' => 'Efectivo', 'monto' => 800]],
+            'autorizacion_id' => $autorizacion->id,
+        ]);
+
+        $primera = $this->actingAs($this->vendedor)->postJson(route('admin.ventas.store'), $payload);
+        $primera->assertCreated();
+
+        // Reintento con la MISMA operación: idempotencia, no nueva venta.
+        $segunda = $this->actingAs($this->vendedor)->postJson(route('admin.ventas.store'), $payload);
+        $segunda->assertCreated();
+        $this->assertSame($primera->json('venta.id'), $segunda->json('venta.id'));
+        $this->assertSame(1, Venta::count());
+
+        // Otra operación con la misma autorización: ya fue consumida.
+        $tercera = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload([
+                'meta' => ['operacion_id' => (string) Str::uuid()],
+                'descuento_porcentaje' => 20,
+                'pagos' => [['metodo' => 'Efectivo', 'monto' => 800]],
+                'autorizacion_id' => $autorizacion->id,
+            ])
+        );
+
+        $tercera->assertStatus(422);
+        $this->assertStringContainsString('ya fue utilizada', (string) $tercera->json('message'));
+        $this->assertSame(1, Venta::count());
+        $this->assertSame((int) $primera->json('venta.id'), (int) $autorizacion->fresh()->venta_id);
     }
 
     public function test_idempotencia_100_reintentos_crea_una_sola_venta(): void

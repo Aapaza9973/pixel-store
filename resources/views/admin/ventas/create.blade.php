@@ -307,7 +307,7 @@
                                    class="col-span-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-label-md text-label-md tabular-nums text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
                         </div>
 
-                        <p x-show="descuentoExcedeLimite" x-cloak
+                        <p x-show="descuentoExcedeLimite && ! autorizacionId" x-cloak
                            class="mt-2 font-body-sm text-body-sm text-amber-400">
                             Descuento requiere autorización de administrador.
                         </p>
@@ -774,9 +774,15 @@
                 return this.descuentoPorcentaje > this.descuentoMaximo + 0.0001;
             },
 
-            // Sin autorización de admin (HU-5.11) el descuento no se aplica.
+            // Sin autorización de admin (HU-5.11) el descuento no se aplica; con
+            // autorización registrada sí, para que el total y el vuelto sean los
+            // que el servidor va a confirmar.
             get descuentoAplicado() {
-                return this.descuentoExcedeLimite ? 0 : this.descuentoMonto;
+                if (! this.descuentoExcedeLimite) {
+                    return this.descuentoMonto;
+                }
+
+                return this.autorizacionId ? this.descuentoMonto : 0;
             },
 
             get total() {
@@ -1257,6 +1263,7 @@
                                 cliente_id: this.cliente?.id ?? null,
                             },
                             descuento_porcentaje: this.porcentajeParaEnviar,
+                            autorizacion_id: this.autorizacionId || null,
                         }),
                     });
 
@@ -1269,6 +1276,8 @@
                         this.items = [];
                         this.pagos = [];
                         this.descuento = { tipo: '%', valor: 0 };
+                        this.autorizacionId = null;
+                        this.autorizacionAdmin = null;
                         this.operacionId = this.nuevaOperacion();
 
                         await this.$nextTick();

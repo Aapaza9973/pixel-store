@@ -8,6 +8,7 @@ use App\Exceptions\DomainException;
 use App\Exceptions\PagoInsuficienteException;
 use App\Exceptions\SerieNoDisponibleException;
 use App\Exceptions\StockInsuficienteException;
+use App\Models\AutorizacionDescuento;
 use App\Models\DetalleVenta;
 use App\Models\LogAuditoria;
 use App\Models\Pago;
@@ -52,9 +53,13 @@ class VentaService
      * precio). Si es null no se valida límite: es un caller interno de
      * confianza; el camino HTTP siempre pasa el rol del autenticado.
      *
+     * `meta['autorizacion_id']` (5.11.5): autorización pendiente de un admin. Solo
+     * se consume cuando el descuento excede el límite del rol; dentro del límite
+     * se ignora, igual que un descuento de 0 %.
+     *
      * @param  array<int, array{producto_id:int, cantidad:int, numero_serie_id?:?int, ubicacion_id?:?int}>  $items
      * @param  array<int, array{metodo:'Efectivo'|'Tarjeta'|'Transferencia'|'QR'|'Otro', monto:float, referencia?:?string}>  $pagos
-     * @param  array{cliente_id?:?int, vendedor_id:int, operacion_id:string, descuento_porcentaje?:float|int|string, autorizado_por?:?int, rol_descuento?:?string}  $meta
+     * @param  array{cliente_id?:?int, vendedor_id:int, operacion_id:string, descuento_porcentaje?:float|int|string, autorizado_por?:?int, autorizacion_id?:?int, rol_descuento?:?string}  $meta
      *
      * @throws StockInsuficienteException
      * @throws SerieNoDisponibleException
@@ -116,15 +121,30 @@ class VentaService
                 // cambio de precio en el medio dejaba validar con una base y aplicar
                 // con otra (TOCTOU).
                 $rolDescuento = $meta['rol_descuento'] ?? null;
+                $autorizacion = null;
 
                 if ($porcentaje > 0
                     && $rolDescuento !== null
                     && ! $this->descuento->validar($rolDescuento, $descuento, $subtotal)) {
-                    throw new DomainException(sprintf(
-                        'El descuento de %s %% supera el máximo permitido para tu rol. '
-                        .'Requiere autorización de administrador.',
-                        rtrim(rtrim(number_format($porcentaje, 2, '.', ''), '0'), '.')
-                    ));
+                    $autorizacionId = $meta['autorizacion_id'] ?? null;
+
+                    if ($autorizacionId === null) {
+                        throw new DomainException(sprintf(
+                            'El descuento de %s %% supera el máximo permitido para tu rol. '
+                            .'Requiere autorización de administrador.',
+                            rtrim(rtrim(number_format($porcentaje, 2, '.', ''), '0'), '.')
+                        ));
+                    }
+
+                    // 5.11.5: el admin autorizó ESTE porcentaje y ESTE monto para
+                    // ESTA operación. Todo se verifica bajo lock porque dos cajas
+                    // podrían intentar consumir la misma autorización.
+                    $autorizacion = $this->resolverAutorizacion(
+                        (int) $autorizacionId,
+                        $porcentaje,
+                        $descuento,
+                        $operacionId
+                    );
                 }
 
                 $total = round(max($subtotal - $descuento, 0), 2);
@@ -155,9 +175,16 @@ class VentaService
                     'total' => $total,
                     'descuento' => $descuento,
                     'descuento_porcentaje' => $porcentaje,
-                    'autorizado_por' => $meta['autorizado_por'] ?? null,
+                    'autorizado_por' => $autorizacion?->admin_id ?? ($meta['autorizado_por'] ?? null),
                     'estado' => 'Pagado',
                 ]);
+
+                // La autorización se consume en la misma transacción: un reintento
+                // con la misma operación devuelve esta venta (idempotencia) y otra
+                // operación ya no puede reutilizarla.
+                if ($autorizacion !== null) {
+                    $autorizacion->update(['venta_id' => $venta->id]);
+                }
 
                 foreach ($items as $item) {
                     $producto = $productos[$item['producto_id']];
@@ -237,6 +264,50 @@ class VentaService
 
             throw $e;
         }
+    }
+
+    /**
+     * Valida y bloquea la autorización de descuento pendiente (5.11.5).
+     *
+     * Debe ser de la misma operación, no estar consumida por otra venta y
+     * coincidir con el porcentaje y el monto que se van a aplicar. Cualquier
+     * desvío es una regla de negocio (422), nunca un 500.
+     */
+    private function resolverAutorizacion(
+        int $autorizacionId,
+        float $porcentaje,
+        float $descuento,
+        string $operacionId
+    ): AutorizacionDescuento {
+        $autorizacion = AutorizacionDescuento::whereKey($autorizacionId)
+            ->lockForUpdate()
+            ->first();
+
+        if ($autorizacion === null || ! $autorizacion->estaPendiente()) {
+            throw new DomainException(
+                'La autorización de descuento no existe o ya fue utilizada. '
+                .'Solicitá una nueva autorización de administrador.'
+            );
+        }
+
+        if ($operacionId === '' || (string) $autorizacion->operacion_id !== $operacionId) {
+            throw new DomainException(
+                'La autorización de descuento pertenece a otra operación. '
+                .'Solicitá una nueva autorización de administrador.'
+            );
+        }
+
+        // Epsilon de un centavo: el POS calcula el monto en JavaScript y el
+        // servicio con los precios de la base; el redondeo no debe rechazar.
+        if (abs((float) $autorizacion->descuento_porcentaje - $porcentaje) > 0.01
+            || abs((float) $autorizacion->monto_descuento - $descuento) > 0.01) {
+            throw new DomainException(
+                'La autorización de descuento no coincide con el descuento aplicado. '
+                .'Solicitá una nueva autorización de administrador.'
+            );
+        }
+
+        return $autorizacion;
     }
 
     /**

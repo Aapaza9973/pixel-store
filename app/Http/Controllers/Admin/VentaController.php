@@ -60,6 +60,9 @@ class VentaController extends Controller
                 'operacion_id' => $this->normalizarOperacionId($datos['meta']['operacion_id'] ?? null),
                 'descuento_porcentaje' => $porcentaje,
                 'autorizado_por' => $datos['autorizado_por'] ?? null,
+                // 5.11.5: si el descuento excede el límite del rol, esta
+                // autorización (creada en 5.11.4) lo habilita dentro del servicio.
+                'autorizacion_id' => $datos['autorizacion_id'] ?? null,
                 // El límite aplica al rol AUTENTICADO, no a meta.vendedor_id.
                 'rol_descuento' => $request->user()->roles->first()?->name,
             ]);
