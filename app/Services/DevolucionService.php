@@ -8,6 +8,7 @@ use App\Exceptions\DomainException;
 use App\Models\DetalleVenta;
 use App\Models\Devolucion;
 use App\Models\DevolucionDetalle;
+use App\Models\Producto;
 use App\Models\Venta;
 use Illuminate\Support\Facades\DB;
 
@@ -15,13 +16,14 @@ use Illuminate\Support\Facades\DB;
  * Registro de devoluciones (HU-5.14).
  *
  * Una devolución es una cabecera (`devoluciones`) con una línea por producto
- * devuelto (`devolucion_detalles`). El stock y los números de serie NO se tocan
- * acá: 5.14.6 y 5.14.7 lo hacen en el Día 3, de modo que este servicio pueda
- * registrar la devolución aunque el reingreso falle y reintentarse sin doble
- * efecto.
+ * devuelto (`devolucion_detalles`). Todo ocurre en una sola transacción: la
+ * cabecera, el reingreso de stock, la liberación del número de serie y el
+ * estado de la venta.
  */
 class DevolucionService
 {
+    public function __construct(private readonly InventoryService $inventario) {}
+
     /**
      * Registra una devolución validando que no se devuelva más de lo vendido.
      *
@@ -125,8 +127,58 @@ class DevolucionService
                 ]);
             }
 
+            $this->reingresarStock($devolucion, $userId);
+            $this->actualizarEstadoVenta($venta, $devolucion);
+
             return $devolucion->load('detalles');
         });
+    }
+
+    /**
+     * 5.14.6 y 5.14.7: devuelve al stock cada línea y libera su número de serie.
+     */
+    private function reingresarStock(Devolucion $devolucion, int $userId): void
+    {
+        foreach ($devolucion->detalles()->with('ventaDetalle.numeroSerie')->get() as $linea) {
+            $producto = Producto::whereKey($linea->producto_id)->firstOrFail();
+
+            $this->inventario->ajustarStock(
+                $producto,
+                (int) $linea->cantidad,
+                'devolucion',
+                "Devolución #{$devolucion->id}",
+                null,
+                $userId
+            );
+
+            $serie = $linea->ventaDetalle?->numeroSerie;
+
+            if ($serie !== null) {
+                $serie->update([
+                    'estado' => 'disponible',
+                    'venta_id' => null,
+                    'fecha_venta' => null,
+                    'cliente_id' => null,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * 5.15.3: 'totalmente_devuelta' si lo devuelto cubre el total; si no, 'parcialmente_devuelta'.
+     */
+    private function actualizarEstadoVenta(Venta $venta, Devolucion $devolucion): void
+    {
+        $devuelto = (float) Devolucion::query()
+            ->where('venta_id', $venta->id)
+            ->where('estado', '!=', 'anulada')
+            ->sum('total_devuelto');
+
+        $venta->update([
+            'estado' => $devuelto >= (float) $venta->total - 0.01
+                ? 'totalmente_devuelta'
+                : 'parcialmente_devuelta',
+        ]);
     }
 
     /**

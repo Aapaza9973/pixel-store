@@ -100,8 +100,8 @@ class DevolucionServiceTest extends TestCase
         $this->assertSame('500.00', $linea->monto);
         $this->assertSame('Pendiente', $linea->estado);
 
-        // 5.14.6 es Día 3: acá el stock no se mueve.
-        $this->assertSame(10, (int) $this->producto->fresh()->stock);
+        // Desde 5.14.6 la devolución reingresa el stock: 10 + 2 devueltas = 12.
+        $this->assertSame(12, (int) $this->producto->fresh()->stock);
     }
 
     public function test_devolucion_parcial_acumula_hasta_lo_vendido(): void
