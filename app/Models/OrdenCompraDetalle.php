@@ -7,6 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Línea de orden de compra (tabla canónica `orden_compra_items`).
@@ -50,5 +51,10 @@ class OrdenCompraDetalle extends Model
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class);
+    }
+
+    public function recepcionItems(): HasMany
+    {
+        return $this->hasMany(OrdenCompraRecepcionItem::class, 'orden_compra_item_id');
     }
 }

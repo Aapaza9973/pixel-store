@@ -6,6 +6,9 @@ namespace App\Services;
 
 use App\Exceptions\DomainException;
 use App\Models\OrdenCompra;
+use App\Models\OrdenCompraDetalle;
+use App\Models\OrdenCompraRecepcion;
+use App\Models\OrdenCompraRecepcionItem;
 use App\Models\Proveedor;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -118,6 +121,119 @@ class OrdenCompraService
 
             return $orden->load('detalles.producto');
         });
+    }
+
+    /**
+     * Registra una recepción (parcial o total) de la orden y suma el stock de
+     * cada línea recibida (3.4.7).
+     *
+     * Solo se puede recibir una orden ya enviada al proveedor ('enviada') o con
+     * recepciones previas ('recibida_parcial'). Un 'borrador' no se pidió, así
+     * que no tiene nada que recibir.
+     *
+     * @param  array<int, array{orden_compra_item_id:int|string, cantidad:int|string}>  $items
+     * @param  array{notas?: string|null}  $datos
+     *
+     * @throws DomainException
+     */
+    public function recibir(OrdenCompra $orden, User $user, array $items, array $datos = []): OrdenCompraRecepcion
+    {
+        if (! in_array($orden->estado, ['enviada', 'recibida_parcial'], true)) {
+            throw new DomainException('Solo se pueden recibir órdenes enviadas o recibidas parcialmente.');
+        }
+
+        if ($items === []) {
+            throw new DomainException('La recepción necesita al menos un ítem.');
+        }
+
+        return DB::transaction(function () use ($orden, $user, $items, $datos) {
+            // Bloquea la orden para que dos recepciones simultáneas no superen lo pedido.
+            $orden = OrdenCompra::whereKey($orden->id)->lockForUpdate()->firstOrFail();
+
+            $inventario = app(InventoryService::class);
+            $lineas = [];
+
+            foreach ($items as $item) {
+                $itemId = (int) ($item['orden_compra_item_id'] ?? 0);
+                $cantidad = (int) ($item['cantidad'] ?? 0);
+
+                if ($cantidad <= 0) {
+                    throw new DomainException('La cantidad a recibir debe ser mayor que cero.');
+                }
+
+                $linea = OrdenCompraDetalle::where('orden_compra_id', $orden->id)
+                    ->whereKey($itemId)
+                    ->first();
+
+                if ($linea === null) {
+                    throw new DomainException('Una de las líneas no pertenece a esta orden.');
+                }
+
+                $pendiente = (int) $linea->cantidad - $this->recibidoDe($linea);
+
+                if ($cantidad > $pendiente) {
+                    $producto = $linea->producto?->nombre ?? 'el producto';
+
+                    throw new DomainException("Solo faltan {$pendiente} unidades por recibir de {$producto}.");
+                }
+
+                $lineas[] = ['linea' => $linea, 'cantidad' => $cantidad];
+            }
+
+            $recepcion = OrdenCompraRecepcion::create([
+                'orden_id' => $orden->id,
+                'user_id' => $user->id,
+                'fecha_recepcion' => now(),
+                'notas' => $datos['notas'] ?? null,
+            ]);
+
+            foreach ($lineas as ['linea' => $linea, 'cantidad' => $cantidad]) {
+                OrdenCompraRecepcionItem::create([
+                    'recepcion_id' => $recepcion->id,
+                    'orden_compra_item_id' => $linea->id,
+                    'cantidad' => $cantidad,
+                ]);
+
+                $inventario->ajustarStock(
+                    $linea->producto,
+                    $cantidad,
+                    'entrada',
+                    "Recepción OC {$orden->numero}",
+                    null,
+                    $user->id
+                );
+            }
+
+            $this->actualizarEstado($orden);
+
+            return $recepcion->load('items.ordenCompraItem.producto');
+        });
+    }
+
+    /**
+     * Unidades ya recibidas de una línea, sumando todas las recepciones.
+     */
+    public function recibidoDe(OrdenCompraDetalle $item): int
+    {
+        return (int) OrdenCompraRecepcionItem::where('orden_compra_item_id', $item->id)->sum('cantidad');
+    }
+
+    /**
+     * 'recibida_total' si todas las líneas están completas; 'recibida_parcial' si
+     * alguna tiene unidades recibidas.
+     */
+    private function actualizarEstado(OrdenCompra $orden): void
+    {
+        $lineas = $orden->detalles()->get();
+
+        $todasCompletas = $lineas->every(fn (OrdenCompraDetalle $linea) => $this->recibidoDe($linea) >= (int) $linea->cantidad);
+        $algunaRecibida = $lineas->contains(fn (OrdenCompraDetalle $linea) => $this->recibidoDe($linea) > 0);
+
+        if ($todasCompletas) {
+            $orden->update(['estado' => 'recibida_total']);
+        } elseif ($algunaRecibida) {
+            $orden->update(['estado' => 'recibida_parcial']);
+        }
     }
 
     /**
