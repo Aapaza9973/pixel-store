@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\VentaController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FavoritoController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
@@ -28,6 +29,10 @@ Route::get('/preview', [PreviewController::class, 'index'])->name('preview');
 
 // Catálogo público (Sprint 2). Layout público definitivo: Día 2+.
 Route::get('/producto/{slug}', [CatalogoController::class, 'show'])->name('catalogo.producto');
+
+// Favoritos (2.7.3-2.7.4): sirven para visitantes y usuarios autenticados.
+Route::post('/favoritos/{producto}', [FavoritoController::class, 'toggle'])->name('catalogo.favoritos.toggle');
+Route::get('/favoritos', [FavoritoController::class, 'index'])->name('catalogo.favoritos.index');
 
 Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

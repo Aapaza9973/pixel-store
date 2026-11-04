@@ -106,10 +106,17 @@
                     Stock disponible: {{ (int) $producto->stock }} u.
                 </p>
 
-                <a href="mailto:ventas@pixelstore.com?subject={{ rawurlencode('Consulta: '.$producto->nombre) }}"
-                   class="mt-4 inline-flex items-center gap-2 rounded-obsidian-lg bg-primary-container px-4 py-2.5 text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90">
-                    Consultar disponibilidad
-                </a>
+                <div class="mt-4 flex flex-wrap items-center gap-3">
+                    <a href="mailto:ventas@pixelstore.com?subject={{ rawurlencode('Consulta: '.$producto->nombre) }}"
+                       class="inline-flex items-center gap-2 rounded-obsidian-lg bg-primary-container px-4 py-2.5 text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90">
+                        Consultar disponibilidad
+                    </a>
+
+                    @include('catalogo._boton-favorito', [
+                        'producto' => $producto,
+                        'favorito' => in_array((int) $producto->id, $favoritosIds, true),
+                    ])
+                </div>
             </div>
 
             <div>

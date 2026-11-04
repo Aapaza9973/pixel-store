@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Listeners\FusionarFavoritosAlLogin;
 use App\Listeners\LogFailedLogin;
 use App\Listeners\LogSuccessfulLogin;
 use App\Listeners\LogSuccessfulLogout;
@@ -71,6 +72,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Auditoría de autenticación
         Event::listen(Login::class, LogSuccessfulLogin::class);
+        Event::listen(Login::class, FusionarFavoritosAlLogin::class);
         Event::listen(Failed::class, LogFailedLogin::class);
         Event::listen(Logout::class, LogSuccessfulLogout::class);
     }

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Producto;
+use App\Services\FavoritoService;
 use App\Services\ProductoService;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -16,12 +18,14 @@ use Illuminate\View\View;
  */
 class CatalogoController extends Controller
 {
-    public function __construct(private readonly ProductoService $productos)
-    {
+    public function __construct(
+        private readonly ProductoService $productos,
+        private readonly FavoritoService $favoritos
+    ) {
         //
     }
 
-    public function show(string $slug): View
+    public function show(Request $request, string $slug): View
     {
         // `productos` no tiene columna `activo`: la visibilidad pública se
         // controla con `visible_catalogo` (schema canónico).
@@ -34,6 +38,8 @@ class CatalogoController extends Controller
         $similares = $this->productos->similares($producto);
         $alternativas = $this->productos->alternativas($producto);
 
-        return view('catalogo.producto', compact('producto', 'similares', 'alternativas'));
+        $favoritosIds = $this->favoritos->ids($request->user(), $request->cookie('favoritos_token'));
+
+        return view('catalogo.producto', compact('producto', 'similares', 'alternativas', 'favoritosIds'));
     }
 }
