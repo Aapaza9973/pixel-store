@@ -34,6 +34,14 @@ class OrdenCompraDetalle extends Model
         'subtotal' => 'decimal:2',
     ];
 
+    /**
+     * Alias de `ordenCompra()` con el nombre que pide el contrato del Día 2.
+     */
+    public function orden(): BelongsTo
+    {
+        return $this->ordenCompra();
+    }
+
     public function ordenCompra(): BelongsTo
     {
         return $this->belongsTo(OrdenCompra::class, 'orden_compra_id');
