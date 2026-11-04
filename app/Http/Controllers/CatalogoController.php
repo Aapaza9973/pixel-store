@@ -32,7 +32,8 @@ class CatalogoController extends Controller
             ->firstOrFail();
 
         $similares = $this->productos->similares($producto);
+        $alternativas = $this->productos->alternativas($producto);
 
-        return view('catalogo.producto', compact('producto', 'similares'));
+        return view('catalogo.producto', compact('producto', 'similares', 'alternativas'));
     }
 }

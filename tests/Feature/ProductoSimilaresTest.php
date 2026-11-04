@@ -91,7 +91,18 @@ class ProductoSimilaresTest extends TestCase
         $response->assertSee('Productos similares');
         $response->assertSee('Similar Visible 950');
         $response->assertSee('950,00');
-        $response->assertDontSee('Similar Fuera De Rango');
+        // 2.5.3: este test ya no valida "no aparece en la ficha", porque
+        // "Alternativas" SÍ muestra productos fuera de rango. Sigue validando
+        // que "Similares" excluye correctamente el producto.
+        $html = $response->getContent();
+        $inicioSimilares = strpos($html, 'Productos similares');
+        $inicioAlternativas = strpos($html, '>Alternativas<');
+        $this->assertNotFalse($inicioSimilares);
+        $this->assertNotFalse($inicioAlternativas);
+
+        $bloqueSimilares = substr($html, $inicioSimilares, $inicioAlternativas - $inicioSimilares);
+        $this->assertStringNotContainsString('Similar Fuera De Rango', $bloqueSimilares);
+        $this->assertStringContainsString('Similar Fuera De Rango', substr($html, $inicioAlternativas));
         $response->assertDontSee('se publican en HU-2.5');
     }
 }

@@ -135,29 +135,19 @@
 
             <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
                 @foreach ($similares as $similar)
-                    @php
-                        $imagenSimilar = $similar->imagenesGaleria->firstWhere('es_principal', true)
-                            ?? $similar->imagenesGaleria->first();
-                    @endphp
+                    @include('catalogo._card-producto', ['producto' => $similar])
+                @endforeach
+            </div>
+        </section>
+    @endif
 
-                    <article class="overflow-hidden rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 backdrop-blur-xl">
-                        @if ($imagenSimilar)
-                            <img src="{{ $imagenSimilar->urlThumbnail() }}"
-                                 alt="{{ $imagenSimilar->alt ?? $similar->nombre }}"
-                                 class="aspect-square w-full object-cover">
-                        @else
-                            <div class="flex aspect-square w-full items-center justify-center bg-surface-container-low">
-                                <span class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Sin imagen</span>
-                            </div>
-                        @endif
+    @if ($alternativas->isNotEmpty())
+        <section class="border-t border-outline-variant/30 pt-8">
+            <h2 class="font-headline-md text-headline-md text-on-surface">Alternativas</h2>
 
-                        <div class="space-y-1 p-3">
-                            <p class="line-clamp-2 font-body-sm text-body-sm text-on-surface">{{ $similar->nombre }}</p>
-                            <p class="font-label-md text-label-md tabular-nums text-on-surface">
-                                Bs {{ number_format((float) $similar->precio_unitario, 2, ',', '.') }}
-                            </p>
-                        </div>
-                    </article>
+            <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                @foreach ($alternativas as $alternativa)
+                    @include('catalogo._card-producto', ['producto' => $alternativa])
                 @endforeach
             </div>
         </section>
