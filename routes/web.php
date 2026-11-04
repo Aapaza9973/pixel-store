@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ProductoImagenController;
 use App\Http\Controllers\Admin\ProveedorController;
 use App\Http\Controllers\Admin\UbicacionController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ValidarStockController;
 use App\Http\Controllers\Admin\VentaController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\CatalogoController;
@@ -76,6 +77,10 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
 
             Route::post('ventas', [VentaController::class, 'store'])
                 ->name('ventas.store');
+
+            // 5.4.2: el POS revalida stock antes de confirmar.
+            Route::post('ventas/validar-stock', ValidarStockController::class)
+                ->name('ventas.validar-stock');
 
             // HU-5.11: el vendedor pide que un admin autorice el descuento.
             Route::post('ventas/autorizar-descuento', [VentaController::class, 'autorizarDescuento'])
