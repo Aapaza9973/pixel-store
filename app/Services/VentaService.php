@@ -10,6 +10,7 @@ use App\Exceptions\SerieNoDisponibleException;
 use App\Exceptions\StockInsuficienteException;
 use App\Models\AutorizacionDescuento;
 use App\Models\DetalleVenta;
+use App\Models\Ingreso;
 use App\Models\LogAuditoria;
 use App\Models\Pago;
 use App\Models\Producto;
@@ -177,6 +178,16 @@ class VentaService
                     'descuento_porcentaje' => $porcentaje,
                     'autorizado_por' => $autorizacion?->admin_id ?? ($meta['autorizado_por'] ?? null),
                     'estado' => 'Pagado',
+                ]);
+
+                // 5.13.9: el ingreso económico nace con la venta y en la misma
+                // transacción, para que no exista venta cobrada sin asiento.
+                Ingreso::create([
+                    'venta_id' => $venta->id,
+                    'user_id' => $meta['vendedor_id'] ?? auth()->id(),
+                    'monto' => $total,
+                    'tipo' => 'venta',
+                    'fecha' => now(),
                 ]);
 
                 // La autorización se consume en la misma transacción: un reintento

@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Models\AutorizacionDescuento;
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\Ingreso;
 use App\Models\Marca;
 use App\Models\NumeroSerie;
 use App\Models\Pago;
@@ -187,6 +188,30 @@ class StoreVentaTest extends TestCase
             'id' => $response->json('venta.id'),
             'cliente_id' => $cliente->id,
         ]);
+    }
+
+    public function test_confirmar_registra_ingreso_economico(): void
+    {
+        $response = $this->actingAs($this->vendedor)->postJson(
+            route('admin.ventas.store'),
+            $this->payload()
+        );
+
+        $response->assertCreated();
+
+        $ventaId = $response->json('venta.id');
+
+        $this->assertDatabaseHas('ingresos', [
+            'venta_id' => $ventaId,
+            'user_id' => $this->vendedor->id,
+            'monto' => 1000,
+            'tipo' => 'venta',
+        ]);
+
+        $this->assertSame(
+            (float) Venta::findOrFail($ventaId)->total,
+            (float) Ingreso::where('venta_id', $ventaId)->sum('monto')
+        );
     }
 
     public function test_venta_sin_cliente_id_permite_confirmar(): void
