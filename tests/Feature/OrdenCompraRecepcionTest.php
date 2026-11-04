@@ -136,7 +136,7 @@ class OrdenCompraRecepcionTest extends TestCase
         ]);
 
         $this->expectException(DomainException::class);
-        $this->expectExceptionMessage('Solo faltan 1 unidades por recibir de Teclado Recepción.');
+        $this->expectExceptionMessage('Solo falta 1 unidad por recibir de Teclado Recepción.');
 
         $this->servicio->recibir($orden, $this->inventario, [
             ['orden_compra_item_id' => $lineas[$this->teclado->id], 'cantidad' => 2],

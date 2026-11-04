@@ -130,7 +130,7 @@ class DevolucionServiceTest extends TestCase
 
             $this->fail('Se esperaba DomainException: solo queda 1 unidad por devolver.');
         } catch (DomainException $e) {
-            $this->assertStringContainsString('Solo quedan 1 unidades por devolver', $e->getMessage());
+            $this->assertStringContainsString('Solo queda 1 unidad por devolver', $e->getMessage());
         }
 
         $this->assertSame(2, Devolucion::where('venta_id', $venta->id)->count());

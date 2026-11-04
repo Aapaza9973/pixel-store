@@ -90,6 +90,8 @@ class OrdenCompraService
      *
      * @throws DomainException
      */
+    // Falta el paso "enviar orden" (pasar de 'borrador' a 'enviada'); los
+    // tests lo fijan con un update directo. Se implementa en Día 4.
     public function crear(Proveedor $proveedor, User $user, array $items, array $datos = []): OrdenCompra
     {
         if ($items === []) {
@@ -174,7 +176,11 @@ class OrdenCompraService
                 if ($cantidad > $pendiente) {
                     $producto = $linea->producto?->nombre ?? 'el producto';
 
-                    throw new DomainException("Solo faltan {$pendiente} unidades por recibir de {$producto}.");
+                    $frase = $pendiente === 1
+                        ? 'Solo falta 1 unidad'
+                        : "Solo faltan {$pendiente} unidades";
+
+                    throw new DomainException("{$frase} por recibir de {$producto}.");
                 }
 
                 $lineas[] = ['linea' => $linea, 'cantidad' => $cantidad];

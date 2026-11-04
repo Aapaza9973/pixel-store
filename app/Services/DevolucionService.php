@@ -85,10 +85,11 @@ class DevolucionService
                 if ($vendidas < $pedidas[$detalle->id] + $devueltas) {
                     $disponibles = max($vendidas - $devueltas, 0);
                     $nombre = $detalle->producto?->nombre ?? "producto #{$detalle->producto_id}";
+                    $frase = $disponibles === 1
+                        ? 'Solo queda 1 unidad'
+                        : "Solo quedan {$disponibles} unidades";
 
-                    throw new DomainException(
-                        "Solo quedan {$disponibles} unidades por devolver de {$nombre}."
-                    );
+                    throw new DomainException("{$frase} por devolver de {$nombre}.");
                 }
 
                 $monto = round($cantidad * (float) $detalle->precio_unitario, 2);

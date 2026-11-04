@@ -80,6 +80,10 @@ class Venta extends Model
         return $query->whereDate('fecha', now()->toDateString());
     }
 
+    // OJO: una venta 'totalmente_devuelta' o 'parcialmente_devuelta' NO se
+    // considera pagada por esta función, aunque el dinero se haya cobrado.
+    // Si se necesita "fue cobrada", usar estado !== 'Cancelada' && estado !==
+    // 'Pendiente'. Reportes/cierre de caja (Día 6+) deben usar esa condición.
     public function estaPagada(): bool
     {
         return $this->estado === 'Pagado';
