@@ -96,6 +96,20 @@
                     @endif
                 @endcan
 
+                @if (Route::has('admin.caja.index') && auth()->user()?->hasAnyRole(['Admin', 'Cajero']))
+                    <x-nav-link :href="route('admin.caja.index')" :active="request()->routeIs('admin.caja.*')" icon="archive">
+                        Caja
+                    </x-nav-link>
+                @endif
+
+                @can('ver reportes')
+                    @if (Route::has('admin.reportes.periodo'))
+                        <x-nav-link :href="route('admin.reportes.periodo')" :active="request()->routeIs('admin.reportes.*')" icon="clipboard">
+                            Reportes
+                        </x-nav-link>
+                    @endif
+                @endcan
+
                 @can('ver marcas')
                     <x-nav-link :href="'#'" :active="request()->routeIs('marcas.*')" icon="bookmark">
                         Marcas

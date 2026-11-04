@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoriaController;
+use App\Http\Controllers\Admin\CierreCajaController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\DevolucionController;
 use App\Http\Controllers\Admin\InventarioController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Admin\OrdenCompraController;
 use App\Http\Controllers\Admin\ProductoController;
 use App\Http\Controllers\Admin\ProductoImagenController;
 use App\Http\Controllers\Admin\ProveedorController;
+use App\Http\Controllers\Admin\ReporteController;
 use App\Http\Controllers\Admin\UbicacionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ValidarStockController;
@@ -114,6 +116,20 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
 
             Route::resource('proveedores', ProveedorController::class)
                 ->parameters(['proveedores' => 'proveedor']);
+
+            // HU-6.1: cierre de caja por turno y reporte diario.
+            Route::get('caja', [CierreCajaController::class, 'index'])
+                ->name('caja.index');
+            Route::get('caja/crear', [CierreCajaController::class, 'create'])
+                ->name('caja.create');
+            Route::post('caja', [CierreCajaController::class, 'store'])
+                ->name('caja.store');
+            Route::get('caja/reporte/{fecha?}', [CierreCajaController::class, 'reporte'])
+                ->name('caja.reporte');
+
+            // HU-6.2: reportes agregados por período.
+            Route::get('reportes/periodo', [ReporteController::class, 'periodo'])
+                ->name('reportes.periodo');
 
             // 3.4.11-3.4.12: PDF de la orden de compra.
             Route::get('compras/{orden}/pdf', [OrdenCompraController::class, 'pdf'])
