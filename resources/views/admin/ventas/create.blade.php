@@ -731,9 +731,12 @@
                 this.cargar();
 
                 // deep: las filas de pago y de carrito se editan en el lugar.
+                // La autorización es por (operacion, porcentaje, monto); si cambia
+                // el carrito el monto cambia y el servidor la rechazaría.
                 this.$watch('items', () => {
                     this.persistir();
                     this.limpiarBanner();
+                    this.limpiarAutorizacion();
                 }, { deep: true });
 
                 this.$watch('pagos', () => {
@@ -744,8 +747,7 @@
                 // La autorización vale para un monto/porcentaje concretos: si el
                 // descuento cambia, hay que volver a pedirla.
                 this.$watch('descuento', () => {
-                    this.autorizacionId = null;
-                    this.autorizacionAdmin = null;
+                    this.limpiarAutorizacion();
                     this.persistir();
                 }, { deep: true });
             },
@@ -1209,6 +1211,11 @@
                 }
 
                 this.ventaConfirmada = null;
+            },
+
+            limpiarAutorizacion() {
+                this.autorizacionId = null;
+                this.autorizacionAdmin = null;
             },
 
             operacionActual() {
