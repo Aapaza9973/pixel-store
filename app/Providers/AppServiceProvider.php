@@ -11,6 +11,7 @@ use App\Listeners\LogSuccessfulLogout;
 use App\Models\AlertaStock;
 use App\Models\User;
 use App\Observers\UserObserver;
+use App\Services\FavoritoService;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -63,11 +64,17 @@ class AppServiceProvider extends ServiceProvider
         // Auditoría de cambios CRUD sobre usuarios (tarea 1.1.15)
         User::observe(UserObserver::class);
 
-        // Contador de alertas sin leer para el badge del header.
+        // Contadores del header/navbar: alertas sin leer y favoritos del
+        // visitante (usuario autenticado o cookie anónima).
         View::composer('layouts.app', function ($view) {
             $view->with('alertasNoLeidasCount', auth()->check()
                 ? AlertaStock::query()->noLeidas()->count()
                 : 0);
+
+            $view->with('favoritosCount', count(app(FavoritoService::class)->listar(
+                auth()->user(),
+                request()->cookie('favoritos_token')
+            )));
         });
 
         // Auditoría de autenticación

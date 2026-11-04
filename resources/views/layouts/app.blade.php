@@ -191,6 +191,20 @@
                 </div>
 
                 <div class="flex items-center gap-4">
+                    {{-- Contador de favoritos del catálogo (deuda D3). --}}
+                    @if (Route::has('catalogo.favoritos.index') && request()->routeIs('catalogo.*'))
+                        <a href="{{ route('catalogo.favoritos.index') }}"
+                           data-favoritos-contador="{{ $favoritosCount ?? 0 }}"
+                           title="Favoritos: {{ $favoritosCount ?? 0 }}"
+                           class="flex items-center gap-1.5 text-on-surface-variant transition hover:text-on-surface">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                            <span class="min-w-[1.25rem] text-center font-label-sm text-label-sm tabular-nums">{{ $favoritosCount ?? 0 }}</span>
+                        </a>
+                    @endif
+
                     <a href="{{ route('alertas.index') }}" class="relative text-on-surface-variant hover:text-on-surface transition"
                        title="{{ $alertasNoLeidasCount ?? 0 }} alertas sin leer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

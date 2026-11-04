@@ -105,6 +105,40 @@ class FavoritoTest extends TestCase
         $this->assertSame(0, Favorito::query()->where('session_token', $token)->count());
     }
 
+    public function test_navbar_muestra_contador_de_favoritos(): void
+    {
+        $url = route('catalogo.producto', $this->producto->slug);
+
+        // Visitante sin login y sin cookie: 0.
+        $this->get($url)->assertOk()->assertSee('data-favoritos-contador="0"', false);
+
+        // Visitante anónimo con cookie: 2.
+        $token = Str::random(40);
+        $otros = [
+            $this->crearProducto('Favorito Navbar A', 500),
+            $this->crearProducto('Favorito Navbar B', 600),
+        ];
+
+        foreach ($otros as $favorito) {
+            Favorito::create(['session_token' => $token, 'producto_id' => $favorito->id]);
+        }
+
+        $this->withCookie('favoritos_token', $token)->get($url)
+            ->assertOk()
+            ->assertSee('data-favoritos-contador="2"', false);
+
+        // Usuario autenticado: 3 (los 2 anónimos no se mezclan sin Login).
+        $user = User::factory()->create(['activo' => true]);
+
+        foreach ([$this->producto, ...$otros] as $favorito) {
+            Favorito::create(['user_id' => $user->id, 'producto_id' => $favorito->id]);
+        }
+
+        $this->actingAs($user)->get($url)
+            ->assertOk()
+            ->assertSee('data-favoritos-contador="3"', false);
+    }
+
     public function test_pagina_favoritos_muestra_los_productos_del_usuario(): void
     {
         $user = User::factory()->create(['activo' => true]);
