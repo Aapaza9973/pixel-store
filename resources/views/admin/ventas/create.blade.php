@@ -11,6 +11,7 @@
      data-url-cliente-store="{{ route('admin.clientes.store') }}"
      data-url-series="{{ route('admin.productos.series', ['producto' => '__producto__']) }}"
      data-url-buscar-productos="{{ route('admin.ventas.buscar-productos') }}"
+     data-url-autorizar-descuento="{{ route('admin.ventas.autorizar-descuento') }}"
      data-url-comprobante="{{ route('admin.ventas.comprobante', ['venta' => '__venta__']) }}">
 
     {{-- Barra superior --}}
@@ -310,6 +311,18 @@
                            class="mt-2 font-body-sm text-body-sm text-amber-400">
                             Descuento requiere autorización de administrador.
                         </p>
+
+                        {{-- HU-5.11: pedir autorización al admin sin salir del POS. --}}
+                        <button type="button" x-show="descuentoExcedeLimite && ! autorizacionId" x-cloak
+                                x-on:click="abrirModalAutorizacion()"
+                                class="mt-2 w-full rounded-obsidian border border-amber-500/40 bg-amber-500/10 px-3 py-2 font-label-md text-label-md text-amber-400 transition hover:bg-amber-500/20">
+                            Solicitar autorización
+                        </button>
+
+                        <p x-show="autorizacionId" x-cloak class="mt-2 font-body-sm text-body-sm text-emerald-400">
+                            Descuento autorizado<span x-show="autorizacionAdmin" x-text="' por ' + autorizacionAdmin"></span>.
+                            Se aplicará al confirmar la venta.
+                        </p>
                     </div>
                 </div>
 
@@ -483,6 +496,96 @@
         </div>
     </div>
 
+    {{-- Modal de autorización de descuento (HU-5.11) --}}
+    <div x-show="modalAutorizacion.abierto" x-cloak
+         x-on:keydown.escape.window="cerrarModalAutorizacion()"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div class="w-full max-w-md rounded-obsidian-xl border border-outline-variant/30 bg-surface-container p-6 shadow-2xl">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                        Venta rápida
+                    </p>
+                    <h3 class="mt-1 font-headline-sm text-headline-sm text-on-surface">
+                        Autorizar descuento
+                    </h3>
+                </div>
+                <button type="button" x-on:click="cerrarModalAutorizacion()" aria-label="Cerrar"
+                        class="text-body-lg text-on-surface-variant transition hover:text-error">
+                    ×
+                </button>
+            </div>
+
+            <p class="mt-3 font-body-sm text-body-sm text-on-surface-variant">
+                El descuento de
+                <span class="tabular-nums text-on-surface" x-text="'Bs ' + money(descuentoMonto)"></span>
+                (<span class="tabular-nums" x-text="descuentoPorcentaje.toFixed(2) + ' %'"></span>)
+                supera tu límite de <span x-text="descuentoMaximo + ' %'"></span>.
+                Un administrador tiene que autorizarlo con sus credenciales.
+            </p>
+
+            <form class="mt-5 space-y-4" x-on:submit.prevent="solicitarAutorizacion()">
+                <div>
+                    <label for="autorizacion-email" class="mb-1.5 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                        Email del administrador <span class="text-error">*</span>
+                    </label>
+                    <input id="autorizacion-email" type="email" x-model="modalAutorizacion.email"
+                           autocomplete="off"
+                           class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                    <p x-show="modalAutorizacion.errores.email" x-cloak
+                       class="mt-1 font-body-sm text-body-sm text-error"
+                       x-text="modalAutorizacion.errores.email?.[0]"></p>
+                </div>
+
+                <div>
+                    <label for="autorizacion-password" class="mb-1.5 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                        Contraseña <span class="text-error">*</span>
+                    </label>
+                    <input id="autorizacion-password" type="password" x-model="modalAutorizacion.password"
+                           autocomplete="off"
+                           class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
+                    <p x-show="modalAutorizacion.errores.password" x-cloak
+                       class="mt-1 font-body-sm text-body-sm text-error"
+                       x-text="modalAutorizacion.errores.password?.[0]"></p>
+                </div>
+
+                <div>
+                    <label for="autorizacion-motivo" class="mb-1.5 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
+                        Motivo (opcional)
+                    </label>
+                    <textarea id="autorizacion-motivo" rows="2" x-model="modalAutorizacion.motivo"
+                              class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25"></textarea>
+                    <p x-show="modalAutorizacion.errores.motivo" x-cloak
+                       class="mt-1 font-body-sm text-body-sm text-error"
+                       x-text="modalAutorizacion.errores.motivo?.[0]"></p>
+                </div>
+
+                <div x-show="modalAutorizacion.error" x-cloak
+                     class="rounded-obsidian border border-error/40 bg-error/10 px-3 py-2 font-body-sm text-body-sm text-error"
+                     x-text="modalAutorizacion.error"></div>
+
+                <ul x-show="erroresCamposAutorizacion.length > 0" x-cloak
+                    class="space-y-1 rounded-obsidian border border-error/40 bg-error/10 px-3 py-2 font-body-sm text-body-sm text-error">
+                    <template x-for="mensaje in erroresCamposAutorizacion" :key="mensaje">
+                        <li x-text="mensaje"></li>
+                    </template>
+                </ul>
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" x-on:click="cerrarModalAutorizacion()"
+                            class="rounded-obsidian-lg border border-outline-variant/30 bg-surface-container-low px-4 py-2 text-body-md text-on-surface-variant transition hover:text-on-surface">
+                        Cancelar
+                    </button>
+                    <button type="submit" x-bind:disabled="modalAutorizacion.enviando"
+                            class="rounded-obsidian-lg bg-primary-container px-4 py-2 text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90 disabled:cursor-not-allowed disabled:opacity-40">
+                        <span x-show="! modalAutorizacion.enviando">Autorizar descuento</span>
+                        <span x-show="modalAutorizacion.enviando" x-cloak>Autorizando…</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     {{-- Modal de alta rápida de cliente (HU-5.5) --}}
     @can('crear clientes')
     <div x-show="modalCliente" x-cloak
@@ -586,6 +689,20 @@
             urlClientes: '',
             urlClienteStore: '',
 
+            // HU-5.11: autorización de descuentos por un administrador.
+            urlAutorizarDescuento: '',
+            autorizacionId: null,
+            autorizacionAdmin: null,
+            modalAutorizacion: {
+                abierto: false,
+                email: '',
+                password: '',
+                motivo: '',
+                enviando: false,
+                error: null,
+                errores: {},
+            },
+
             // HU-5.3: buscador de productos del POS.
             urlBuscarProductos: '',
             urlComprobanteBase: '',
@@ -608,6 +725,7 @@
                 this.urlSeries = this.$el.dataset.urlSeries || '';
                 this.urlBuscarProductos = this.$el.dataset.urlBuscarProductos || '';
                 this.urlComprobanteBase = this.$el.dataset.urlComprobante || '';
+                this.urlAutorizarDescuento = this.$el.dataset.urlAutorizarDescuento || '';
                 this.operacionId = this.operacionActual();
 
                 this.cargar();
@@ -623,7 +741,13 @@
                     this.limpiarBanner();
                 }, { deep: true });
 
-                this.$watch('descuento', () => this.persistir(), { deep: true });
+                // La autorización vale para un monto/porcentaje concretos: si el
+                // descuento cambia, hay que volver a pedirla.
+                this.$watch('descuento', () => {
+                    this.autorizacionId = null;
+                    this.autorizacionAdmin = null;
+                    this.persistir();
+                }, { deep: true });
             },
 
             get subtotal() {
@@ -933,6 +1057,89 @@
                     this.errorCliente = 'No se pudo conectar con el servidor.';
                 } finally {
                     this.guardandoCliente = false;
+                }
+            },
+
+            get erroresCamposAutorizacion() {
+                return Object.values(this.modalAutorizacion.errores || {}).flat();
+            },
+
+            abrirModalAutorizacion() {
+                this.modalAutorizacion = {
+                    abierto: true,
+                    email: '',
+                    password: '',
+                    motivo: '',
+                    enviando: false,
+                    error: null,
+                    errores: {},
+                };
+            },
+
+            cerrarModalAutorizacion() {
+                this.modalAutorizacion.abierto = false;
+                this.modalAutorizacion.password = '';
+            },
+
+            async solicitarAutorizacion() {
+                if (this.modalAutorizacion.enviando) {
+                    return;
+                }
+
+                this.modalAutorizacion.enviando = true;
+                this.modalAutorizacion.error = null;
+                this.modalAutorizacion.errores = {};
+
+                const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+                try {
+                    const respuesta = await fetch(this.urlAutorizarDescuento, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                        },
+                        body: JSON.stringify({
+                            email: this.modalAutorizacion.email,
+                            password: this.modalAutorizacion.password,
+                            operacion_id: this.operacionId,
+                            descuento_porcentaje: this.porcentajeParaEnviar,
+                            monto_descuento: Number(this.descuentoMonto.toFixed(2)),
+                            motivo: this.modalAutorizacion.motivo || null,
+                        }),
+                    });
+
+                    const cuerpo = await respuesta.json().catch(() => ({}));
+
+                    if (respuesta.status === 201) {
+                        // 5.11.5 conecta este id al payload de confirmar.
+                        this.autorizacionId = cuerpo.autorizacion_id;
+                        this.autorizacionAdmin = cuerpo.admin?.name || null;
+                        this.modalAutorizacion.abierto = false;
+                        this.modalAutorizacion.password = '';
+
+                        return;
+                    }
+
+                    if (respuesta.status === 422) {
+                        this.modalAutorizacion.errores = cuerpo.errors || {};
+                        this.modalAutorizacion.error = cuerpo.message || 'Revisá los datos de la autorización.';
+
+                        return;
+                    }
+
+                    if (respuesta.status === 429) {
+                        this.modalAutorizacion.error = 'Demasiados intentos. Esperá un minuto e intentá de nuevo.';
+
+                        return;
+                    }
+
+                    this.modalAutorizacion.error = cuerpo.message || 'No se pudo autorizar el descuento.';
+                } catch (error) {
+                    this.modalAutorizacion.error = 'No se pudo conectar con el servidor.';
+                } finally {
+                    this.modalAutorizacion.enviando = false;
                 }
             },
 

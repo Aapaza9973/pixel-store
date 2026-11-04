@@ -71,6 +71,11 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::post('ventas', [VentaController::class, 'store'])
                 ->name('ventas.store');
 
+            // HU-5.11: el vendedor pide que un admin autorice el descuento.
+            Route::post('ventas/autorizar-descuento', [VentaController::class, 'autorizarDescuento'])
+                ->middleware('throttle:autorizar-descuento')
+                ->name('ventas.autorizar-descuento');
+
             Route::get('ventas/{venta}/comprobante', [VentaController::class, 'comprobante'])
                 ->name('ventas.comprobante');
 

@@ -8,12 +8,16 @@ use App\Exceptions\DomainException;
 use App\Exceptions\SerieNoDisponibleException;
 use App\Exceptions\StockInsuficienteException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AutorizarDescuentoRequest;
 use App\Http\Requests\Admin\StoreVentaRequest;
+use App\Models\AutorizacionDescuento;
 use App\Models\Producto;
+use App\Models\User;
 use App\Models\Venta;
 use App\Services\VentaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Ramsey\Uuid\Uuid;
@@ -77,6 +81,55 @@ class VentaController extends Controller
                 'total' => (float) $venta->total,
                 'estado' => $venta->estado,
             ],
+        ], 201);
+    }
+
+    /**
+     * Autoriza un descuento fuera del límite del rol (HU-5.11).
+     *
+     * El administrador confirma su identidad con email + contraseña, pero NO se
+     * inicia sesión como él: `Auth::validate()` solo verifica las credenciales,
+     * no toca el guard ni la sesión del vendedor que está haciendo la venta.
+     */
+    public function autorizarDescuento(AutorizarDescuentoRequest $request): JsonResponse
+    {
+        $datos = $request->validated();
+
+        if (! Auth::validate([
+            'email' => $datos['email'],
+            'password' => $datos['password'],
+        ])) {
+            return $this->respuestaDominio(new DomainException('Credenciales incorrectas.'), 422);
+        }
+
+        $admin = User::where('email', $datos['email'])->firstOrFail();
+
+        if (! $admin->hasRole('Admin')) {
+            return response()->json([
+                'message' => 'El usuario no tiene permisos para autorizar descuentos.',
+                'code' => 'sin_permiso_autorizar',
+            ], 403);
+        }
+
+        $autorizacion = AutorizacionDescuento::create([
+            'operacion_id' => $datos['operacion_id'],
+            // La venta todavía no existe: se enlaza al confirmar (5.11.5).
+            'venta_id' => null,
+            'admin_id' => $admin->id,
+            'vendedor_id' => $request->user()->id,
+            'monto_descuento' => $datos['monto_descuento'],
+            'descuento_porcentaje' => $datos['descuento_porcentaje'],
+            'motivo' => $datos['motivo'] ?? null,
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'autorizacion_id' => $autorizacion->id,
+            'admin' => [
+                'id' => $admin->id,
+                'name' => $admin->name,
+            ],
+            'operacion_id' => $autorizacion->operacion_id,
         ], 201);
     }
 

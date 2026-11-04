@@ -13,9 +13,12 @@ use App\Observers\UserObserver;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -37,6 +40,12 @@ class AppServiceProvider extends ServiceProvider
             if ($user->hasRole('Admin')) {
                 return true;
             }
+        });
+
+        // HU-5.11: 5 intentos por minuto para autorizar descuentos. La clave es
+        // el vendedor autenticado (la IP solo si no hay sesión).
+        RateLimiter::for('autorizar-descuento', function (Request $request) {
+            return Limit::perMinute(5)->by((string) ($request->user()?->id ?? $request->ip()));
         });
 
         // Paginación con Tailwind
