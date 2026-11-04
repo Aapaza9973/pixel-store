@@ -10,6 +10,7 @@ use App\Models\Devolucion;
 use App\Models\DevolucionDetalle;
 use App\Models\Producto;
 use App\Models\Venta;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -38,101 +39,114 @@ class DevolucionService
         string $operacionId,
         int $userId
     ): Devolucion {
-        return DB::transaction(function () use ($ventaId, $items, $motivo, $operacionId, $userId) {
-            // Idempotencia mínima (5.14.10 la completa): operacion_id es UNIQUE,
-            // así que el guard evita el 500 en el reintento del POS.
+        try {
+            return DB::transaction(function () use ($ventaId, $items, $motivo, $operacionId, $userId) {
+                // Idempotencia mínima (5.14.10 la completa): operacion_id es UNIQUE,
+                // así que el guard evita el 500 en el reintento del POS.
+                $existente = Devolucion::where('operacion_id', $operacionId)->first();
+
+                if ($existente !== null) {
+                    return $existente->load('detalles');
+                }
+
+                $venta = Venta::whereKey($ventaId)->first();
+
+                if ($venta === null) {
+                    throw new DomainException('La venta indicada no existe.');
+                }
+
+                if ($venta->estado === 'Cancelada') {
+                    throw new DomainException('No se puede devolver una venta cancelada.');
+                }
+
+                $lineas = [];
+                $totalDevuelto = 0.0;
+
+                // Lo pedido en ESTA devolución por línea: dos items del mismo
+                // venta_detalle_id no deben poder superar juntos lo vendido.
+                $pedidas = [];
+
+                foreach ($items as $item) {
+                    $ventaDetalleId = (int) ($item['venta_detalle_id'] ?? 0);
+                    $cantidad = (int) ($item['cantidad'] ?? 0);
+
+                    if ($cantidad <= 0) {
+                        throw new DomainException('La cantidad a devolver debe ser mayor que cero.');
+                    }
+
+                    $detalle = DetalleVenta::whereKey($ventaDetalleId)->first();
+
+                    if ($detalle === null || (int) $detalle->venta_id !== (int) $venta->id) {
+                        throw new DomainException('La línea de venta no pertenece a la venta indicada.');
+                    }
+
+                    $pedidas[$detalle->id] = ($pedidas[$detalle->id] ?? 0) + $cantidad;
+                    $vendidas = (int) $detalle->cantidad;
+                    $devueltas = $this->cantidadDevuelta((int) $detalle->id);
+
+                    if ($vendidas < $pedidas[$detalle->id] + $devueltas) {
+                        $disponibles = max($vendidas - $devueltas, 0);
+                        $nombre = $detalle->producto?->nombre ?? "producto #{$detalle->producto_id}";
+                        $frase = $disponibles === 1
+                            ? 'Solo queda 1 unidad'
+                            : "Solo quedan {$disponibles} unidades";
+
+                        throw new DomainException("{$frase} por devolver de {$nombre}.");
+                    }
+
+                    $monto = round($cantidad * (float) $detalle->precio_unitario, 2);
+                    $totalDevuelto += $monto;
+
+                    $lineas[] = [
+                        'venta_detalle_id' => $detalle->id,
+                        'venta_id' => $venta->id,
+                        'producto_id' => $detalle->producto_id,
+                        'cantidad' => $cantidad,
+                        'monto' => $monto,
+                    ];
+                }
+
+                $devolucion = Devolucion::create([
+                    'operacion_id' => $operacionId,
+                    'venta_id' => $venta->id,
+                    'user_id' => $userId,
+                    'motivo' => $motivo,
+                    'estado' => 'procesada',
+                    'total_devuelto' => round($totalDevuelto, 2),
+                ]);
+
+                foreach ($lineas as $linea) {
+                    DevolucionDetalle::create([
+                        'devolucion_id' => $devolucion->id,
+                        'venta_detalle_id' => $linea['venta_detalle_id'],
+                        'venta_id' => $linea['venta_id'],
+                        'producto_id' => $linea['producto_id'],
+                        'cantidad' => $linea['cantidad'],
+                        // La línea exige motivo; el de la cabecera es el que el
+                        // usuario escribió, hasta que 5.15 permita uno por línea.
+                        'motivo' => $motivo,
+                        'estado' => 'Pendiente',
+                        'monto' => $linea['monto'],
+                    ]);
+                }
+
+                $this->reingresarStock($devolucion, $userId);
+                $this->actualizarEstadoVenta($venta, $devolucion);
+
+                return $devolucion->load('detalles');
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            // 5.14.10: dos requests con el mismo operacion_id pueden pasar el
+            // guard antes de que el primero commitee. El UNIQUE de la base
+            // resuelve la carrera; acá se traduce a idempotencia, no a 500.
             $existente = Devolucion::where('operacion_id', $operacionId)->first();
 
             if ($existente !== null) {
                 return $existente->load('detalles');
             }
 
-            $venta = Venta::whereKey($ventaId)->first();
-
-            if ($venta === null) {
-                throw new DomainException('La venta indicada no existe.');
-            }
-
-            if ($venta->estado === 'Cancelada') {
-                throw new DomainException('No se puede devolver una venta cancelada.');
-            }
-
-            $lineas = [];
-            $totalDevuelto = 0.0;
-
-            // Lo pedido en ESTA devolución por línea: dos items del mismo
-            // venta_detalle_id no deben poder superar juntos lo vendido.
-            $pedidas = [];
-
-            foreach ($items as $item) {
-                $ventaDetalleId = (int) ($item['venta_detalle_id'] ?? 0);
-                $cantidad = (int) ($item['cantidad'] ?? 0);
-
-                if ($cantidad <= 0) {
-                    throw new DomainException('La cantidad a devolver debe ser mayor que cero.');
-                }
-
-                $detalle = DetalleVenta::whereKey($ventaDetalleId)->first();
-
-                if ($detalle === null || (int) $detalle->venta_id !== (int) $venta->id) {
-                    throw new DomainException('La línea de venta no pertenece a la venta indicada.');
-                }
-
-                $pedidas[$detalle->id] = ($pedidas[$detalle->id] ?? 0) + $cantidad;
-                $vendidas = (int) $detalle->cantidad;
-                $devueltas = $this->cantidadDevuelta((int) $detalle->id);
-
-                if ($vendidas < $pedidas[$detalle->id] + $devueltas) {
-                    $disponibles = max($vendidas - $devueltas, 0);
-                    $nombre = $detalle->producto?->nombre ?? "producto #{$detalle->producto_id}";
-                    $frase = $disponibles === 1
-                        ? 'Solo queda 1 unidad'
-                        : "Solo quedan {$disponibles} unidades";
-
-                    throw new DomainException("{$frase} por devolver de {$nombre}.");
-                }
-
-                $monto = round($cantidad * (float) $detalle->precio_unitario, 2);
-                $totalDevuelto += $monto;
-
-                $lineas[] = [
-                    'venta_detalle_id' => $detalle->id,
-                    'venta_id' => $venta->id,
-                    'producto_id' => $detalle->producto_id,
-                    'cantidad' => $cantidad,
-                    'monto' => $monto,
-                ];
-            }
-
-            $devolucion = Devolucion::create([
-                'operacion_id' => $operacionId,
-                'venta_id' => $venta->id,
-                'user_id' => $userId,
-                'motivo' => $motivo,
-                'estado' => 'procesada',
-                'total_devuelto' => round($totalDevuelto, 2),
-            ]);
-
-            foreach ($lineas as $linea) {
-                DevolucionDetalle::create([
-                    'devolucion_id' => $devolucion->id,
-                    'venta_detalle_id' => $linea['venta_detalle_id'],
-                    'venta_id' => $linea['venta_id'],
-                    'producto_id' => $linea['producto_id'],
-                    'cantidad' => $linea['cantidad'],
-                    // La línea exige motivo; el de la cabecera es el que el
-                    // usuario escribió, hasta que 5.15 permita uno por línea.
-                    'motivo' => $motivo,
-                    'estado' => 'Pendiente',
-                    'monto' => $linea['monto'],
-                ]);
-            }
-
-            $this->reingresarStock($devolucion, $userId);
-            $this->actualizarEstadoVenta($venta, $devolucion);
-
-            return $devolucion->load('detalles');
-        });
+            throw $e;
+        }
     }
 
     /**
