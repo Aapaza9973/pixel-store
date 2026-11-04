@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\ClienteController;
+use App\Http\Controllers\Admin\DevolucionController;
 use App\Http\Controllers\Admin\InventarioController;
 use App\Http\Controllers\Admin\ProductoController;
 use App\Http\Controllers\Admin\ProductoImagenController;
@@ -79,11 +80,19 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::get('ventas/{venta}/comprobante', [VentaController::class, 'comprobante'])
                 ->name('ventas.comprobante');
 
-            Route::get('productos/{producto}/series', [VentaController::class, 'series'])
-                ->name('productos.series');
+            // Debe declararse antes de ventas/{venta}: si no, "buscar-productos" cae en show.
             Route::get('ventas/buscar-productos', [VentaController::class, 'buscarProductos'])
                 ->middleware('throttle:60,1')
                 ->name('ventas.buscar-productos');
+
+            Route::get('ventas/{venta}', [VentaController::class, 'show'])
+                ->name('ventas.show');
+
+            Route::post('ventas/{venta}/devoluciones', [DevolucionController::class, 'store'])
+                ->name('ventas.devoluciones.store');
+
+            Route::get('productos/{producto}/series', [VentaController::class, 'series'])
+                ->name('productos.series');
 
             // Debe declararse antes del resource: si no, "buscar" cae en show.
             Route::get('clientes/buscar', [ClienteController::class, 'buscar'])

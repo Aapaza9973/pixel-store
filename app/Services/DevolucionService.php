@@ -182,6 +182,23 @@ class DevolucionService
     }
 
     /**
+     * Unidades que todavía se pueden devolver por línea de la venta, indexadas
+     * por `venta_detalle_id`. Lo usa la vista de detalle para el modal.
+     *
+     * @return array<int, int>
+     */
+    public function pendientesPorLinea(Venta $venta): array
+    {
+        $pendientes = [];
+
+        foreach ($venta->detalles as $detalle) {
+            $pendientes[$detalle->id] = max(0, (int) $detalle->cantidad - $this->cantidadDevuelta($detalle->id));
+        }
+
+        return $pendientes;
+    }
+
+    /**
      * Unidades ya devueltas de una línea de venta, sin contar las devoluciones
      * anuladas: una devolución anulada libera esas unidades para devolver.
      */

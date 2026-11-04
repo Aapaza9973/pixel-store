@@ -14,6 +14,7 @@ use App\Models\AutorizacionDescuento;
 use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
+use App\Services\DevolucionService;
 use App\Services\VentaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -144,6 +145,29 @@ class VentaController extends Controller
             ],
             'operacion_id' => $autorizacion->operacion_id,
         ], 201);
+    }
+
+    /**
+     * Detalle de una venta: líneas, pagos, historial de devoluciones y acción de devolver.
+     */
+    public function show(Venta $venta, DevolucionService $devoluciones): View
+    {
+        abort_unless(auth()->user()?->can('ver ventas'), 403);
+
+        $venta->load([
+            'cliente',
+            'vendedor',
+            'pagos',
+            'detalles.producto',
+            'detalles.numeroSerie',
+            'devoluciones.detalles.ventaDetalle.producto',
+            'devoluciones.user',
+        ]);
+
+        $pendientes = $devoluciones->pendientesPorLinea($venta);
+        $puedeDevolver = $venta->estado !== 'Cancelada' && array_sum($pendientes) > 0;
+
+        return view('admin.ventas.show', compact('venta', 'pendientes', 'puedeDevolver'));
     }
 
     /**
