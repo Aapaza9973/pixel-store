@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Producto;
+use App\Services\ProductoService;
 use Illuminate\View\View;
 
 /**
@@ -15,6 +16,11 @@ use Illuminate\View\View;
  */
 class CatalogoController extends Controller
 {
+    public function __construct(private readonly ProductoService $productos)
+    {
+        //
+    }
+
     public function show(string $slug): View
     {
         // `productos` no tiene columna `activo`: la visibilidad pública se
@@ -25,6 +31,8 @@ class CatalogoController extends Controller
             ->where('visible_catalogo', true)
             ->firstOrFail();
 
-        return view('catalogo.producto', compact('producto'));
+        $similares = $this->productos->similares($producto);
+
+        return view('catalogo.producto', compact('producto', 'similares'));
     }
 }
