@@ -156,4 +156,125 @@ class DevolucionStockTest extends TestCase
         $this->assertSame('totalmente_devuelta', $venta->fresh()->estado);
         $this->assertSame(10, (int) $this->producto->fresh()->stock);
     }
+
+    /**
+     * Venta de N unidades, una línea por unidad, cada una con su propio SN.
+     *
+     * @return array{venta: Venta, series: array<int, NumeroSerie>, detalles: array<int, DetalleVenta>}
+     */
+    private function crearVentaConSeries(int $cantidad): array
+    {
+        $venta = Venta::create([
+            'operacion_id' => (string) Str::uuid(),
+            'user_id' => $this->vendedor->id,
+            'total' => 100 * $cantidad,
+            'descuento' => 0,
+            'descuento_porcentaje' => 0,
+            'estado' => 'Pagado',
+        ]);
+
+        $series = [];
+        $detalles = [];
+
+        for ($i = 1; $i <= $cantidad; $i++) {
+            $serie = NumeroSerie::create([
+                'producto_id' => $this->producto->id,
+                'numero_serie' => 'SN-SERIE-'.$i.'-'.Str::random(6),
+                'estado' => 'vendido',
+                'venta_id' => $venta->id,
+                'cliente_id' => null,
+                'fecha_ingreso' => now()->subDays(5),
+                'fecha_venta' => now(),
+            ]);
+
+            $detalles[] = DetalleVenta::create([
+                'venta_id' => $venta->id,
+                'producto_id' => $this->producto->id,
+                'numero_serie_id' => $serie->id,
+                'cantidad' => 1,
+                'precio_unitario' => 100,
+            ]);
+
+            $series[] = $serie;
+        }
+
+        return ['venta' => $venta, 'series' => $series, 'detalles' => $detalles];
+    }
+
+    public function test_devolucion_parcial_con_serie_solo_libera_la_serie_devuelta(): void
+    {
+        $datos = $this->crearVentaConSeries(2);
+        [$devuelta, $intacta] = $datos['series'];
+
+        $this->servicio->registrar(
+            $datos['venta']->id,
+            [['venta_detalle_id' => $datos['detalles'][0]->id, 'cantidad' => 1]],
+            'Falla de una unidad',
+            (string) Str::uuid(),
+            $this->vendedor->id
+        );
+
+        $devuelta->refresh();
+        $intacta->refresh();
+
+        $this->assertSame('disponible', $devuelta->estado);
+        $this->assertNull($devuelta->venta_id);
+        $this->assertNull($devuelta->fecha_venta);
+
+        $this->assertSame('vendido', $intacta->estado);
+        $this->assertSame($datos['venta']->id, (int) $intacta->venta_id);
+        $this->assertNotNull($intacta->fecha_venta);
+    }
+
+    public function test_devolucion_total_con_series_libera_todas(): void
+    {
+        $datos = $this->crearVentaConSeries(2);
+
+        $this->servicio->registrar(
+            $datos['venta']->id,
+            [
+                ['venta_detalle_id' => $datos['detalles'][0]->id, 'cantidad' => 1],
+                ['venta_detalle_id' => $datos['detalles'][1]->id, 'cantidad' => 1],
+            ],
+            'Devolución total',
+            (string) Str::uuid(),
+            $this->vendedor->id
+        );
+
+        foreach ($datos['series'] as $serie) {
+            $serie->refresh();
+
+            $this->assertSame('disponible', $serie->estado);
+            $this->assertNull($serie->venta_id);
+            $this->assertNull($serie->fecha_venta);
+        }
+
+        $this->assertSame('totalmente_devuelta', $datos['venta']->fresh()->estado);
+    }
+
+    public function test_devolucion_sin_serie_reingresa_stock_sin_tocar_numeros_serie(): void
+    {
+        $intacta = NumeroSerie::create([
+            'producto_id' => $this->producto->id,
+            'numero_serie' => 'SN-AJENA-'.Str::random(6),
+            'estado' => 'disponible',
+            'venta_id' => null,
+            'cliente_id' => null,
+            'fecha_ingreso' => now(),
+            'fecha_venta' => null,
+        ]);
+
+        $venta = $this->crearVenta(1);
+
+        $this->devolver($venta, 1);
+
+        $this->assertSame(11, (int) $this->producto->fresh()->stock);
+        $this->assertDatabaseCount('numeros_serie', 1);
+
+        $intacta->refresh();
+
+        $this->assertSame('disponible', $intacta->estado);
+        $this->assertNull($intacta->venta_id);
+        $this->assertNull($intacta->fecha_venta);
+    }
 }

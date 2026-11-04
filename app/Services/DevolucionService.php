@@ -74,7 +74,13 @@ class DevolucionService
                         throw new DomainException('La cantidad a devolver debe ser mayor que cero.');
                     }
 
-                    $detalle = DetalleVenta::whereKey($ventaDetalleId)->first();
+                    // 5.14.11: el lock serializa las devoluciones del mismo
+                    // ítem. Sin él, dos devoluciones concurrentes leen el mismo
+                    // devuelto_previo y ambas pasan la validación. Primero se
+                    // bloquea la fila y RECIÉN DESPUÉS se cuenta lo devuelto.
+                    $detalle = DetalleVenta::whereKey($ventaDetalleId)
+                        ->lockForUpdate()
+                        ->first();
 
                     if ($detalle === null || (int) $detalle->venta_id !== (int) $venta->id) {
                         throw new DomainException('La línea de venta no pertenece a la venta indicada.');
