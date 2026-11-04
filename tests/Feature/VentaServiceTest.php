@@ -341,6 +341,63 @@ class VentaServiceTest extends TestCase
         }
     }
 
+    public function test_dos_ventas_consecutivas_no_bajan_stock_a_negativo(): void
+    {
+        $this->producto->update(['stock' => 1]);
+
+        [$items, $pagos, $meta] = $this->datos();
+
+        $primera = $this->service->confirmar($items, $pagos, $meta);
+
+        $this->assertDatabaseHas('ventas', ['id' => $primera->id, 'operacion_id' => $meta['operacion_id']]);
+        $this->assertSame(0, (int) $this->producto->fresh()->stock);
+
+        // Segunda venta del mismo producto con otra operación: ya no hay stock.
+        [$items, $pagos, $meta] = $this->datos();
+
+        try {
+            $this->service->confirmar($items, $pagos, $meta);
+            $this->fail('Se esperaba StockInsuficienteException en la segunda venta.');
+        } catch (StockInsuficienteException $e) {
+            $this->assertSame(409, $e->getStatusCode());
+        }
+
+        $this->assertDatabaseCount('ventas', 1);
+        $this->assertSame(0, (int) $this->producto->fresh()->stock);
+    }
+
+    public function test_rollback_completo_si_falla_mitad_del_payload(): void
+    {
+        // El primer producto tiene stock de sobra; el segundo no tiene ninguna
+        // unidad. La validación falla ANTES de escribir, así que la venta
+        // completa (y sus efectos) debe quedar sin rastro.
+        $sinStock = Producto::create([
+            'categoria_id' => $this->producto->categoria_id,
+            'nombre' => 'Gabinete sin stock',
+            'precio_unitario' => 50,
+            'stock' => 0,
+            'umbral_alerta' => 1,
+        ]);
+
+        $response = $this->actingAs($this->vendedor)->postJson(route('admin.ventas.store'), [
+            'items' => [
+                ['producto_id' => $this->producto->id, 'cantidad' => 1],
+                ['producto_id' => $sinStock->id, 'cantidad' => 1],
+            ],
+            'pagos' => [['metodo' => 'Efectivo', 'monto' => 150]],
+            'meta' => ['operacion_id' => (string) Str::uuid()],
+        ]);
+
+        $response->assertStatus(409);
+        $response->assertJsonPath('code', 'stock_insuficiente');
+
+        $this->assertDatabaseCount('ventas', 0);
+        $this->assertDatabaseCount('ingresos', 0);
+        $this->assertDatabaseCount('movimientos_stock', 0);
+        $this->assertSame(5, (int) $this->producto->fresh()->stock);
+        $this->assertSame(0, (int) $sinStock->fresh()->stock);
+    }
+
     private function insertarVentaDesdeOtraConexion(string $operacionId): int
     {
         $pdo = $this->conexionSecundaria();
