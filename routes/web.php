@@ -90,6 +90,10 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::post('ventas/validar-stock', ValidarStockController::class)
                 ->name('ventas.validar-stock');
 
+            // 5.7.3: el POS valida la serie antes de asignarla a la línea.
+            Route::post('ventas/validar-serie', [VentaController::class, 'validarSerie'])
+                ->name('ventas.validar-serie');
+
             // HU-5.11: el vendedor pide que un admin autorice el descuento.
             Route::post('ventas/autorizar-descuento', [VentaController::class, 'autorizarDescuento'])
                 ->middleware('throttle:autorizar-descuento')

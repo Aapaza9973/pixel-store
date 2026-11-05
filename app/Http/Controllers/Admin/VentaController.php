@@ -10,11 +10,13 @@ use App\Exceptions\StockInsuficienteException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AutorizarDescuentoRequest;
 use App\Http\Requests\Admin\StoreVentaRequest;
+use App\Http\Requests\Admin\ValidarSerieRequest;
 use App\Models\AutorizacionDescuento;
 use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
 use App\Services\DevolucionService;
+use App\Services\NumeroSerieService;
 use App\Services\VentaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -192,6 +194,33 @@ class VentaController extends Controller
         $numero = '#'.str_pad((string) $venta->id, 6, '0', STR_PAD_LEFT);
 
         return view('admin.ventas.comprobante', compact('venta', 'numero'));
+    }
+
+    /**
+     * Valida una serie antes de asignarla a una línea del POS (HU-5.7.3).
+     *
+     * La validación definitiva sigue ocurriendo dentro de la transacción de la
+     * venta; este endpoint solo evita asignar una serie que ya no sirve.
+     */
+    public function validarSerie(ValidarSerieRequest $request, NumeroSerieService $series): JsonResponse
+    {
+        try {
+            $serie = $series->validarParaVenta(
+                (int) $request->validated('numero_serie_id'),
+                (int) $request->validated('producto_id')
+            );
+        } catch (SerieNoDisponibleException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => $e->getErrorCode(),
+            ], 422);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'numero_serie' => $serie->numero_serie,
+            'id' => $serie->id,
+        ]);
     }
 
     /**

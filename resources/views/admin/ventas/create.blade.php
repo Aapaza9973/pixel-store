@@ -10,6 +10,7 @@
      data-url-clientes="{{ route('admin.clientes.buscar') }}"
      data-url-cliente-store="{{ route('admin.clientes.store') }}"
      data-url-series="{{ route('admin.productos.series', ['producto' => '__producto__']) }}"
+     data-url-validar-serie="{{ route('admin.ventas.validar-serie') }}"
      data-url-buscar-productos="{{ route('admin.ventas.buscar-productos') }}"
      data-url-autorizar-descuento="{{ route('admin.ventas.autorizar-descuento') }}"
      data-url-comprobante="{{ route('admin.ventas.comprobante', ['venta' => '__venta__']) }}">
@@ -491,7 +492,8 @@
                 <template x-for="serie in serieModal.series" :key="serie.id">
                     <li>
                         <button type="button" x-on:click="elegirSerie(serie)"
-                                class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-left font-label-md text-label-md tabular-nums text-on-surface transition hover:border-primary-container/40">
+                                x-bind:disabled="serieModal.validando"
+                                class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-left font-label-md text-label-md tabular-nums text-on-surface transition hover:border-primary-container/40 disabled:cursor-not-allowed disabled:opacity-40">
                             <span x-text="serie.numero_serie"></span>
                         </button>
                     </li>
@@ -715,9 +717,10 @@
             buscandoProducto: false,
             errorProducto: null,
 
-            // HU-5.6: número de serie por línea.
+            // HU-5.6 / 5.7.3: número de serie por línea y validación previa.
             urlSeries: '',
-            serieModal: { abierto: false, itemIndex: null, cargando: false, series: [], error: null },
+            urlValidarSerie: '',
+            serieModal: { abierto: false, itemIndex: null, cargando: false, validando: false, series: [], error: null },
             silenciarBanner: false,
 
             init() {
@@ -727,6 +730,7 @@
                 this.urlClientes = this.$el.dataset.urlClientes || '';
                 this.urlClienteStore = this.$el.dataset.urlClienteStore || '';
                 this.urlSeries = this.$el.dataset.urlSeries || '';
+                this.urlValidarSerie = this.$el.dataset.urlValidarSerie || '';
                 this.urlBuscarProductos = this.$el.dataset.urlBuscarProductos || '';
                 this.urlComprobanteBase = this.$el.dataset.urlComprobante || '';
                 this.urlAutorizarDescuento = this.$el.dataset.urlAutorizarDescuento || '';
@@ -1167,7 +1171,7 @@
                     return;
                 }
 
-                this.serieModal = { abierto: true, itemIndex: index, cargando: true, series: [], error: null };
+                this.serieModal = { abierto: true, itemIndex: index, cargando: true, validando: false, series: [], error: null };
 
                 try {
                     const url = this.urlSeries.replace('__producto__', item.producto_id);
@@ -1188,18 +1192,52 @@
                 }
             },
 
-            elegirSerie(serie) {
+            // 5.7.3: la serie se valida contra el servidor antes de asignarla;
+            // si ya no sirve, el error se muestra en el modal y no se asigna.
+            async elegirSerie(serie) {
                 const index = this.serieModal.itemIndex;
                 const item = this.items[index];
 
-                if (! item) {
+                if (! item || this.serieModal.validando) {
                     return;
                 }
 
-                item.numero_serie_id = serie.id;
-                item.numero_serie = serie.numero_serie;
-                this.items.splice(index, 1, item);
-                this.serieModal.abierto = false;
+                this.serieModal.validando = true;
+                this.serieModal.error = null;
+
+                try {
+                    const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                    const respuesta = await fetch(this.urlValidarSerie, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                        },
+                        body: JSON.stringify({
+                            numero_serie_id: serie.id,
+                            producto_id: item.producto_id,
+                        }),
+                    });
+
+                    const cuerpo = await respuesta.json().catch(() => ({}));
+
+                    if (! respuesta.ok) {
+                        this.serieModal.error = cuerpo.message || 'Ese número de serie ya no está disponible.';
+                        this.serieModal.series = this.serieModal.series.filter((disponible) => disponible.id !== serie.id);
+
+                        return;
+                    }
+
+                    item.numero_serie_id = serie.id;
+                    item.numero_serie = cuerpo.numero_serie || serie.numero_serie;
+                    this.items.splice(index, 1, item);
+                    this.serieModal.abierto = false;
+                } catch (error) {
+                    this.serieModal.error = 'No se pudo validar el número de serie.';
+                } finally {
+                    this.serieModal.validando = false;
+                }
             },
 
             quitarSerie(index) {
