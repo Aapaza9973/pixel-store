@@ -119,7 +119,15 @@
     {{-- Tabla --}}
     <div class="overflow-hidden rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 backdrop-blur-xl">
         <div class="border-b border-outline-variant/30 bg-surface-container-low px-5 py-4">
-            <h3 class="font-headline-sm text-headline-sm text-on-surface">Detalle por período</h3>
+            <div class="flex items-center justify-between">
+                <h3 class="font-headline-sm text-headline-sm text-on-surface">Detalle por período</h3>
+                @can('ver reportes')
+                    <a href="{{ route('admin.reportes.excel', ['desde' => $desde, 'hasta' => $hasta, 'agrupacion' => $agrupacion]) }}"
+                       class="rounded-obsidian border border-outline-variant/40 bg-surface-container px-3 py-1.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
+                        Exportar Excel
+                    </a>
+                @endcan
+            </div>
         </div>
 
         <div class="overflow-x-auto">
