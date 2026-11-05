@@ -1,0 +1,547 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{detalle\: App\\Models\\OrdenCompraDetalle, recibido\: int, pendiente\: int\<0, max\>\}, Closure\(App\\Models\\OrdenCompraDetalle\)\: array\{detalle\: App\\Models\\OrdenCompraDetalle, recibido\: int, pendiente\: int\<0, max\>\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Admin/OrdenCompraController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\AtributoTecnico\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\AtributoTecnico\:\:\$tipo_dato\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\AtributoTecnico\:\:\$unidad\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\AtributoTecnico\:\:\$valoresPredefinidos\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$imagen_principal\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$stock\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProductoAtributo\:\:\$atributo_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProductoAtributo\:\:\$valor_boolean\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProductoAtributo\:\:\$valor_decimal\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProductoAtributo\:\:\$valor_enum_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProductoAtributo\:\:\$valor_integer\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProductoAtributo\:\:\$valor_string\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tipo_dato\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Parameter \#1 \$attributes of static method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\Producto\>\:\:create\(\) expects array\<model property of App\\Models\\Producto, mixed\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\AtributoTecnico\>\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\AtributoTecnico\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:mapWithKeys\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\<mixed\>, Closure\(App\\Models\\ProductoAtributo\)\: non\-empty\-array\<mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Relation ''valoresPredefinidos'' is not found in App\\Models\\AtributoTecnico model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Admin/ProductoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ProductoImagenController.php
+
+		-
+			message: '#^Parameter \#1 \$attributes of static method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\User\>\:\:create\(\) expects array\<model property of App\\Models\\User, mixed\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Admin/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/ValidarStockController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$stock\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/ValidarStockController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of static method Illuminate\\Database\\Connection\:\:transaction\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/ValidarStockController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$maneja_numero_serie\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/VentaController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/VentaController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$precio_unitario\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/VentaController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/VentaController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$stock\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/VentaController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$descuento_maximo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/VentaController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/VentaController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/VentaController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:disponibles\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/VentaController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Producto\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/VentaController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>descuento_maximo" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Admin/VentaController.php
+
+		-
+			message: '#^Parameter \#1 \$user of class Illuminate\\Auth\\Events\\Verified constructor expects Illuminate\\Contracts\\Auth\\MustVerifyEmail, App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Auth/VerifyEmailController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$ocultar_si_sin_stock\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/CatalogoController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$stock\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/CatalogoController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Listeners/LogFailedLogin.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$stock\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Producto.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$umbral_alerta\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Producto.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProductoAtributo\:\:\$valor_boolean\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/ProductoAtributo.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProductoAtributo\:\:\$valor_decimal\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/ProductoAtributo.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProductoAtributo\:\:\$valor_integer\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/ProductoAtributo.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProductoAtributo\:\:\$valor_string\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/ProductoAtributo.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tipo_dato\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/ProductoAtributo.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$valor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/ProductoAtributo.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Ubicacion\:\:\$activa\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Ubicacion.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Ubicacion\:\:\$anaquel\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Ubicacion.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Ubicacion\:\:\$estante\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Ubicacion.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Ubicacion\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Ubicacion.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Ubicacion\:\:\$pasillo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Ubicacion.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Providers/AppServiceProvider.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cantidad\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CotizacionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$precio_unitario\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CotizacionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$producto_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/CotizacionService.php
+
+		-
+			message: '#^Access to an undefined property Spatie\\Permission\\Contracts\\Role\:\:\$descuento_maximo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/DescuentoService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cantidad\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/DevolucionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/DevolucionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/DevolucionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$producto_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/DevolucionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ventaDetalle\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/DevolucionService.php
+
+		-
+			message: '#^Offset ''cantidad'' on array\{venta_detalle_id\: int, cantidad\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/DevolucionService.php
+
+		-
+			message: '#^Offset ''venta_detalle_id'' on array\{venta_detalle_id\: int, cantidad\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/DevolucionService.php
+
+		-
+			message: '#^Parameter \#1 \$column of method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\DevolucionDetalle\>\:\:where\(\) expects array\<int\|model property of App\\Models\\DevolucionDetalle, mixed\>\|\(Closure\(Illuminate\\Database\\Query\\Builder\)\: mixed\)\|Illuminate\\Contracts\\Database\\Query\\Expression\|model property of App\\Models\\DevolucionDetalle, ''devolucion_detalles…'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/DevolucionService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>nombre" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/DevolucionService.php
+
+		-
+			message: '#^Parameter \#1 \$attributes of static method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\Favorito\>\:\:firstOrCreate\(\) expects array\<model property of App\\Models\\Favorito, mixed\>, array\<string, int\|string\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/FavoritoService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$stock\.$#'
+			identifier: property.notFound
+			count: 6
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$umbral_alerta\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StockUbicacion\:\:\$cantidad\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>cantidad" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/OrdenCompraService.php
+
+		-
+			message: '#^Offset ''cantidad'' on array\{orden_compra_item_id\: int\|string, cantidad\: int\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/OrdenCompraService.php
+
+		-
+			message: '#^Offset ''cantidad'' on array\{producto_id\: int\|string, cantidad\: int\|string, precio_unitario\: float\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/OrdenCompraService.php
+
+		-
+			message: '#^Offset ''orden_compra_item_id'' on array\{orden_compra_item_id\: int\|string, cantidad\: int\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/OrdenCompraService.php
+
+		-
+			message: '#^Offset ''precio_unitario'' on array\{producto_id\: int\|string, cantidad\: int\|string, precio_unitario\: float\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/OrdenCompraService.php
+
+		-
+			message: '#^Offset ''producto_id'' on array\{producto_id\: int\|string, cantidad\: int\|string, precio_unitario\: float\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/OrdenCompraService.php
+
+		-
+			message: '#^Parameter \#1 \$key of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:contains\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|Illuminate\\Database\\Eloquent\\Model\|int\|string, Closure\(App\\Models\\OrdenCompraDetalle\)\: bool given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrdenCompraService.php
+
+		-
+			message: '#^Parameter \#1 \$key of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:every\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|Illuminate\\Database\\Eloquent\\Model\|string, Closure\(App\\Models\\OrdenCompraDetalle\)\: bool given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrdenCompraService.php
+
+		-
+			message: '#^Parameter \#1 \$producto of method App\\Services\\InventoryService\:\:ajustarStock\(\) expects App\\Models\\Producto, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrdenCompraService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>nombre" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/OrdenCompraService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$categoria_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/ProductoService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$precio_unitario\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/ProductoService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$maneja_numero_serie\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/VentaService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$nombre\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/VentaService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$precio_unitario\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/VentaService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Producto\:\:\$stock\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/VentaService.php
+
+		-
+			message: '#^Offset ''operacion_id'' on array\{cliente_id\?\: int\|null, vendedor_id\: int, operacion_id\: string, descuento_porcentaje\?\: float\|int\|string, autorizado_por\?\: int\|null, autorizacion_id\?\: int\|null, rol_descuento\?\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/VentaService.php
+
+		-
+			message: '#^Offset ''vendedor_id'' on array\{cliente_id\?\: int\|null, vendedor_id\: int, operacion_id\: string, descuento_porcentaje\?\: float\|int\|string, autorizado_por\?\: int\|null, autorizacion_id\?\: int\|null, rol_descuento\?\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/VentaService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>admin_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/VentaService.php

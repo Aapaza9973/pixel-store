@@ -1,0 +1,12 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    paths:
+        - app
+    excludePaths:
+        # No existe en Laravel 13; queda como opcional para no romper el config.
+        - app/Console/Kernel.php (?)
+    checkModelProperties: true
+    reportUnmatchedIgnoredErrors: false
