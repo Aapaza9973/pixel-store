@@ -103,9 +103,15 @@ en cada venta ni arriesgar inconsistencias si se corrige un pago.
 
 ---
 
+## 🔀 Concurrencia real (5.13.12)
+
+5.13.12 implementado como `Venta100ConcurrenciaTest` (100 procesos). El smoke de 2 procesos se mantiene como `VentaServiceConcurrenciaTest`.
+
+---
+
 ## ⚠️ Limitaciones conocidas
 
-- Los tests de “concurrencia” son secuenciales (PHPUnit no levanta procesos paralelos); la garantía real la dan los `lockForUpdate` y los `UNIQUE` de la base.
+- `Venta100ConcurrenciaTest` levanta 100 procesos PHP reales; el resto de la suite es secuencial (PHPUnit no paraleliza por sí solo). La garantía de no-oversell sigue siendo el `lockForUpdate` más el `CHECK (stock >= 0)`.
 - Sin carrito/pedidos públicos ni pagos en línea (Fase 3).
 - Números de serie sin CRUD ni consulta de garantía por SN.
 - El E2E cubre el happy path; los caminos de error siguen cubiertos por los tests por módulo.
