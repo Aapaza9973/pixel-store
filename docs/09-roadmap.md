@@ -9,9 +9,9 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 | Fase | Nombre | Duración estimada | Estado |
 |:-:|---|---|:-:|
 | 1 | Fundación | 4 semanas | ✅ **100%** |
-| 2 | Trazabilidad y cotizaciones | 4 semanas | 🚧 En desarrollo |
-| 3 | Catálogo público y pedidos | 4 semanas | ⏳ Pendiente |
-| 4 | Facturación y proveedores | 4 semanas | ⏳ Pendiente |
+| 2 | Trazabilidad y cotizaciones | 4 semanas | ✅ ~90% (falta cotizaciones) |
+| 3 | Catálogo público y pedidos | 4 semanas | 🚧 Parcial (ficha + favoritos) |
+| 4 | Facturación y proveedores | 4 semanas | 🚧 Parcial (proveedores/OC ✅) |
 | 5 | Motor de compatibilidad e IA | 4 semanas | ⏳ Pendiente |
 | 6 | Escalabilidad y multi-sucursal | Futuro | ⏳ Pendiente |
 
@@ -40,7 +40,7 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 
 ---
 
-## 🚧 Fase 2 — Trazabilidad y cotizaciones (En desarrollo)
+## ✅ Fase 2 — Trazabilidad y cotizaciones (~90% completada)
 
 ### Objetivos
 - Cotizaciones formales con PDF y validez configurable
@@ -49,6 +49,19 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 - Devoluciones con reversión de puntos
 - Cierre de caja diario
 - Reportes básicos
+
+### Estado real (actualizado 2026-11-04)
+
+Implementado y con tests:
+- POS completo (`VentaService`: pago mixto, descuentos por rol, comprobante)
+- Devoluciones (`DevolucionService`: reingreso de stock, liberación de serie)
+- Cierre de caja (`CierreCajaService`: cierre único vendedor/día)
+- Reportes básicos (`ReporteService` + `ReporteController`)
+- Números de serie (parcial: `NumeroSerieService`, vinculación en venta)
+
+Pendiente:
+- **Cotizaciones** (2.1): sin `CotizacionService`, controller ni vistas
+- CRUD completo de números de serie y consulta de garantías
 
 ### Tareas planificadas
 
@@ -104,7 +117,7 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 
 ---
 
-## ⏳ Fase 3 — Catálogo público y pedidos
+## 🚧 Fase 3 — Catálogo público y pedidos (parcial: ficha + favoritos)
 
 ### Objetivos
 - Catálogo público sin autenticación
@@ -150,7 +163,7 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 
 ---
 
-## ⏳ Fase 4 — Facturación y proveedores
+## 🚧 Fase 4 — Facturación y proveedores (proveedores y OC ✅)
 
 ### Objetivos
 - Facturación electrónica SIN (CUCU API / Libélula)
@@ -267,14 +280,16 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 
 ## 📊 Métricas de progreso
 
-| Fase | Tests | Servicios | Modelos |
-|:-:|:-:|:-:|:-:|
-| 1 ✅ | 96 | 1 | 20+ |
-| 2 🚧 | ~130 (esperado) | 3 | +8 |
-| 3 ⏳ | ~150 | 5 | +4 |
-| 4 ⏳ | ~170 | 7 | +4 |
-| 5 ⏳ | ~180 | 8 | +2 |
-| 6 ⏳ | ~200 | 10 | +4 |
+Snapshot real (2026-11-04):
+
+| Métrica | Valor |
+|---|---|
+| Tests | 339 passing (1452 assertions) |
+| Servicios | 12 |
+| Modelos | 31 |
+| Policies | 7 |
+| Controladores Admin | 15 |
+| FormRequests | 17 |
 
 ---
 

@@ -20,24 +20,22 @@ prioridad y sprint objetivo.
   "cuenta desactivada" en el login permitiría enumerar usuarios.
 
 ### Sprint 2 — Modelos pendientes
-- [ ] Crear modelo `Venta` (tabla `ventas` ya existe en schema)
-- [ ] Crear modelo `CierreCaja` (tabla `cierres_cajas` ya existe en schema)
-- [ ] Descomentar relaciones `ventas()` y `cierresCaja()` en `app/Models/User.php`
-- [ ] Bloquea: HU del POS (Sprint 2), Cierre de Caja (Sprint 2)
+- [x] Crear modelo `Venta` (tabla `ventas` ya existe en schema)
+- [x] Crear modelo `CierreCaja` (tabla `cierres_cajas` ya existe en schema)
+- [x] Descomentar relaciones `ventas()` y `cierresCaja()` en `app/Models/User.php`
+- **Cerrado**: los modelos ya existen y `User::ventas()` quedó descomentada
+  (`cierresCaja()` ya estaba activa).
 
 ---
 
 ## 🟡 Prioridad media
 
 ### Bug — Ruta `/alertas` duplicada en `routes/web.php`
-- [ ] `routes/web.php` declara `Route::get('/alertas', ...)->name('alertas.index')`
-      dos veces (líneas 65 y 69: dentro y fuera del grupo `user.has.role`).
-- **Impacto**: la segunda declaración sobrescribe el nombre; el control de
-      roles para alertas queda ambiguo.
-- **Fix sugerido**: eliminar la duplicada y mantener la que tiene el middleware
-      correcto (presumiblemente la del grupo con `user.has.role`).
+- [x] Eliminar la declaración duplicada de `alertas.index`.
+- **Cerrado**: eliminada la duplicada fuera del grupo `user.has.role`; la ruta
+  queda protegida por el middleware correcto. La autorización real la sigue
+  resolviendo `AlertaStockPolicy` vía `authorizeResource`.
 - **Detectado**: Wave 2 Bloque 2 (commit `bc621e1`)
-- **Cuándo arreglarlo**: Sprint 2, junto con la revisión de rutas.
 
 ### Refactor pendiente — `app/Models/MovimientoStock.php`
 No sigue el patrón profesional de las skills:
@@ -49,14 +47,39 @@ No sigue el patrón profesional de las skills:
 
 **Cuándo arreglarlo**: cuando se toque el módulo de movimientos (Sprint 2).
 
+### Refactor — Servicios de inventario consolidados
+- [x] Unificar `InventarioService` (métricas de solo lectura) dentro de
+      `InventoryService` (mutación de stock).
+- **Cerrado**: `resumen()` se movió a `InventoryService`; `InventarioService.php`
+  fue eliminado; `InventarioController` y `DashboardController` ahora inyectan
+  `InventoryService`.
+- **Motivo**: dos clases para el mismo dominio (español vs inglés) violaban la
+  regla "no mezclar idiomas". El usuario eligió `InventoryService` como canónico.
+
+### Tailwind — dependencia `@tailwindcss/vite` (v4) colgada + plan de migración
+- [ ] Decidir y ejecutar una de las dos rutas (ver plan abajo).
+- **Situación**: `package.json` declara `@tailwindcss/vite@^4.3.3` **y**
+  `tailwindcss@^3.1.0`. El build real usa **Tailwind v3** vía `postcss.config.js`
+  + `tailwind.config.js` (config v3 con `theme.extend`); `vite.config.js` **no**
+  importa `@tailwindcss/vite`, así que el plugin v4 está **instalado pero inactivo**.
+- **Conclusión**: el sistema Obsidian Cyber Grid ya está implementado como
+  `theme.extend` de v3 (colores, tipografía, borderRadius en `tailwind.config.js`),
+  por lo que **no requiere migrar a v4**.
+- **Plan (recomendado: opción A)**:
+  - **A. Quedarse en v3**: quitar `@tailwindcss/vite` de `devDependencies`
+    (`npm uninstall @tailwindcss/vite`) para eliminar la ambigüedad. Cero riesgo.
+  - **B. Migrar a v4** (solo si se necesita el engine nuevo): reemplazar
+    `tailwindcss` + `@tailwindcss/vite`, conectar el plugin en `vite.config.js`,
+    migrar `tailwind.config.js` → CSS-first `@theme`, y verificar las clases
+    legacy (`slate-*`, `blue-*`) del panel admin no migrado. Esfuerzo alto.
+- **Cuándo arreglarlo**: antes de tocar estilos del panel admin o del catálogo.
+
 ### Bug — Tabla `telescope_entries` no migrada
-- [ ] Ejecutar `php artisan telescope:install` + `php artisan migrate` en local
-      (o desinstalar Telescope si no se usa activamente)
-- 25.449 errores `Undefined table: telescope_entries` acumulados en
-  `storage/logs/laravel.log` desde el 2026-09-23
-- **Impacto**: ensucia el log real; un bug crítico puede quedar enterrado
+- [x] Publicar migración + `php artisan migrate`.
+- **Cerrado**: se publicó con
+  `php artisan vendor:publish --tag=telescope-migrations` y se ejecutó
+  `php artisan migrate`, creando `telescope_entries` (y tablas relacionadas).
 - **Detectado**: durante verificación manual del Bloque 3
-- **Cuándo arreglarlo**: antes de empezar el Sprint 2
 
 ### Bug — Vista `historial.blade.php` faltante
 - [x] Crear `resources/views/admin/usuarios/historial.blade.php`
