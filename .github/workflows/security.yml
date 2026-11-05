@@ -1,0 +1,58 @@
+name: security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'   # lunes 06:00 UTC
+
+# Los 4 jobs nacen con continue-on-error: true porque hoy existen
+# vulnerabilidades y hallazgos preexistentes que no se corrigen en este PR.
+# Pasar a false cuando el backlog de vulnerabilidades preexistentes esté resuelto.
+jobs:
+  php-dependencies:
+    runs-on: ubuntu-latest
+    continue-on-error: true   # Ver nota de cabecera del archivo.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+      - run: composer audit --locked --format=plain
+
+  js-dependencies:
+    runs-on: ubuntu-latest
+    continue-on-error: true   # Ver nota de cabecera del archivo.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --ignore-scripts
+      - run: npm audit --audit-level=high
+
+  secrets:
+    runs-on: ubuntu-latest
+    continue-on-error: true   # Ver nota de cabecera del archivo.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    continue-on-error: true   # Ver nota de cabecera del archivo.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+      - run: composer install --prefer-dist --no-progress
+      - run: ./vendor/bin/phpstan analyse --memory-limit=1G --no-progress
