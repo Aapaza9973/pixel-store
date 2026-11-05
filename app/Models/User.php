@@ -118,6 +118,14 @@ class User extends Authenticatable
         return $this->hasMany(CierreCaja::class, 'user_id');
     }
 
+    /**
+     * Historial de contraseñas para evitar reutilización (HU-1.6).
+     */
+    public function passwordHistories(): HasMany
+    {
+        return $this->hasMany(PasswordHistory::class);
+    }
+
     // ============ SCOPES ============
 
     /**

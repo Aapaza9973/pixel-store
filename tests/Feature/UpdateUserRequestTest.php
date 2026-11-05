@@ -136,7 +136,7 @@ class UpdateUserRequestTest extends TestCase
         ]), $admin);
         $this->assertTrue($valSinMayuscula->fails());
         $this->assertSame(
-            'La contraseña debe incluir al menos una mayúscula y un número.',
+            'La contraseña debe incluir al menos una mayúscula, un número y un símbolo.',
             $valSinMayuscula->errors()->first('password')
         );
 
@@ -147,7 +147,7 @@ class UpdateUserRequestTest extends TestCase
         ]), $admin);
         $this->assertTrue($valSinNumero->fails());
         $this->assertSame(
-            'La contraseña debe incluir al menos una mayúscula y un número.',
+            'La contraseña debe incluir al menos una mayúscula, un número y un símbolo.',
             $valSinNumero->errors()->first('password')
         );
 

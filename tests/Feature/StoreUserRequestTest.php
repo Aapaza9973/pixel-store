@@ -31,8 +31,8 @@ class StoreUserRequestTest extends TestCase
         return array_merge([
             'name' => 'Carlos Gomez',
             'email' => 'carlos.gomez@pixelstore.com',
-            'password' => 'Password123',
-            'password_confirmation' => 'Password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
             'telefono' => '70012345',
             'nit_ci' => '1234567',
             'roles' => ['Vendedor'],
@@ -80,7 +80,7 @@ class StoreUserRequestTest extends TestCase
         ]));
         $this->assertTrue($valSinMayuscula->fails());
         $this->assertSame(
-            'La contraseña debe incluir al menos una mayúscula y un número.',
+            'La contraseña debe incluir al menos una mayúscula, un número y un símbolo.',
             $valSinMayuscula->errors()->first('password')
         );
 
@@ -91,7 +91,7 @@ class StoreUserRequestTest extends TestCase
         ]));
         $this->assertTrue($valSinNumero->fails());
         $this->assertSame(
-            'La contraseña debe incluir al menos una mayúscula y un número.',
+            'La contraseña debe incluir al menos una mayúscula, un número y un símbolo.',
             $valSinNumero->errors()->first('password')
         );
 

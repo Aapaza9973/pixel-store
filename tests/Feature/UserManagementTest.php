@@ -44,8 +44,8 @@ class UserManagementTest extends TestCase
         return array_merge([
             'name' => 'Carlos Gomez',
             'email' => 'carlos.gomez@pixelstore.com',
-            'password' => 'Password123',
-            'password_confirmation' => 'Password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
             'telefono' => '70012345',
             'nit_ci' => '1234567',
             'roles' => ['Vendedor'],
@@ -83,7 +83,7 @@ class UserManagementTest extends TestCase
 
         $this->assertTrue($nuevo->hasRole('Vendedor'));
         $this->assertTrue($nuevo->estaActivo());
-        $this->assertTrue(Hash::check('Password123', $nuevo->password));
+        $this->assertTrue(Hash::check('Password123!', $nuevo->password));
     }
 
     public function test_email_duplicado_devuelve_error(): void

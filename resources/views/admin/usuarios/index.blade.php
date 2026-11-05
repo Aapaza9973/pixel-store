@@ -4,22 +4,30 @@
 @section('subtitle', 'Gestión del personal con acceso al sistema')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data="{ desactivando: null, motivo: '' }">
 
     {{-- Encabezado --}}
     <div class="flex items-center justify-between">
         <p class="text-sm text-slate-400">
             Total: <span class="text-white font-semibold">{{ $usuarios->total() }}</span> usuarios
         </p>
-        @can('crear usuarios')
-            <a href="{{ route('admin.usuarios.create') }}"
-               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                Nuevo usuario
-            </a>
-        @endcan
+        <div class="flex items-center gap-2">
+            @can('ver usuarios')
+                <a href="{{ route('admin.usuarios.export', request()->query()) }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg transition">
+                    Exportar CSV
+                </a>
+            @endcan
+            @can('crear usuarios')
+                <a href="{{ route('admin.usuarios.create') }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Nuevo usuario
+                </a>
+            @endcan
+        </div>
     </div>
 
     {{-- Filtros --}}
@@ -148,13 +156,11 @@
                                     @endcan
                                     @can('editar usuarios')
                                         @if ($usuario->activo)
-                                            <form method="POST" action="{{ route('admin.usuarios.desactivar', $usuario) }}"
-                                                  onsubmit="return confirm('¿Desactivar a {{ $usuario->name }}?')" class="inline">
-                                                @csrf
-                                                <button type="submit" class="text-xs text-amber-400 hover:text-amber-300 font-medium">
-                                                    Desactivar
-                                                </button>
-                                            </form>
+                                            <button type="button"
+                                                    @click='desactivando = { id: {{ $usuario->id }}, nombre: {{ json_encode($usuario->name) }}, url: {{ json_encode(route('admin.usuarios.desactivar', $usuario)) }} }; motivo = ""'
+                                                    class="text-xs text-amber-400 hover:text-amber-300 font-medium">
+                                                Desactivar
+                                            </button>
                                         @else
                                             <form method="POST" action="{{ route('admin.usuarios.activar', $usuario) }}"
                                                   onsubmit="return confirm('¿Activar a {{ $usuario->name }}?')" class="inline">
@@ -183,6 +189,42 @@
             <div class="mt-4">{{ $usuarios->links() }}</div>
         @endif
     </x-card>
+
+    {{-- Modal de desactivación con motivo opcional (HU-1.8) --}}
+    <div x-show="desactivando" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+         @click.self="desactivando = null">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
+            <h3 class="text-lg font-semibold text-white">Desactivar usuario</h3>
+            <p class="mt-2 text-sm text-slate-400">
+                Vas a desactivar la cuenta de
+                <span class="text-white font-semibold" x-text="desactivando?.nombre"></span>.
+            </p>
+
+            <form method="POST" :action="desactivando?.url" class="mt-5 space-y-4">
+                @csrf
+                <div>
+                    <label for="motivo" class="block text-sm font-medium text-slate-300 mb-1.5">
+                        Motivo (opcional)
+                    </label>
+                    <textarea name="motivo" id="motivo" x-model="motivo" rows="3"
+                              placeholder="Ej.: finalización de contrato, vacaciones, etc."
+                              class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button type="submit"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition">
+                        Desactivar
+                    </button>
+                    <button type="button" @click="desactivando = null"
+                            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg transition">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection
 
