@@ -96,6 +96,14 @@
                     @endif
                 @endcan
 
+                @can('ver cotizaciones')
+                    @if (Route::has('admin.cotizaciones.index'))
+                        <x-nav-link :href="route('admin.cotizaciones.index')" :active="request()->routeIs('admin.cotizaciones.*')" icon="clipboard">
+                            Cotizaciones
+                        </x-nav-link>
+                    @endif
+                @endcan
+
                 @if (Route::has('admin.caja.index') && auth()->user()?->hasAnyRole(['Admin', 'Cajero']))
                     <x-nav-link :href="route('admin.caja.index')" :active="request()->routeIs('admin.caja.*')" icon="archive">
                         Caja

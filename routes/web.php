@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\CierreCajaController;
 use App\Http\Controllers\Admin\ClienteController;
+use App\Http\Controllers\Admin\CotizacionController;
 use App\Http\Controllers\Admin\DevolucionController;
 use App\Http\Controllers\Admin\InventarioController;
 use App\Http\Controllers\Admin\OrdenCompraController;
@@ -61,9 +62,13 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::post('productos/{producto}/transferir-stock', [ProductoController::class, 'transferirStock'])
                 ->name('productos.transferir-stock');
             Route::post('movimientos/salida', [\App\Http\Controllers\Admin\MovimientoController::class, 'registrarSalida'])
+                ->middleware('can:editar productos')
                 ->name('movimientos.salida');
             Route::resource('ubicaciones', UbicacionController::class)
                 ->parameters(['ubicaciones' => 'ubicacion']);
+            Route::get('usuarios/export', [UserController::class, 'export'])
+                ->name('usuarios.export');
+
             Route::resource('usuarios', UserController::class)
                 ->parameters(['usuarios' => 'user']);
             Route::post('usuarios/{user}/desactivar', [UserController::class, 'desactivar'])
@@ -117,6 +122,16 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::resource('proveedores', ProveedorController::class)
                 ->parameters(['proveedores' => 'proveedor']);
 
+            // HU Fase 2.1: cotizaciones formales.
+            Route::resource('cotizaciones', CotizacionController::class)
+                ->parameters(['cotizaciones' => 'cotizacion']);
+            Route::get('cotizaciones/{cotizacion}/pdf', [CotizacionController::class, 'pdf'])
+                ->name('cotizaciones.pdf');
+            Route::post('cotizaciones/{cotizacion}/convertir', [CotizacionController::class, 'convertir'])
+                ->name('cotizaciones.convertir');
+            Route::post('cotizaciones/{cotizacion}/anular', [CotizacionController::class, 'anular'])
+                ->name('cotizaciones.anular');
+
             // HU-6.1: cierre de caja por turno y reporte diario.
             Route::get('caja', [CierreCajaController::class, 'index'])
                 ->name('caja.index');
@@ -130,6 +145,8 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             // HU-6.2: reportes agregados por período.
             Route::get('reportes/periodo', [ReporteController::class, 'periodo'])
                 ->name('reportes.periodo');
+            Route::get('reportes/excel', [ReporteController::class, 'exportarExcel'])
+                ->name('reportes.excel');
 
             // 3.4.11-3.4.12: PDF de la orden de compra.
             Route::get('compras/{orden}/pdf', [OrdenCompraController::class, 'pdf'])
@@ -143,6 +160,8 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::middleware('inventario.access')->group(function () {
                 Route::get('inventario', [InventarioController::class, 'index'])
                     ->name('inventario.index');
+                Route::get('inventario/kpis', [InventarioController::class, 'kpis'])
+                    ->name('inventario.kpis');
             });
         });
         Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
