@@ -45,8 +45,11 @@
                     {{ $estadoTexto }}
                 </span>
 
-                <a href="{{ route('admin.ventas.comprobante', $venta) }}"
-                   class="text-sm text-blue-400 hover:text-blue-300">Comprobante</a>
+                <a href="{{ route('admin.ventas.comprobante', ['venta' => $venta, 'formato' => 'ticket']) }}"
+                   class="text-sm text-blue-400 hover:text-blue-300">Ticket</a>
+
+                <a href="{{ route('admin.ventas.comprobante', ['venta' => $venta, 'formato' => 'a4']) }}"
+                   class="text-sm text-blue-400 hover:text-blue-300">A4</a>
 
                 @can('crear devoluciones')
                     @if ($puedeDevolver)

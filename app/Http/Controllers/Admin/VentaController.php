@@ -173,12 +173,13 @@ class VentaController extends Controller
     }
 
     /**
-     * Comprobante imprimible de una venta (Día 3.3).
+     * Comprobante imprimible de una venta (Día 3.3 / 5.12.2).
      *
+     * Dos formatos: ticket térmico de 80 mm (por defecto) y hoja A4.
      * Sin numeración correlativa todavía: el número visible se deriva del PK
      * (#000123) para que el papel sea estable y reproducible.
      */
-    public function comprobante(Venta $venta): View
+    public function comprobante(Request $request, Venta $venta): View
     {
         abort_unless(auth()->user()?->can('ver ventas'), 403);
 
@@ -193,7 +194,13 @@ class VentaController extends Controller
 
         $numero = '#'.str_pad((string) $venta->id, 6, '0', STR_PAD_LEFT);
 
-        return view('admin.ventas.comprobante', compact('venta', 'numero'));
+        $formato = $request->string('formato')->toString() === 'a4' ? 'a4' : 'ticket';
+
+        $vista = $formato === 'a4'
+            ? 'admin.ventas.comprobante-a4'
+            : 'admin.ventas.comprobante-ticket';
+
+        return view($vista, compact('venta', 'numero', 'formato'));
     }
 
     /**
