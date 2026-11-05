@@ -54,8 +54,14 @@
     </div>
 
     <div class="overflow-hidden rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 backdrop-blur-xl">
-        <div class="border-b border-outline-variant/30 bg-surface-container-low px-5 py-4">
+        <div class="flex items-center justify-between border-b border-outline-variant/30 bg-surface-container-low px-5 py-4">
             <h3 class="font-headline-sm text-headline-sm text-on-surface">{{ $tabs[$tipo]['label'] }}</h3>
+            @can('ver reportes')
+                <a href="{{ route('admin.reportes.pdf', ['tipo' => $tipo, 'desde' => $desde, 'hasta' => $hasta]) }}"
+                   class="rounded-obsidian border border-outline-variant/40 bg-surface-container px-3 py-1.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
+                    Exportar PDF
+                </a>
+            @endcan
         </div>
         <table class="min-w-full text-body-md">
             <thead class="bg-surface-container-low">

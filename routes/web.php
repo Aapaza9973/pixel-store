@@ -162,6 +162,11 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
                 ->middleware('can:ver reportes')
                 ->name('reportes.indicadores');
 
+            // HU-6.5: exportación PDF de cualquier reporte (?tipo=).
+            Route::get('reportes/pdf', [ReporteController::class, 'pdf'])
+                ->middleware('can:ver reportes')
+                ->name('reportes.pdf');
+
             // 3.4.11-3.4.12: PDF de la orden de compra.
             Route::get('compras/{orden}/pdf', [OrdenCompraController::class, 'pdf'])
                 ->name('compras.pdf');

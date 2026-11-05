@@ -122,10 +122,16 @@
             <div class="flex items-center justify-between">
                 <h3 class="font-headline-sm text-headline-sm text-on-surface">Detalle por período</h3>
                 @can('ver reportes')
-                    <a href="{{ route('admin.reportes.excel', ['desde' => $desde, 'hasta' => $hasta, 'agrupacion' => $agrupacion]) }}"
-                       class="rounded-obsidian border border-outline-variant/40 bg-surface-container px-3 py-1.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
-                        Exportar Excel
-                    </a>
+                    <div class="flex items-center gap-2">
+                        <a href="{{ route('admin.reportes.pdf', ['tipo' => 'periodo', 'desde' => $desde, 'hasta' => $hasta, 'agrupacion' => $agrupacion]) }}"
+                           class="rounded-obsidian border border-outline-variant/40 bg-surface-container px-3 py-1.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
+                            Exportar PDF
+                        </a>
+                        <a href="{{ route('admin.reportes.excel', ['desde' => $desde, 'hasta' => $hasta, 'agrupacion' => $agrupacion]) }}"
+                           class="rounded-obsidian border border-outline-variant/40 bg-surface-container px-3 py-1.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
+                            Exportar Excel
+                        </a>
+                    </div>
                 @endcan
             </div>
         </div>
