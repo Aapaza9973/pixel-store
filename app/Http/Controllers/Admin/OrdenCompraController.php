@@ -28,6 +28,27 @@ class OrdenCompraController extends Controller
         $this->authorizeResource(OrdenCompra::class, 'orden');
     }
 
+    public function index(Request $request): View
+    {
+        $estados = ['borrador', 'enviada', 'recibida_parcial', 'recibida_total', 'cancelada'];
+
+        $ordenes = OrdenCompra::query()
+            ->with('proveedor')
+            ->when($request->filled('estado'), fn ($query) => $query->where('estado', $request->string('estado')->toString()))
+            ->when($request->filled('proveedor_id'), fn ($query) => $query->where('proveedor_id', $request->integer('proveedor_id')))
+            ->when($request->filled('desde'), fn ($query) => $query->whereDate('fecha_emision', '>=', $request->date('desde')))
+            ->when($request->filled('hasta'), fn ($query) => $query->whereDate('fecha_emision', '<=', $request->date('hasta')))
+            ->orderByDesc('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.compras.index', [
+            'ordenes' => $ordenes,
+            'estados' => $estados,
+            'proveedores' => Proveedor::query()->orderBy('nombre')->get(['id', 'nombre']),
+        ]);
+    }
+
     public function create(): View
     {
         return view('admin.compras.create', [

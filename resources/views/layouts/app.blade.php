@@ -96,6 +96,14 @@
                     @endif
                 @endcan
 
+                @can('ver ordenes-compra')
+                    @if (Route::has('admin.compras.index'))
+                        <x-nav-link :href="route('admin.compras.index')" :active="request()->routeIs('admin.compras.*')" icon="cube">
+                            Compras
+                        </x-nav-link>
+                    @endif
+                @endcan
+
                 @can('ver cotizaciones')
                     @if (Route::has('admin.cotizaciones.index'))
                         <x-nav-link :href="route('admin.cotizaciones.index')" :active="request()->routeIs('admin.cotizaciones.*')" icon="clipboard">
