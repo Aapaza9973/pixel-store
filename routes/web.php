@@ -171,6 +171,19 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
                 ->middleware('can:ver reportes')
                 ->name('reportes.pdf');
 
+            // 3.4.9: alta, detalle y recepción de órdenes de compra.
+            Route::get('compras/crear', [OrdenCompraController::class, 'create'])
+                ->name('compras.create');
+
+            Route::post('compras', [OrdenCompraController::class, 'store'])
+                ->name('compras.store');
+
+            Route::get('compras/{orden}', [OrdenCompraController::class, 'show'])
+                ->name('compras.show');
+
+            Route::post('compras/{orden}/recepciones', [OrdenCompraController::class, 'recibir'])
+                ->name('compras.recibir');
+
             // 3.4.11-3.4.12: PDF de la orden de compra.
             Route::get('compras/{orden}/pdf', [OrdenCompraController::class, 'pdf'])
                 ->name('compras.pdf');
