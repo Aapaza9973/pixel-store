@@ -337,3 +337,5 @@ Ver el código actual:
 ## 🏁 Cierre de Sprint 2
 
 **Sprint 2 cerrado el 2026-11-05.** 355 tests passing (354 de módulos + 1 E2E de cierre), 92 del gate y 12 de `VentaPosTest`. Detalle de aceptación, validación manual y decisiones D2/D3 en [10 — QA final Sprint 2](10-qa-final-sprint2.md).
+
+- [Sprint 2 — retro](12-demo-retro-sprint2.md): guion de demo de 5 minutos y retrospectiva del cierre (369 tests finales, 0 regresiones, 10 commits de cierre).
