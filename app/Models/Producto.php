@@ -17,7 +17,7 @@ class Producto extends Model
         'categoria_id', 'marca_id', 'nombre', 'slug', 'descripcion',
         'precio_unitario', 'costo', 'stock', 'umbral_alerta',
         'maneja_numero_serie', 'sku', 'codigo_barras',
-        'visible_catalogo', 'imagen_principal', 'imagenes',
+        'visible_catalogo', 'ocultar_si_sin_stock', 'imagen_principal', 'imagenes',
     ];
 
     protected $casts = [
@@ -25,6 +25,7 @@ class Producto extends Model
         'costo' => 'decimal:2',
         'maneja_numero_serie' => 'boolean',
         'visible_catalogo' => 'boolean',
+        'ocultar_si_sin_stock' => 'boolean',
         'imagenes' => 'array',
     ];
 
@@ -77,9 +78,16 @@ class Producto extends Model
         return $this->hasMany(ProductoImagen::class, 'producto_id')->orderBy('orden');
     }
 
+    /**
+     * 2.8.4: visible en catálogo y, si el producto lo pide, con stock > 0.
+     */
     public function scopeVisible($query)
     {
-        return $query->where('visible_catalogo', true);
+        return $query->where('visible_catalogo', true)
+            ->where(function ($query) {
+                $query->where('ocultar_si_sin_stock', false)
+                    ->orWhere('stock', '>', 0);
+            });
     }
 
     public function scopeStockBajo($query)

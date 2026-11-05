@@ -99,6 +99,15 @@
                 <dt class="text-slate-500 text-xs uppercase tracking-wider mb-1">Umbral de alerta</dt>
                 <dd class="text-slate-300">{{ $producto->umbral_alerta }} unid.</dd>
             </div>
+            <div>
+                <dt class="text-slate-500 text-xs uppercase tracking-wider mb-1">Catálogo</dt>
+                <dd class="text-slate-300">
+                    {{ $producto->visible_catalogo ? 'Visible' : 'Oculto' }}
+                    @if ($producto->ocultar_si_sin_stock)
+                        · se oculta sin stock
+                    @endif
+                </dd>
+            </div>
         </div>
     </x-card>
 

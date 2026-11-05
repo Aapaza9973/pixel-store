@@ -170,6 +170,15 @@
                            class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500">
                     <span class="text-sm text-slate-300">Visible en catálogo</span>
                 </label>
+
+                <div x-data="{ oculto: {{ old('ocultar_si_sin_stock', $producto->ocultar_si_sin_stock) ? 'true' : 'false' }} }" class="flex flex-col">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="ocultar_si_sin_stock" value="1" x-model="oculto"
+                               class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500">
+                        <span class="text-sm text-slate-300">Ocultar si no hay stock</span>
+                    </label>
+                    <span x-show="oculto" x-cloak class="text-xs text-slate-500">Se ocultará del catálogo cuando el stock llegue a 0.</span>
+                </div>
             </div>
         </div>
 

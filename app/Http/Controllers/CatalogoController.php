@@ -35,6 +35,11 @@ class CatalogoController extends Controller
             ->where('visible_catalogo', true)
             ->firstOrFail();
 
+        // 2.8.4: el producto puede ocultarse del catálogo mientras no tenga stock.
+        if ($producto->ocultar_si_sin_stock && (int) $producto->stock <= 0) {
+            abort(404);
+        }
+
         $similares = $this->productos->similares($producto);
         $alternativas = $this->productos->alternativas($producto);
 

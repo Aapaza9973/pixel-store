@@ -27,6 +27,7 @@ class StoreProductoRequest extends FormRequest
             'sku' => ['nullable', 'string', 'max:50', 'unique:productos,sku'],
             'codigo_barras' => ['nullable', 'string', 'max:50'],
             'visible_catalogo' => ['boolean'],
+            'ocultar_si_sin_stock' => ['boolean'],
             'imagen' => ['nullable', 'image', 'max:2048'],
             'atributos' => ['nullable', 'array'],
         ];
@@ -65,6 +66,7 @@ class StoreProductoRequest extends FormRequest
         $this->merge([
             'maneja_numero_serie' => $this->boolean('maneja_numero_serie'),
             'visible_catalogo' => $this->boolean('visible_catalogo'),
+            'ocultar_si_sin_stock' => $this->boolean('ocultar_si_sin_stock'),
         ]);
     }
 }

@@ -142,6 +142,7 @@ CREATE TABLE productos (
     sku                   VARCHAR(50) NULL UNIQUE,
     codigo_barras         VARCHAR(50) NULL,
     visible_catalogo      BOOLEAN NOT NULL DEFAULT TRUE,
+    ocultar_si_sin_stock  BOOLEAN NOT NULL DEFAULT FALSE,
     imagen_principal      VARCHAR(255) NULL,
     imagenes              JSONB NULL,
     created_at            TIMESTAMP NOT NULL DEFAULT now(),
