@@ -148,11 +148,19 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::get('reportes/excel', [ReporteController::class, 'exportarExcel'])
                 ->name('reportes.excel');
             Route::get('reportes/vendedor', [ReporteController::class, 'vendedor'])
+                ->middleware('can:ver reportes')
                 ->name('reportes.vendedor');
             Route::get('reportes/categoria', [ReporteController::class, 'categoria'])
+                ->middleware('can:ver reportes')
                 ->name('reportes.categoria');
             Route::get('reportes/metodos', [ReporteController::class, 'metodos'])
+                ->middleware('can:ver reportes')
                 ->name('reportes.metodos');
+
+            // HU-6.4: utilidad, ranking y antigüedad de inventario.
+            Route::get('reportes/indicadores', [ReporteController::class, 'indicadores'])
+                ->middleware('can:ver reportes')
+                ->name('reportes.indicadores');
 
             // 3.4.11-3.4.12: PDF de la orden de compra.
             Route::get('compras/{orden}/pdf', [OrdenCompraController::class, 'pdf'])

@@ -146,6 +146,114 @@ class ReporteService
         ])->all();
     }
 
+    /**
+     * Utilidad neta por producto: ingresos menos costo histórico (HU-6.4.1-6.4.3).
+     *
+     * `costo` y `utilidad` son null cuando ninguna línea del producto tiene
+     * `precio_costo` (ventas anteriores a la migración 6.4.4).
+     *
+     * @return list<array{producto_id:int, nombre:string, cantidad:int, ingresos:float, costo:float|null, utilidad:float|null}>
+     */
+    public function utilidadNetaPorProducto(string $desde, string $hasta): array
+    {
+        $filas = DB::table('detalle_ventas')
+            ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+            ->join('productos', 'productos.id', '=', 'detalle_ventas.producto_id')
+            ->whereIn('ventas.estado', self::ESTADOS_COBRADOS)
+            ->whereBetween('ventas.fecha', [$this->inicio($desde), $this->fin($hasta)])
+            ->selectRaw(
+                'productos.id AS producto_id, productos.nombre AS nombre,
+                 SUM(detalle_ventas.cantidad) AS cantidad,
+                 SUM(detalle_ventas.cantidad * detalle_ventas.precio_unitario) AS ingresos,
+                 SUM(CASE WHEN detalle_ventas.precio_costo IS NOT NULL
+                          THEN detalle_ventas.cantidad * detalle_ventas.precio_costo END) AS costo,
+                 COUNT(detalle_ventas.precio_costo) AS lineas_con_costo'
+            )
+            ->groupBy('productos.id', 'productos.nombre')
+            ->orderByDesc('ingresos')
+            ->get();
+
+        return $filas->map(function ($fila): array {
+            $ingresos = round((float) $fila->ingresos, 2);
+            $costo = (int) $fila->lineas_con_costo > 0 ? round((float) $fila->costo, 2) : null;
+
+            return [
+                'producto_id' => (int) $fila->producto_id,
+                'nombre' => $fila->nombre,
+                'cantidad' => (int) $fila->cantidad,
+                'ingresos' => $ingresos,
+                'costo' => $costo,
+                'utilidad' => $costo === null ? null : round($ingresos - $costo, 2),
+            ];
+        })->all();
+    }
+
+    /**
+     * Ranking de productos por total vendido (HU-6.4.5).
+     *
+     * @param  'asc'|'desc'  $orden
+     * @return list<array{producto_id:int, nombre:string, cantidad:int, total:float}>
+     */
+    public function rankingProductos(string $desde, string $hasta, int $limite = 10, string $orden = 'desc'): array
+    {
+        $sentido = $orden === 'asc' ? 'asc' : 'desc';
+
+        $filas = DB::table('detalle_ventas')
+            ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+            ->join('productos', 'productos.id', '=', 'detalle_ventas.producto_id')
+            ->whereIn('ventas.estado', self::ESTADOS_COBRADOS)
+            ->whereBetween('ventas.fecha', [$this->inicio($desde), $this->fin($hasta)])
+            ->selectRaw('productos.id AS producto_id, productos.nombre AS nombre, SUM(detalle_ventas.cantidad) AS cantidad, SUM(detalle_ventas.cantidad * detalle_ventas.precio_unitario) AS total')
+            ->groupBy('productos.id', 'productos.nombre')
+            ->orderBy('total', $sentido)
+            ->limit($limite)
+            ->get();
+
+        return $filas->map(fn ($fila): array => [
+            'producto_id' => (int) $fila->producto_id,
+            'nombre' => $fila->nombre,
+            'cantidad' => (int) $fila->cantidad,
+            'total' => round((float) $fila->total, 2),
+        ])->all();
+    }
+
+    /**
+     * Antigüedad del inventario: productos con stock y días desde su última venta
+     * cobrada (HU-6.4.6-6.4.7). `dias_sin_venta` es null si nunca se vendió.
+     *
+     * @return list<array{producto_id:int, nombre:string, stock:int, dias_sin_venta:int|null}>
+     */
+    public function antiguedadInventario(): array
+    {
+        $filas = DB::table('productos')
+            ->where('productos.stock', '>', 0)
+            ->select('productos.id AS producto_id', 'productos.nombre', 'productos.stock')
+            ->selectRaw(
+                '(SELECT MAX(ventas.fecha)
+                    FROM detalle_ventas
+                    INNER JOIN ventas ON ventas.id = detalle_ventas.venta_id
+                   WHERE detalle_ventas.producto_id = productos.id
+                     AND ventas.estado IN (?, ?, ?)) AS ultima_venta',
+                self::ESTADOS_COBRADOS
+            )
+            ->get();
+
+        $hoy = Carbon::now()->startOfDay();
+
+        return $filas->map(fn ($fila): array => [
+            'producto_id' => (int) $fila->producto_id,
+            'nombre' => $fila->nombre,
+            'stock' => (int) $fila->stock,
+            'dias_sin_venta' => $fila->ultima_venta === null
+                ? null
+                : (int) Carbon::parse($fila->ultima_venta)->startOfDay()->diffInDays($hoy),
+        ])
+            // Nunca vendidos primero: son los más antiguos del inventario.
+            ->sort(fn (array $a, array $b): int => ($b['dias_sin_venta'] ?? PHP_INT_MAX) <=> ($a['dias_sin_venta'] ?? PHP_INT_MAX))
+            ->values()
+            ->all();
+    }
+
     private function inicio(string $desde): string
     {
         return Carbon::parse($desde)->startOfDay()->toDateTimeString();

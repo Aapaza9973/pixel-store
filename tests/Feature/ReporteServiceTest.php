@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\Venta;
 use App\Services\ReporteService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -160,5 +161,143 @@ class ReporteServiceTest extends TestCase
         $this->assertSame('Efectivo', $filas[0]['metodo']);
         $this->assertSame(1, $filas[0]['cantidad']);
         $this->assertSame(200.0, $filas[0]['total']);
+    }
+
+    private function crearProducto(string $nombre, float $precio, int $stock = 10, ?float $costo = null): Producto
+    {
+        $categoria = Categoria::create(['nombre' => 'Cat '.uniqid(), 'tipo' => 'Componente']);
+
+        return Producto::create([
+            'categoria_id' => $categoria->id,
+            'nombre' => $nombre,
+            'precio_unitario' => $precio,
+            'costo' => $costo,
+            'stock' => $stock,
+            'umbral_alerta' => 2,
+        ]);
+    }
+
+    public function test_utilidad_neta_por_producto(): void
+    {
+        $conCosto = $this->crearProducto('Con costo '.uniqid(), 1000, 10, 600);
+        $sinCosto = $this->crearProducto('Sin costo '.uniqid(), 500, 10, null);
+
+        $venta = $this->crearVenta('2026-03-02', 2500);
+        DetalleVenta::create([
+            'venta_id' => $venta->id,
+            'producto_id' => $conCosto->id,
+            'cantidad' => 2,
+            'precio_unitario' => 1000,
+            'precio_costo' => 600,
+            'descuento_item' => 0,
+        ]);
+        DetalleVenta::create([
+            'venta_id' => $venta->id,
+            'producto_id' => $sinCosto->id,
+            'cantidad' => 1,
+            'precio_unitario' => 500,
+            'precio_costo' => null,
+            'descuento_item' => 0,
+        ]);
+
+        $filas = $this->servicio->utilidadNetaPorProducto('2026-03-01', '2026-03-31');
+
+        $conCostoFila = collect($filas)->firstWhere('producto_id', $conCosto->id);
+        $this->assertSame(2000.0, $conCostoFila['ingresos']);
+        $this->assertSame(1200.0, $conCostoFila['costo']);
+        $this->assertSame(800.0, $conCostoFila['utilidad']);
+
+        // Sin precio_costo histórico no se puede calcular la utilidad.
+        $sinCostoFila = collect($filas)->firstWhere('producto_id', $sinCosto->id);
+        $this->assertNull($sinCostoFila['costo']);
+        $this->assertNull($sinCostoFila['utilidad']);
+    }
+
+    public function test_ranking_productos_top_y_bottom(): void
+    {
+        $barato = $this->crearProducto('Barato '.uniqid(), 100);
+        $medio = $this->crearProducto('Medio '.uniqid(), 200);
+        $caro = $this->crearProducto('Caro '.uniqid(), 300);
+
+        $venta = $this->crearVenta('2026-03-02', 1300);
+        foreach ([[$barato, 1], [$medio, 2], [$caro, 3]] as [$producto, $cantidad]) {
+            DetalleVenta::create([
+                'venta_id' => $venta->id,
+                'producto_id' => $producto->id,
+                'cantidad' => $cantidad,
+                'precio_unitario' => $producto->precio_unitario,
+                'descuento_item' => 0,
+            ]);
+        }
+
+        $top = $this->servicio->rankingProductos('2026-03-01', '2026-03-31', 2);
+        $this->assertCount(2, $top);
+        $this->assertSame($caro->id, $top[0]['producto_id']);
+        $this->assertSame(900.0, $top[0]['total']);
+        $this->assertSame($medio->id, $top[1]['producto_id']);
+
+        $bottom = $this->servicio->rankingProductos('2026-03-01', '2026-03-31', 2, 'asc');
+        $this->assertSame($barato->id, $bottom[0]['producto_id']);
+        $this->assertSame(100.0, $bottom[0]['total']);
+    }
+
+    public function test_antiguedad_inventario_solo_con_stock(): void
+    {
+        $viejo = $this->crearProducto('Viejo '.uniqid(), 100, 5);
+        $nunca = $this->crearProducto('Nunca vendido '.uniqid(), 100, 3);
+        $agotado = $this->crearProducto('Agotado '.uniqid(), 100, 0);
+
+        $venta = $this->crearVenta(now()->subDays(10)->toDateString(), 100);
+        DetalleVenta::create([
+            'venta_id' => $venta->id,
+            'producto_id' => $viejo->id,
+            'cantidad' => 1,
+            'precio_unitario' => 100,
+            'descuento_item' => 0,
+        ]);
+
+        $filas = collect($this->servicio->antiguedadInventario());
+
+        $this->assertSame(10, $filas->firstWhere('producto_id', $viejo->id)['dias_sin_venta']);
+        $this->assertNull($filas->firstWhere('producto_id', $nunca->id)['dias_sin_venta']);
+        // Sin stock queda fuera del reporte.
+        $this->assertNull($filas->firstWhere('producto_id', $agotado->id));
+    }
+
+    /**
+     * HU-6.2.6: el reporte anual debe resolverse en menos de 2 s con 1000 ventas.
+     * Threshold holgado para no ser flaky en CI.
+     */
+    public function test_por_periodo_anual_con_1000_ventas_es_rapido(): void
+    {
+        $filas = [];
+        $ahora = now()->toDateTimeString();
+
+        for ($i = 0; $i < 1000; $i++) {
+            $filas[] = [
+                'operacion_id' => (string) Str::uuid(),
+                'fecha' => sprintf('2031-%02d-%02d 10:00:00', ($i % 12) + 1, ($i % 28) + 1),
+                'user_id' => $this->vendedor->id,
+                'total' => 100,
+                'descuento' => 0,
+                'descuento_porcentaje' => 0,
+                'estado' => 'Pagado',
+                'created_at' => $ahora,
+                'updated_at' => $ahora,
+            ];
+        }
+
+        foreach (array_chunk($filas, 250) as $lote) {
+            DB::table('ventas')->insert($lote);
+        }
+
+        $inicio = hrtime(true);
+        $resultado = $this->servicio->porPeriodo('2031-01-01', '2031-12-31', 'anio');
+        $duracionMs = (hrtime(true) - $inicio) / 1_000_000;
+
+        $this->assertSame([
+            ['periodo' => '2031', 'total_ventas' => 100000.0, 'cantidad_ventas' => 1000],
+        ], $resultado);
+        $this->assertLessThan(2000, $duracionMs, "porPeriodo tardó {$duracionMs} ms");
     }
 }
