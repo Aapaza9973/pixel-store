@@ -102,11 +102,13 @@ class User extends Authenticatable
         return $this->hasMany(OrdenCompra::class, 'user_id');
     }
 
-    // TODO(sprint-2): crear modelo Venta
-    // public function ventas(): HasMany
-    // {
-    //     return $this->hasMany(Venta::class);
-    // }
+    /**
+     * Ventas registradas por este usuario.
+     */
+    public function ventas(): HasMany
+    {
+        return $this->hasMany(Venta::class);
+    }
 
     /**
      * Cierres de caja registrados por este usuario.

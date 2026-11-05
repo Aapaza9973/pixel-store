@@ -149,7 +149,6 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
     });
 
     // Alertas de stock
-    Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
     Route::patch('/alertas/{alerta}/leida', [AlertaController::class, 'marcarLeida'])->name('alertas.leida');
     Route::post('/alertas/marcar-todas', [AlertaController::class, 'marcarTodas'])->name('alertas.marcar-todas');
     Route::delete('/alertas/{alerta}', [AlertaController::class, 'destroy'])->name('alertas.destroy');
