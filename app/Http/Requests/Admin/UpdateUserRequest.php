@@ -30,7 +30,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed', 'regex:/[A-Z]/', 'regex:/[0-9]/'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed', 'regex:/[A-Z]/', 'regex:/[0-9]/', 'regex:/[^A-Za-z0-9]/'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'nit_ci' => ['nullable', 'string', 'max:20'],
             'roles' => ['required', 'array', 'min:1'],
@@ -53,7 +53,7 @@ class UpdateUserRequest extends FormRequest
             'email.unique' => 'El email ya está registrado.',
             'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
             'password.confirmed' => 'Las contraseñas no coinciden.',
-            'password.regex' => 'La contraseña debe incluir al menos una mayúscula y un número.',
+            'password.regex' => 'La contraseña debe incluir al menos una mayúscula, un número y un símbolo.',
             'roles.required' => 'Debe asignar al menos un rol.',
             'roles.min' => 'Debe asignar al menos un rol.',
             'roles.*.exists' => 'El rol seleccionado no es válido.',

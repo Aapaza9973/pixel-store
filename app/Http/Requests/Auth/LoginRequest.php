@@ -12,6 +12,11 @@ use Illuminate\Validation\ValidationException;
 class LoginRequest extends FormRequest
 {
     /**
+     * Segundos de bloqueo tras superar los 5 intentos fallidos (15 minutos).
+     */
+    protected const LOCKOUT_SECONDS = 900;
+
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -51,7 +56,7 @@ class LoginRequest extends FormRequest
         ];
 
         if (! Auth::attempt($credentials, $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->throttleKey(), self::LOCKOUT_SECONDS);
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),

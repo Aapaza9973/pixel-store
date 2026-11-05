@@ -80,6 +80,44 @@
                 @endcan
 
 
+                @can('ver clientes')
+                    @if (Route::has('admin.clientes.index'))
+                        <x-nav-link :href="route('admin.clientes.index')" :active="request()->routeIs('admin.clientes.*')" icon="users">
+                            Clientes
+                        </x-nav-link>
+                    @endif
+                @endcan
+
+                @can('ver proveedores')
+                    @if (Route::has('admin.proveedores.index'))
+                        <x-nav-link :href="route('admin.proveedores.index')" :active="request()->routeIs('admin.proveedores.*')" icon="tag">
+                            Proveedores
+                        </x-nav-link>
+                    @endif
+                @endcan
+
+                @can('ver cotizaciones')
+                    @if (Route::has('admin.cotizaciones.index'))
+                        <x-nav-link :href="route('admin.cotizaciones.index')" :active="request()->routeIs('admin.cotizaciones.*')" icon="clipboard">
+                            Cotizaciones
+                        </x-nav-link>
+                    @endif
+                @endcan
+
+                @if (Route::has('admin.caja.index') && auth()->user()?->hasAnyRole(['Admin', 'Cajero']))
+                    <x-nav-link :href="route('admin.caja.index')" :active="request()->routeIs('admin.caja.*')" icon="archive">
+                        Caja
+                    </x-nav-link>
+                @endif
+
+                @can('ver reportes')
+                    @if (Route::has('admin.reportes.periodo'))
+                        <x-nav-link :href="route('admin.reportes.periodo')" :active="request()->routeIs('admin.reportes.*')" icon="clipboard">
+                            Reportes
+                        </x-nav-link>
+                    @endif
+                @endcan
+
                 @can('ver marcas')
                     <x-nav-link :href="'#'" :active="request()->routeIs('marcas.*')" icon="bookmark">
                         Marcas
@@ -118,23 +156,31 @@
 
             {{-- User info --}}
             <div class="border-t border-outline-variant/30 p-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-semibold text-body-sm">
-                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                @auth
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-semibold text-body-sm">
+                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-body-sm font-medium text-on-surface truncate">{{ auth()->user()->name }}</p>
+                            <p class="font-label-sm text-label-sm text-outline truncate">
+                                {{ auth()->user()->getRoleNames()->first() ?? 'Sin rol' }}
+                            </p>
+                        </div>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-body-sm font-medium text-on-surface truncate">{{ auth()->user()->name }}</p>
-                        <p class="font-label-sm text-label-sm text-outline truncate">
-                            {{ auth()->user()->getRoleNames()->first() ?? 'Sin rol' }}
-                        </p>
-                    </div>
-                </div>
-                <form method="POST" action="{{ route('logout') }}" data-logout-form class="mt-3">
-                    @csrf
-                    <button type="submit" class="w-full text-left font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition">
-                        Cerrar sesión
-                    </button>
-                </form>
+                    <form method="POST" action="{{ route('logout') }}" data-logout-form class="mt-3">
+                        @csrf
+                        <button type="submit" class="w-full text-left font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition">
+                            Cerrar sesión
+                        </button>
+                    </form>
+                @else
+                    {{-- El catálogo público usa este layout hasta que exista layouts.public. --}}
+                    <a href="{{ route('login') }}"
+                       class="inline-flex items-center font-label-sm text-label-sm uppercase tracking-[0.18em] text-on-surface-variant transition hover:text-on-surface">
+                        Iniciar sesión
+                    </a>
+                @endauth
             </div>
         </aside>
 
@@ -153,6 +199,20 @@
                 </div>
 
                 <div class="flex items-center gap-4">
+                    {{-- Contador de favoritos del catálogo (deuda D3). --}}
+                    @if (Route::has('catalogo.favoritos.index') && request()->routeIs('catalogo.*'))
+                        <a href="{{ route('catalogo.favoritos.index') }}"
+                           data-favoritos-contador="{{ $favoritosCount ?? 0 }}"
+                           title="Favoritos: {{ $favoritosCount ?? 0 }}"
+                           class="flex items-center gap-1.5 text-on-surface-variant transition hover:text-on-surface">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                            <span class="min-w-[1.25rem] text-center font-label-sm text-label-sm tabular-nums">{{ $favoritosCount ?? 0 }}</span>
+                        </a>
+                    @endif
+
                     <a href="{{ route('alertas.index') }}" class="relative text-on-surface-variant hover:text-on-surface transition"
                        title="{{ $alertasNoLeidasCount ?? 0 }} alertas sin leer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

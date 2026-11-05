@@ -86,17 +86,45 @@ class User extends Authenticatable
         return $this->hasMany(MovimientoStock::class);
     }
 
-    // TODO(sprint-2): crear modelo Venta
-    // public function ventas(): HasMany
-    // {
-    //     return $this->hasMany(Venta::class);
-    // }
+    /**
+     * Devoluciones registradas por este usuario.
+     */
+    public function devoluciones(): HasMany
+    {
+        return $this->hasMany(Devolucion::class, 'user_id');
+    }
 
-    // TODO(sprint-2): crear modelo CierreCaja
-    // public function cierresCaja(): HasMany
-    // {
-    //     return $this->hasMany(CierreCaja::class);
-    // }
+    /**
+     * Órdenes de compra creadas por este usuario.
+     */
+    public function ordenesCompra(): HasMany
+    {
+        return $this->hasMany(OrdenCompra::class, 'user_id');
+    }
+
+    /**
+     * Ventas registradas por este usuario.
+     */
+    public function ventas(): HasMany
+    {
+        return $this->hasMany(Venta::class);
+    }
+
+    /**
+     * Cierres de caja registrados por este usuario.
+     */
+    public function cierresCaja(): HasMany
+    {
+        return $this->hasMany(CierreCaja::class, 'user_id');
+    }
+
+    /**
+     * Historial de contraseñas para evitar reutilización (HU-1.6).
+     */
+    public function passwordHistories(): HasMany
+    {
+        return $this->hasMany(PasswordHistory::class);
+    }
 
     // ============ SCOPES ============
 

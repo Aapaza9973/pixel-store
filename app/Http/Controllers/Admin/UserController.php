@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class UserController extends Controller
 {
@@ -31,29 +32,8 @@ class UserController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = User::query()->with('roles');
-
-        if ($request->filled('buscar')) {
-            $query->buscar($request->string('buscar')->trim()->toString());
-        }
-
-        if ($request->filled('rol')) {
-            $rol = $request->string('rol')->trim()->toString();
-            $query->whereHas('roles', function ($q) use ($rol): void {
-                $q->where('name', $rol);
-            });
-        }
-
-        if ($request->filled('estado')) {
-            $estado = $request->string('estado')->trim()->toString();
-            if (in_array($estado, ['activos', 'activo', '1'], true)) {
-                $query->activos();
-            } elseif (in_array($estado, ['inactivos', 'inactivo', '0'], true)) {
-                $query->inactivos();
-            }
-        }
-
-        $usuarios = $query->orderByDesc('id')
+        $usuarios = $this->baseQuery($request)
+            ->orderByDesc('id')
             ->paginate(15)
             ->withQueryString();
 
@@ -63,6 +43,36 @@ class UserController extends Controller
             'usuarios' => $usuarios,
             'roles' => $roles,
         ]);
+    }
+
+    /**
+     * Exporta el listado filtrado a CSV (HU-1.7).
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        $this->authorize('viewAny', User::class);
+
+        $query = $this->baseQuery($request)->with('roles');
+
+        return response()->streamDownload(function () use ($query): void {
+            $salida = fopen('php://output', 'w');
+
+            fputcsv($salida, ['Nombre', 'Email', 'Roles', 'Estado', 'Registrado']);
+
+            $query->chunk(200, function ($usuarios) use ($salida): void {
+                foreach ($usuarios as $usuario) {
+                    fputcsv($salida, [
+                        $usuario->name,
+                        $usuario->email,
+                        $usuario->roles->pluck('name')->implode(', '),
+                        $usuario->activo ? 'Activo' : 'Inactivo',
+                        $usuario->created_at->format('d/m/Y H:i'),
+                    ]);
+                }
+            });
+
+            fclose($salida);
+        }, 'usuarios.csv', ['Content-Type' => 'text/csv']);
     }
 
     /**
@@ -183,13 +193,21 @@ class UserController extends Controller
     /**
      * Desactiva la cuenta del usuario especificado.
      */
-    public function desactivar(User $user): RedirectResponse
+    public function desactivar(Request $request, User $user): RedirectResponse
     {
         $this->authorize('desactivar', $user);
+
+        $motivo = $request->input('motivo');
 
         DB::transaction(function () use ($user): void {
             $user->update(['activo' => false]);
         });
+
+        app(AuditoriaService::class)->registrarCambioEstado(
+            $user,
+            false,
+            is_string($motivo) && $motivo !== '' ? $motivo : null
+        );
 
         return redirect()
             ->route('admin.usuarios.index')
@@ -206,6 +224,8 @@ class UserController extends Controller
         DB::transaction(function () use ($user): void {
             $user->update(['activo' => true]);
         });
+
+        app(AuditoriaService::class)->registrarCambioEstado($user, true);
 
         return redirect()
             ->route('admin.usuarios.index')
@@ -253,5 +273,35 @@ class UserController extends Controller
             'usuario' => $user,
             'logs' => $logs,
         ]);
+    }
+
+    /**
+     * Construye la consulta base con los filtros de búsqueda, rol y estado.
+     */
+    private function baseQuery(Request $request)
+    {
+        $query = User::query();
+
+        if ($request->filled('buscar')) {
+            $query->buscar($request->string('buscar')->trim()->toString());
+        }
+
+        if ($request->filled('rol')) {
+            $rol = $request->string('rol')->trim()->toString();
+            $query->whereHas('roles', function ($q) use ($rol): void {
+                $q->where('name', $rol);
+            });
+        }
+
+        if ($request->filled('estado')) {
+            $estado = $request->string('estado')->trim()->toString();
+            if (in_array($estado, ['activos', 'activo', '1'], true)) {
+                $query->activos();
+            } elseif (in_array($estado, ['inactivos', 'inactivo', '0'], true)) {
+                $query->inactivos();
+            }
+        }
+
+        return $query;
     }
 }

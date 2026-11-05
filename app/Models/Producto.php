@@ -14,7 +14,7 @@ class Producto extends Model
     protected $table = 'productos';
 
     protected $fillable = [
-        'categoria_id', 'marca_id', 'nombre', 'descripcion',
+        'categoria_id', 'marca_id', 'nombre', 'slug', 'descripcion',
         'precio_unitario', 'costo', 'stock', 'umbral_alerta',
         'maneja_numero_serie', 'sku', 'codigo_barras',
         'visible_catalogo', 'imagen_principal', 'imagenes',
@@ -53,12 +53,29 @@ class Producto extends Model
         return $this->hasMany(AlertaStock::class);
     }
 
-    // public function numerosSerie(): HasMany { return $this->hasMany(NumeroSerie::class); }
+    public function numerosSerie(): HasMany
+    {
+        return $this->hasMany(NumeroSerie::class, 'producto_id');
+    }
+
     public function stockUbicaciones(): HasMany
     {
         return $this->hasMany(StockUbicacion::class);
     }
-    // public function detalleVentas(): HasMany { return $this->hasMany(DetalleVenta::class); }
+
+    public function detalleVentas(): HasMany
+    {
+        return $this->hasMany(DetalleVenta::class, 'producto_id');
+    }
+
+    /**
+     * Galería normalizada. Se llama distinto de `imagenes` porque ese es el
+     * nombre de la columna JSONB heredada del schema original.
+     */
+    public function imagenesGaleria(): HasMany
+    {
+        return $this->hasMany(ProductoImagen::class, 'producto_id')->orderBy('orden');
+    }
 
     public function scopeVisible($query)
     {

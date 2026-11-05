@@ -4,18 +4,23 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Listeners\FusionarFavoritosAlLogin;
 use App\Listeners\LogFailedLogin;
 use App\Listeners\LogSuccessfulLogin;
 use App\Listeners\LogSuccessfulLogout;
 use App\Models\AlertaStock;
 use App\Models\User;
 use App\Observers\UserObserver;
+use App\Services\FavoritoService;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -39,6 +44,12 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
+        // HU-5.11: 5 intentos por minuto para autorizar descuentos. La clave es
+        // el vendedor autenticado (la IP solo si no hay sesión).
+        RateLimiter::for('autorizar-descuento', function (Request $request) {
+            return Limit::perMinute(5)->by((string) ($request->user()?->id ?? $request->ip()));
+        });
+
         // Paginación con Tailwind
         Paginator::useTailwind();
 
@@ -46,19 +57,30 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(AlertaStock::class, \App\Policies\AlertaStockPolicy::class);
         Gate::policy(\App\Models\Ubicacion::class, \App\Policies\UbicacionPolicy::class);
         Gate::policy(\App\Models\User::class, \App\Policies\UserPolicy::class);
+        Gate::policy(\App\Models\Proveedor::class, \App\Policies\ProveedorPolicy::class);
+        Gate::policy(\App\Models\Cliente::class, \App\Policies\ClientePolicy::class);
+        Gate::policy(\App\Models\OrdenCompra::class, \App\Policies\OrdenCompraPolicy::class);
+        Gate::policy(\App\Models\Cotizacion::class, \App\Policies\CotizacionPolicy::class);
 
         // Auditoría de cambios CRUD sobre usuarios (tarea 1.1.15)
         User::observe(UserObserver::class);
 
-        // Contador de alertas sin leer para el badge del header.
+        // Contadores del header/navbar: alertas sin leer y favoritos del
+        // visitante (usuario autenticado o cookie anónima).
         View::composer('layouts.app', function ($view) {
             $view->with('alertasNoLeidasCount', auth()->check()
                 ? AlertaStock::query()->noLeidas()->count()
                 : 0);
+
+            $view->with('favoritosCount', count(app(FavoritoService::class)->listar(
+                auth()->user(),
+                request()->cookie('favoritos_token')
+            )));
         });
 
         // Auditoría de autenticación
         Event::listen(Login::class, LogSuccessfulLogin::class);
+        Event::listen(Login::class, FusionarFavoritosAlLogin::class);
         Event::listen(Failed::class, LogFailedLogin::class);
         Event::listen(Logout::class, LogSuccessfulLogout::class);
     }

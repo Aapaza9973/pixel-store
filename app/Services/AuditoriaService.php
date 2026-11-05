@@ -105,4 +105,34 @@ class AuditoriaService
             report($e);
         }
     }
+
+    /**
+     * Registra la activación/desactivación de una cuenta en la auditoría.
+     *
+     * Complementa al `UserObserver` (que ya registra el diff de `activo` como
+     * `editar_user`): aquí se guarda la **acción semántica** y el motivo
+     * opcional de la desactivación (HU-1.8).
+     */
+    public function registrarCambioEstado(User $user, bool $activo, ?string $motivo = null): void
+    {
+        $ip = request()->ip();
+
+        try {
+            LogAuditoria::create([
+                'user_id' => auth()->id(),
+                'accion' => $activo ? 'activar_user' : 'desactivar_user',
+                'modelo' => User::class,
+                'modelo_id' => $user->id,
+                'datos_anteriores' => ['activo' => ! $activo],
+                'datos_nuevos' => array_filter([
+                    'activo' => $activo,
+                    'motivo' => $motivo,
+                ], fn ($v) => $v !== null),
+                'ip' => $ip,
+                'user_agent' => request()->userAgent(),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
 }

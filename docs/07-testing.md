@@ -38,8 +38,8 @@ php artisan test --parallel
 ## 📊 Estado actual
 
 ```
-Tests:    177 passed (613 assertions)
-Duration: ~49s
+Tests:    264 passed (890 assertions)
+Duration: ~75s
 ```
 
 ### Distribución por módulo
@@ -77,6 +77,56 @@ Duration: ~49s
 | `ProfileTest` | 5 | Gestión de perfil |
 | `ExampleTest` (Feature + Unit) | 2 | Smoke tests |
 
+## 🚦 Gate de HU-1.1 / HU-RF.4
+
+El gate es una **lista cerrada y auditable** de archivos, declarada en
+`phpunit.xml` como `<testsuite name="gate">`.
+
+```bash
+php artisan test --testsuite=gate
+```
+
+**Corre 92 tests (311 assertions).**
+
+> ⚠️ **El "gate 65" que se venía reportando no existe.** Se ejecutaba
+> `--filter="HU-1.1|HU-RF.4"`, un filtro que matchea nombres de clase/método;
+> esas cadenas solo viven en docblocks, así que corría **0 tests**. El 65 era
+> el conteo de permisos de `RoleSeeder`, no de tests. El número real es **92**.
+
+### Qué cubre y por qué esos archivos
+
+| Archivo | Tests | Motivo |
+|---|:-:|---|
+| `UserManagementTest` | 13 | HU-1.1: CRUD de usuarios y asignación de roles |
+| `UserPolicyTest` | 6 | Autorización por acción sobre usuarios |
+| `UserObserverTest` | 9 | Auditoría de crear/editar/eliminar usuario |
+| `UserHistorialTest` | 3 | Historial de auditoría por usuario |
+| `UserPanelHomeTest` | 4 | `panelHome()` por rol |
+| `StoreUserRequestTest` | 6 | Validación de alta de usuario |
+| `UpdateUserRequestTest` | 6 | Validación de edición de usuario |
+| `RoleAccessTest` | 5 | Matriz de permisos por rol |
+| `InventarioAccessTest` | 8 | HU-RF.4: acceso exclusivo + auditoría del 403 |
+| `MensajesContextualesTest` | 6 | Los 5 mensajes de bloqueo |
+| `AuditoriaLoginTest` | 4 | `login`, `logout` y `login_fallido` |
+| `SessionExtendTest` | 5 | Extensión de sesión |
+| `Auth/AuthenticationTest` | 5 | Login, logout y cuenta inactiva |
+| `Auth/LoginRedirectTest` | 9 | Redirección por rol e `intended()` |
+| `Auth/LoginValidationTest` | 3 | Validación del formulario de login |
+
+**Fuera del gate a propósito**: el resto de `Auth/*` (registro, reset,
+confirmación y actualización de contraseña, verificación de email) porque es
+flujo Breeze y no pertenece a HU-1.1 ni HU-RF.4; y `ErrorPageTest` porque cubre
+vistas de error, no autenticación.
+
+### Cómo agregar un archivo al gate
+
+1. Agregarlo como `<file>` en el testsuite `gate` de `phpunit.xml`.
+2. Agregarlo también en los `<exclude>` del testsuite `Feature`; si no, la
+   suite completa ejecuta esos tests dos veces (una por `Feature` y otra por
+   `gate`), duplicando assertions y tiempo sin sumar cobertura.
+
+---
+
 ### Cobertura de autenticación y acceso al inventario (HU-RF.4)
 
 | Archivo | Qué verifica |
@@ -87,6 +137,49 @@ Duration: ~49s
 | `InventarioAccessTest` | Admin e Inventario entran; Vendedor, Cajero, Cliente y sin rol reciben 403; **el 403 queda en `logs_auditoria`** y el acceso permitido no genera log |
 | `MensajesContextualesTest` | Los 5 mensajes (403 inventario, 403 sin rol, cuenta desactivada, credenciales inválidas, rate limit) son distintos entre sí |
 | `AuditoriaLoginTest` | `login`, `logout` y `login_fallido` con `login_intentado`, sin exponer la contraseña |
+
+---
+
+## 🧵 Concurrencia (manual)
+
+Los tests del gate y de idempotencia son **secuenciales**: PHPUnit no levanta
+procesos paralelos, así que no prueban concurrencia real. Cien requests en un
+mismo proceso nunca ejercitan dos transacciones simultáneas; llamarlo "test de
+concurrencia" sería un falso verde.
+
+### Procedimiento
+
+Con el server levantado (`php artisan serve`) y una sesión autenticada:
+
+1. Obtener un `operacion_id` (UUID) y el `csrf_token` de una venta válida.
+2. Disparar N requests simultáneos con el **mismo** `operacion_id`:
+
+```bash
+# k6
+k6 run --vus 20 --iterations 20 scripts/venta_concurrente.js
+
+# o ab
+ab -n 20 -c 20 -p payload.json -T application/json \
+   -H "Cookie: $SESSION_COOKIE" \
+   -H "X-CSRF-TOKEN: $CSRF" \
+   http://localhost:8000/admin/ventas
+```
+
+### Criterios de aceptación
+
+- `select count(*) from ventas where operacion_id = '<uuid>'` devuelve **1**.
+- `movimientos_stock` tiene **una** fila de salida por ítem (no N).
+- `pagos` tiene exactamente los pagos de la venta creada (no N juegos).
+- Las N-1 respuestas restantes son **201 idempotentes** con el mismo
+  `venta.id`, o **409** de stock si el stock no alcanzaba para todas.
+
+### Qué mirar si falla
+
+| Síntoma | Causa probable |
+|---|---|
+| Más de una venta con el mismo `operacion_id` | Falta el UNIQUE o el guard corre fuera de la transacción |
+| Stock descontado N veces | El ajuste ocurre fuera del lock |
+| 500 por violación de unicidad | La excepción de la DB no se mapea a una respuesta de dominio |
 
 ---
 

@@ -362,7 +362,7 @@ Con volumen real (miles de usuarios) el planner usará estos índices en lugar d
 | Umbral de alerta ≥ 0 | `CHECK (umbral_alerta >= 0)` |
 | Email único | `UNIQUE (email)` en `users` |
 | SKU único | `UNIQUE (sku)` en `productos` |
-| Un cierre por vendedor/día | `UNIQUE (user_id, fecha_cierre)` en `cierres_caja` |
+| Un cierre por turno | `UNIQUE (user_id, fecha, turno)` en `cierres_caja`. turno ∈ (mañana, tarde, noche). Reemplaza la regla vieja de fecha de cierre, que ya no existe (ver migración 2026_11_04_000005). |
 | Un valor por atributo por producto | `UNIQUE (producto_id, atributo_id)` |
 | Invariante de stock | Garantizado por `InventoryService` |
 

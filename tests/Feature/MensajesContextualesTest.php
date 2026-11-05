@@ -76,7 +76,7 @@ class MensajesContextualesTest extends TestCase
         $user = User::factory()->create();
         $credenciales = ['email' => $user->email, 'password' => 'password-incorrecta'];
 
-        // 5 intentos fallidos consumen el límite (5 / 60s por email|IP).
+        // 5 intentos fallidos consumen el límite (5 / 15 min por email|IP).
         for ($i = 0; $i < 5; $i++) {
             $this->post('/login', $credenciales);
         }
@@ -96,7 +96,7 @@ class MensajesContextualesTest extends TestCase
             'No tiene permisos asignados.',
             'Su cuenta está desactivada. Contacte al administrador.',
             'Estas credenciales no coinciden con nuestros registros.',
-            'Demasiados intentos de acceso. Por favor intente nuevamente en 60 segundos.',
+            'Demasiados intentos de acceso. Por favor intente nuevamente en 15 minutos.',
         ];
 
         $this->assertSame(

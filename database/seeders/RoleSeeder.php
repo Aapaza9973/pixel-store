@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 class RoleSeeder extends Seeder
 {
@@ -64,7 +64,7 @@ class RoleSeeder extends Seeder
         // Cajero
         $cajero = Role::firstOrCreate(['name' => 'Cajero', 'guard_name' => 'web']);
         $cajero->syncPermissions([
-            'ver productos', 'ver clientes', 'crear clientes', 'editar clientes',
+            'ver productos', 'ver clientes', 'editar clientes',
             'ver ventas', 'crear ventas', 'ver caja', 'crear caja',
         ]);
 
@@ -88,6 +88,19 @@ class RoleSeeder extends Seeder
         // Cliente
         $cliente = Role::firstOrCreate(['name' => 'Cliente', 'guard_name' => 'web']);
         $cliente->syncPermissions(['ver cotizaciones', 'usar compatibilidad']);
+
+        // Límite de descuento autorizado por rol (HU-5.10).
+        $descuentos = [
+            'Admin' => 100,
+            'Vendedor' => 10,
+            'Cajero' => 5,
+            'Inventario' => 0,
+            'Cliente' => 0,
+        ];
+
+        foreach ($descuentos as $nombre => $maximo) {
+            Role::where('name', $nombre)->update(['descuento_maximo' => $maximo]);
+        }
 
         // Usuarios demo
         $adminUser = User::firstOrCreate(

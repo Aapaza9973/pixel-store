@@ -19,6 +19,7 @@
                 <div>
                     <label for="name" class="block text-sm font-medium text-slate-300 mb-1.5">
                         Nombre completo <span class="text-red-400">*</span>
+                        <x-help-tooltip text="Nombre completo de la persona." />
                     </label>
                     <input type="text" name="name" id="name" value="{{ old('name') }}"
                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
@@ -29,6 +30,7 @@
                 <div>
                     <label for="email" class="block text-sm font-medium text-slate-300 mb-1.5">
                         Correo electrónico <span class="text-red-400">*</span>
+                        <x-help-tooltip text="Email único. Se usará para iniciar sesión." />
                     </label>
                     <input type="email" name="email" id="email" value="{{ old('email') }}"
                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
@@ -39,6 +41,7 @@
                 <div>
                     <label for="telefono" class="block text-sm font-medium text-slate-300 mb-1.5">
                         Teléfono
+                        <x-help-tooltip text="Número de contacto (opcional)." />
                     </label>
                     <input type="text" name="telefono" id="telefono" value="{{ old('telefono') }}"
                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
@@ -49,6 +52,7 @@
                 <div>
                     <label for="nit_ci" class="block text-sm font-medium text-slate-300 mb-1.5">
                         NIT / CI
+                        <x-help-tooltip text="NIT o cédula de identidad (opcional)." />
                     </label>
                     <input type="text" name="nit_ci" id="nit_ci" value="{{ old('nit_ci') }}"
                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
@@ -67,16 +71,18 @@
                 <div>
                     <label for="password" class="block text-sm font-medium text-slate-300 mb-1.5">
                         Contraseña <span class="text-red-400">*</span>
+                        <x-help-tooltip text="Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 símbolo." />
                     </label>
                     <input type="password" name="password" id="password"
                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    <p class="mt-1 text-xs text-slate-500">Mínimo 8 caracteres, 1 mayúscula y 1 número.</p>
+                    <p class="mt-1 text-xs text-slate-500">Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 símbolo.</p>
                     @error('password') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
                     <label for="password_confirmation" class="block text-sm font-medium text-slate-300 mb-1.5">
                         Confirmar contraseña <span class="text-red-400">*</span>
+                        <x-help-tooltip text="Repita la misma contraseña." />
                     </label>
                     <input type="password" name="password_confirmation" id="password_confirmation"
                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
@@ -88,6 +94,7 @@
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
             <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">
                 Roles <span class="text-red-400">*</span>
+                <x-help-tooltip text="Uno o más roles. Definen los permisos del usuario." />
             </h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2">

@@ -4,7 +4,13 @@
 @section('subtitle', 'Panel de control de inventario')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data='inventarioPoll(@js([
+    "productosTotales" => $productosTotales,
+    "stockBajo" => $productosStockBajo,
+    "agotados" => $productosAgotados,
+    "valorInventario" => $valorInventarioBs,
+    "url" => route("admin.inventario.kpis"),
+]))'>
 
     {{-- ===================== KPIs ===================== --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -21,7 +27,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="font-headline-lg text-headline-lg tabular-nums text-on-surface">
+            <p class="font-headline-lg text-headline-lg tabular-nums text-on-surface" x-text="formato(productosTotales)">
                 {{ number_format($productosTotales) }}
             </p>
             <p class="font-body-sm text-body-sm text-on-surface-variant/80">
@@ -41,7 +47,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="font-headline-lg text-headline-lg tabular-nums text-amber-400">
+            <p class="font-headline-lg text-headline-lg tabular-nums text-amber-400" x-text="formato(stockBajo)">
                 {{ number_format($productosStockBajo) }}
             </p>
             <p class="font-body-sm text-body-sm text-on-surface-variant/80">
@@ -61,7 +67,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="font-headline-lg text-headline-lg tabular-nums text-error">
+            <p class="font-headline-lg text-headline-lg tabular-nums text-error" x-text="formato(agotados)">
                 {{ number_format($productosAgotados) }}
             </p>
             <p class="font-body-sm text-body-sm text-on-surface-variant/80">
@@ -81,7 +87,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="font-headline-lg text-headline-lg tabular-nums text-emerald-400">
+            <p class="font-headline-lg text-headline-lg tabular-nums text-emerald-400" x-text="formatoBs(valorInventario)">
                 Bs {{ number_format($valorInventarioBs, 2) }}
             </p>
             <p class="font-body-sm text-body-sm text-on-surface-variant/80">
@@ -242,4 +248,48 @@
         });
     }
 </script>
+
+    @once
+        <script>
+            function inventarioPoll(config) {
+                return {
+                    productosTotales: config.productosTotales,
+                    stockBajo: config.stockBajo,
+                    agotados: config.agotados,
+                    valorInventario: config.valorInventario,
+
+                    init() {
+                        setInterval(() => this.refrescar(), 30000);
+                    },
+
+                    formato(n) {
+                        return Number(n).toLocaleString('es-BO');
+                    },
+
+                    formatoBs(n) {
+                        return 'Bs ' + Number(n).toLocaleString('es-BO', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        });
+                    },
+
+                    async refrescar() {
+                        try {
+                            const res = await fetch(config.url, {
+                                headers: { 'Accept': 'application/json' },
+                            });
+                            if (!res.ok) return;
+                            const d = await res.json();
+                            this.productosTotales = d.productos_totales;
+                            this.stockBajo = d.stock_bajo;
+                            this.agotados = d.agotados;
+                            this.valorInventario = d.valor_inventario;
+                        } catch (e) {
+                            // Silencioso: se conserva el último dato conocido.
+                        }
+                    },
+                };
+            }
+        </script>
+    @endonce
 @endsection

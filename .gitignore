@@ -26,3 +26,9 @@ yarn-error.log
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Artefactos locales de sesión
+/diagnostico.txt
+/test-output.txt
+/skill-hu.txt
+/login-desktop.png
