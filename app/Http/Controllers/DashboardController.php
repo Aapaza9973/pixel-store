@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\InventarioService;
+use App\Services\InventoryService;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(InventarioService $inventario): View
+    public function index(InventoryService $inventario): View
     {
         return view('dashboard', $inventario->resumen());
     }
