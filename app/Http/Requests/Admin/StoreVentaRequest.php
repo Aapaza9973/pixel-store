@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Producto;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 /**
  * Confirmación de venta desde el POS.
@@ -44,6 +46,48 @@ class StoreVentaRequest extends FormRequest
             'autorizado_por' => ['nullable', 'integer', 'exists:users,id'],
             // Autorización pendiente (HU-5.11) que cubre el descuento pedido.
             'autorizacion_id' => ['nullable', 'integer', 'exists:autorizaciones_descuento,id'],
+        ];
+    }
+
+    /**
+     * 5.6.7: si el producto exige número de serie, la línea no puede ir sin uno.
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $items = $this->input('items');
+
+                if (! is_array($items) || $items === []) {
+                    return;
+                }
+
+                $ids = collect($items)
+                    ->filter(fn ($item) => is_array($item) && empty($item['numero_serie_id']))
+                    ->pluck('producto_id')
+                    ->filter()
+                    ->unique()
+                    ->all();
+
+                $requierenSerie = Producto::query()
+                    ->whereIn('id', $ids)
+                    ->where('maneja_numero_serie', true)
+                    ->pluck('id')
+                    ->all();
+
+                foreach ($items as $indice => $item) {
+                    if (! is_array($item)
+                        || ! empty($item['numero_serie_id'])
+                        || ! in_array((int) ($item['producto_id'] ?? 0), $requierenSerie, true)) {
+                        continue;
+                    }
+
+                    $validator->errors()->add(
+                        "items.{$indice}.numero_serie_id",
+                        'Seleccioná el número de serie del producto.'
+                    );
+                }
+            },
         ];
     }
 

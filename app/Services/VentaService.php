@@ -103,6 +103,18 @@ class VentaService
                     }
                 }
 
+                // 5.6.7: si el producto exige número de serie, la línea no puede
+                // venderse sin uno. Se valida bajo el mismo lock que el stock.
+                foreach ($items as $item) {
+                    $producto = $productos[$item['producto_id']];
+
+                    if ($producto->maneja_numero_serie && empty($item['numero_serie_id'])) {
+                        throw new DomainException(
+                            "El producto {$producto->nombre} requiere número de serie."
+                        );
+                    }
+                }
+
                 // El descuento llega como porcentaje (nunca como monto): así el
                 // cliente no puede alterar la base de cálculo.
                 $porcentaje = round((float) ($meta['descuento_porcentaje'] ?? 0), 2);

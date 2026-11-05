@@ -442,10 +442,14 @@
 
                     <button type="button" x-on:click="confirmarVenta()"
                             class="w-full rounded-obsidian-lg bg-primary-container px-4 py-3 text-body-md font-medium text-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-primary-container/90 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-                            x-bind:disabled="items.length === 0 || pagos.length === 0 || enviando || faltaPago">
+                            x-bind:disabled="items.length === 0 || pagos.length === 0 || enviando || faltaPago || faltanSeries">
                         <span x-show="! enviando">Confirmar venta</span>
                         <span x-show="enviando" x-cloak>Confirmando…</span>
                     </button>
+
+                    <p x-show="faltanSeries" x-cloak class="mt-2 font-body-sm text-body-sm text-error">
+                        Elegí la serie de los productos marcados con 'Requiere serie'.
+                    </p>
                 </div>
             </div>
         </aside>
@@ -821,6 +825,11 @@
 
             get erroresCampos() {
                 return Object.values(this.errores || {}).flat();
+            },
+
+            // 5.6.7: no se puede confirmar si una línea exige serie y no la tiene.
+            get faltanSeries() {
+                return this.items.some((item) => item.maneja_numero_serie && ! item.numero_serie_id);
             },
 
             // El banner se limpia al tocar el carrito, así que el link vive
