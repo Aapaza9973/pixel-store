@@ -206,6 +206,9 @@ class VentaService
                         'numero_serie_id' => $item['numero_serie_id'] ?? null,
                         'cantidad' => $item['cantidad'],
                         'precio_unitario' => $producto->precio_unitario,
+                        // 6.4.4: costo histórico para utilidad neta. El campo del
+                        // producto se llama `costo` (no `precio_costo`).
+                        'precio_costo' => $producto->costo ?? null,
                     ]);
                 }
 

@@ -29,12 +29,13 @@ class DetalleVenta extends Model
 
     protected $fillable = [
         'venta_id', 'producto_id', 'numero_serie_id',
-        'cantidad', 'precio_unitario', 'descuento_item',
+        'cantidad', 'precio_unitario', 'precio_costo', 'descuento_item',
     ];
 
     protected $casts = [
         'cantidad' => 'integer',
         'precio_unitario' => 'decimal:2',
+        'precio_costo' => 'decimal:2',
         'descuento_item' => 'decimal:2',
     ];
 

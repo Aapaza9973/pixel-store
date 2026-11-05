@@ -74,6 +74,88 @@ class ReporteService
         ])->all();
     }
 
+    /**
+     * Ventas cobradas agrupadas por vendedor.
+     *
+     * @return list<array{vendedor_id:int, nombre:string, cantidad:int, total:float}>
+     */
+    public function ventasPorVendedor(string $desde, string $hasta): array
+    {
+        $filas = DB::table('ventas')
+            ->join('users', 'users.id', '=', 'ventas.user_id')
+            ->whereIn('ventas.estado', self::ESTADOS_COBRADOS)
+            ->whereBetween('ventas.fecha', [$this->inicio($desde), $this->fin($hasta)])
+            ->selectRaw('ventas.user_id AS vendedor_id, users.name AS nombre, COUNT(*) AS cantidad, SUM(ventas.total) AS total')
+            ->groupBy('ventas.user_id', 'users.name')
+            ->orderByDesc('total')
+            ->get();
+
+        return $filas->map(fn ($fila): array => [
+            'vendedor_id' => (int) $fila->vendedor_id,
+            'nombre' => $fila->nombre,
+            'cantidad' => (int) $fila->cantidad,
+            'total' => round((float) $fila->total, 2),
+        ])->all();
+    }
+
+    /**
+     * Ventas cobradas agrupadas por categoría de producto.
+     *
+     * @return list<array{categoria:string, cantidad:int, total:float}>
+     */
+    public function ventasPorCategoria(string $desde, string $hasta): array
+    {
+        $filas = DB::table('detalle_ventas')
+            ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+            ->join('productos', 'productos.id', '=', 'detalle_ventas.producto_id')
+            ->join('categorias', 'categorias.id', '=', 'productos.categoria_id')
+            ->whereIn('ventas.estado', self::ESTADOS_COBRADOS)
+            ->whereBetween('ventas.fecha', [$this->inicio($desde), $this->fin($hasta)])
+            ->selectRaw('categorias.nombre AS categoria, SUM(detalle_ventas.cantidad) AS cantidad, SUM(detalle_ventas.cantidad * detalle_ventas.precio_unitario) AS total')
+            ->groupBy('categorias.id', 'categorias.nombre')
+            ->orderByDesc('total')
+            ->get();
+
+        return $filas->map(fn ($fila): array => [
+            'categoria' => $fila->categoria,
+            'cantidad' => (int) $fila->cantidad,
+            'total' => round((float) $fila->total, 2),
+        ])->all();
+    }
+
+    /**
+     * Métodos de pago más usados en ventas cobradas.
+     *
+     * @return list<array{metodo:string, cantidad:int, total:float}>
+     */
+    public function metodosPagoMasUsados(string $desde, string $hasta): array
+    {
+        $filas = DB::table('pagos')
+            ->join('ventas', 'ventas.id', '=', 'pagos.venta_id')
+            ->whereIn('ventas.estado', self::ESTADOS_COBRADOS)
+            ->whereBetween('ventas.fecha', [$this->inicio($desde), $this->fin($hasta)])
+            ->selectRaw('pagos.metodo AS metodo, COUNT(*) AS cantidad, SUM(pagos.monto) AS total')
+            ->groupBy('pagos.metodo')
+            ->orderByDesc('total')
+            ->get();
+
+        return $filas->map(fn ($fila): array => [
+            'metodo' => $fila->metodo,
+            'cantidad' => (int) $fila->cantidad,
+            'total' => round((float) $fila->total, 2),
+        ])->all();
+    }
+
+    private function inicio(string $desde): string
+    {
+        return Carbon::parse($desde)->startOfDay()->toDateTimeString();
+    }
+
+    private function fin(string $hasta): string
+    {
+        return Carbon::parse($hasta)->endOfDay()->toDateTimeString();
+    }
+
     private function formatearPeriodo(Carbon $periodo, string $agrupacion): string
     {
         return match ($agrupacion) {

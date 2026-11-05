@@ -337,6 +337,7 @@ CREATE TABLE detalle_ventas (
     numero_serie_id   BIGINT NULL,
     cantidad          INTEGER NOT NULL CHECK (cantidad > 0),
     precio_unitario   DECIMAL(10,2) NOT NULL,
+    precio_costo      DECIMAL(12,2) NULL,
     descuento_item    DECIMAL(10,2) NOT NULL DEFAULT 0,
     created_at        TIMESTAMP NOT NULL DEFAULT now(),
     updated_at        TIMESTAMP NOT NULL DEFAULT now()

@@ -147,6 +147,12 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
                 ->name('reportes.periodo');
             Route::get('reportes/excel', [ReporteController::class, 'exportarExcel'])
                 ->name('reportes.excel');
+            Route::get('reportes/vendedor', [ReporteController::class, 'vendedor'])
+                ->name('reportes.vendedor');
+            Route::get('reportes/categoria', [ReporteController::class, 'categoria'])
+                ->name('reportes.categoria');
+            Route::get('reportes/metodos', [ReporteController::class, 'metodos'])
+                ->name('reportes.metodos');
 
             // 3.4.11-3.4.12: PDF de la orden de compra.
             Route::get('compras/{orden}/pdf', [OrdenCompraController::class, 'pdf'])

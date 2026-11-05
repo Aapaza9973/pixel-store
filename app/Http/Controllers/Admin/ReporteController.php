@@ -8,6 +8,7 @@ use App\Exports\ReporteExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReportePeriodoRequest;
 use App\Services\ReporteService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
@@ -65,5 +66,61 @@ class ReporteController extends Controller
         );
 
         return Excel::download($export, "reporte-periodo-{$desde}-a-{$hasta}.xlsx");
+    }
+
+    /**
+     * Reporte específico: ventas por vendedor (HU-6.3).
+     */
+    public function vendedor(Request $request, ReporteService $reportes): View
+    {
+        [$desde, $hasta] = $this->rango($request);
+
+        return view('admin.reportes.especificos', [
+            'tipo' => 'vendedor',
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'filas' => $reportes->ventasPorVendedor($desde, $hasta),
+        ]);
+    }
+
+    /**
+     * Reporte específico: ventas por categoría (HU-6.3).
+     */
+    public function categoria(Request $request, ReporteService $reportes): View
+    {
+        [$desde, $hasta] = $this->rango($request);
+
+        return view('admin.reportes.especificos', [
+            'tipo' => 'categoria',
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'filas' => $reportes->ventasPorCategoria($desde, $hasta),
+        ]);
+    }
+
+    /**
+     * Reporte específico: métodos de pago más usados (HU-6.3).
+     */
+    public function metodos(Request $request, ReporteService $reportes): View
+    {
+        [$desde, $hasta] = $this->rango($request);
+
+        return view('admin.reportes.especificos', [
+            'tipo' => 'metodos',
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'filas' => $reportes->metodosPagoMasUsados($desde, $hasta),
+        ]);
+    }
+
+    /**
+     * @return array{0: string, 1: string} [desde, hasta]
+     */
+    private function rango(Request $request): array
+    {
+        $desde = $request->string('desde')->toString() ?: Carbon::now()->startOfMonth()->toDateString();
+        $hasta = $request->string('hasta')->toString() ?: Carbon::now()->toDateString();
+
+        return [$desde, $hasta];
     }
 }

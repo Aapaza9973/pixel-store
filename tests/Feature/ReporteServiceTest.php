@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Exceptions\DomainException;
+use App\Models\Categoria;
+use App\Models\DetalleVenta;
+use App\Models\Pago;
+use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
 use App\Services\ReporteService;
@@ -85,5 +89,76 @@ class ReporteServiceTest extends TestCase
         $this->expectExceptionMessage('La agrupación «trimestre» no es válida.');
 
         $this->servicio->porPeriodo('2026-01-01', '2026-01-31', 'trimestre');
+    }
+
+    public function test_ventas_por_vendedor_agrupa_y_ordena(): void
+    {
+        $otro = User::factory()->create();
+
+        // Vendedor principal: 2 ventas (100 + 50 = 150).
+        $this->crearVenta('2026-03-01', 100);
+        $this->crearVenta('2026-03-02', 50);
+
+        // Otro vendedor: 1 venta de 500.
+        Venta::create([
+            'operacion_id' => (string) Str::uuid(),
+            'fecha' => '2026-03-03 10:00:00',
+            'user_id' => $otro->id,
+            'total' => 500,
+            'descuento' => 0,
+            'descuento_porcentaje' => 0,
+            'estado' => 'Pagado',
+        ]);
+
+        $filas = $this->servicio->ventasPorVendedor('2026-03-01', '2026-03-31');
+
+        $this->assertCount(2, $filas);
+        $this->assertSame($otro->id, $filas[0]['vendedor_id']);
+        $this->assertSame(500.0, $filas[0]['total']);
+        $this->assertSame($this->vendedor->id, $filas[1]['vendedor_id']);
+        $this->assertSame(150.0, $filas[1]['total']);
+        $this->assertSame(2, $filas[1]['cantidad']);
+    }
+
+    public function test_ventas_por_categoria_suma_por_categoria(): void
+    {
+        $categoria = Categoria::create(['nombre' => 'Procesadores '.uniqid(), 'tipo' => 'Componente']);
+        $producto = Producto::create([
+            'categoria_id' => $categoria->id,
+            'nombre' => 'CPU '.uniqid(),
+            'precio_unitario' => 1000,
+            'stock' => 10,
+            'umbral_alerta' => 5,
+        ]);
+
+        $venta = $this->crearVenta('2026-03-02', 2000);
+        DetalleVenta::create([
+            'venta_id' => $venta->id,
+            'producto_id' => $producto->id,
+            'cantidad' => 2,
+            'precio_unitario' => 1000,
+            'descuento_item' => 0,
+        ]);
+
+        $filas = $this->servicio->ventasPorCategoria('2026-03-01', '2026-03-31');
+
+        $this->assertCount(1, $filas);
+        $this->assertSame($categoria->nombre, $filas[0]['categoria']);
+        $this->assertSame(2, $filas[0]['cantidad']);
+        $this->assertSame(2000.0, $filas[0]['total']);
+    }
+
+    public function test_metodos_pago_mas_usados_cuenta_y_suma(): void
+    {
+        $venta = $this->crearVenta('2026-03-02', 300);
+        Pago::create(['venta_id' => $venta->id, 'monto' => 200, 'metodo' => 'Efectivo', 'estado' => 'Completado']);
+        Pago::create(['venta_id' => $venta->id, 'monto' => 100, 'metodo' => 'Tarjeta', 'estado' => 'Completado']);
+
+        $filas = $this->servicio->metodosPagoMasUsados('2026-03-01', '2026-03-31');
+
+        $this->assertCount(2, $filas);
+        $this->assertSame('Efectivo', $filas[0]['metodo']);
+        $this->assertSame(1, $filas[0]['cantidad']);
+        $this->assertSame(200.0, $filas[0]['total']);
     }
 }
