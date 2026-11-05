@@ -9,7 +9,7 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 | Fase | Nombre | Duración estimada | Estado |
 |:-:|---|---|:-:|
 | 1 | Fundación | 4 semanas | ✅ **100%** |
-| 2 | Trazabilidad y cotizaciones | 4 semanas | ✅ ~90% (falta cotizaciones) |
+| 2 | Trazabilidad y cotizaciones | 4 semanas | ✅ **100%** (cerrado 2026-11-05) |
 | 3 | Catálogo público y pedidos | 4 semanas | 🚧 Parcial (ficha + favoritos) |
 | 4 | Facturación y proveedores | 4 semanas | 🚧 Parcial (proveedores/OC ✅) |
 | 5 | Motor de compatibilidad e IA | 4 semanas | ⏳ Pendiente |
@@ -40,7 +40,7 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 
 ---
 
-## ✅ Fase 2 — Trazabilidad y cotizaciones (~90% completada)
+## ✅ Fase 2 — Trazabilidad y cotizaciones (completada)
 
 ### Objetivos
 - Cotizaciones formales con PDF y validez configurable
@@ -50,68 +50,70 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 - Cierre de caja diario
 - Reportes básicos
 
-### Estado real (actualizado 2026-11-04)
+### Estado real (Sprint 2 cerrado 2026-11-05)
 
 Implementado y con tests:
-- POS completo (`VentaService`: pago mixto, descuentos por rol, comprobante)
-- Devoluciones (`DevolucionService`: reingreso de stock, liberación de serie)
-- Cierre de caja (`CierreCajaService`: cierre único vendedor/día)
-- Reportes básicos (`ReporteService` + `ReporteController`)
-- Números de serie (parcial: `NumeroSerieService`, vinculación en venta)
+- POS completo (`VentaService`: pago mixto, descuentos por rol, autorización de admin, comprobante)
+- Devoluciones (`DevolucionService`: reingreso de stock, liberación de serie, estados parcial/total)
+- Cierre de caja (`CierreCajaService`: cierre único por vendedor/día, reporte diario)
+- Reportes (`ReporteService` + `ReporteController`: período, vendedor, categoría, métodos, indicadores, PDF y Excel)
+- Cotizaciones (`CotizacionService` + PDF + conversión a venta)
+- Clientes (CRUD, historial y puntos)
+- Números de serie (`NumeroSerieService`, vinculación en venta y liberación en devolución)
 
 Pendiente:
-- **Cotizaciones** (2.1): sin `CotizacionService`, controller ni vistas
-- CRUD completo de números de serie y consulta de garantías
+- CRUD completo de números de serie y consulta de garantías (hoy cubierto a nivel de servicio)
+- Envío automático de cotizaciones por WhatsApp/correo (se comparte el PDF)
 
 ### Tareas planificadas
 
-#### 2.1 — Cotizaciones
-- [ ] `CotizacionService`
-- [ ] `CotizacionController`
-- [ ] Generación de PDF con DomPDF
-- [ ] Validez configurable (default 4 días)
-- [ ] Estados: Vigente, Vencida, Convertida, Anulada
-- [ ] Envío por WhatsApp/correo
-- [ ] Conversión de cotización a venta
-- [ ] Tests: 8-10
+#### 2.1 — Cotizaciones ✅
+- [x] `CotizacionService`
+- [x] `CotizacionController`
+- [x] Generación de PDF con DomPDF
+- [x] Validez configurable (default 4 días)
+- [x] Estados: Vigente, Vencida, Convertida, Anulada
+- [ ] Envío por WhatsApp/correo (se descarga/comparte el PDF)
+- [x] Conversión de cotización a venta
+- [x] Tests: 8-10
 
-#### 2.2 — Números de serie
-- [ ] `NumeroSerieService`
-- [ ] CRUD de números de serie
-- [ ] Vinculación automática al vender
+#### 2.2 — Números de serie (parcial)
+- [x] `NumeroSerieService`
+- [ ] CRUD de números de serie (sin controller ni vistas propias)
+- [x] Vinculación automática al vender
 - [ ] Consulta por número de serie (garantías)
-- [ ] Estados: disponible, vendido, devuelto, defectuoso, baja
-- [ ] Tests: 10-12
+- [x] Estados: disponible, vendido, devuelto, defectuoso, baja
+- [x] Tests: 10-12
 
-#### 2.3 — POS (Punto de Venta)
-- [ ] `VentaService`
-- [ ] Interfaz de POS con búsqueda rápida
-- [ ] Validación de stock en tiempo real
-- [ ] Pago mixto (efectivo + tarjeta + transferencia)
-- [ ] Descuentos por rol (5% vendedor, 10% admin)
-- [ ] Registro de número de serie obligatorio para CPUs/GPUs
-- [ ] Comprobante imprimible (80mm y A4)
-- [ ] Tests: 12-15
+#### 2.3 — POS (Punto de Venta) ✅
+- [x] `VentaService`
+- [x] Interfaz de POS con búsqueda rápida
+- [x] Validación de stock en tiempo real
+- [x] Pago mixto (efectivo + tarjeta + transferencia)
+- [x] Descuentos por rol (10% vendedor, 5% cajero, 100% admin) + autorización
+- [ ] Registro de número de serie obligatorio por categoría (hoy se valida si se envía)
+- [x] Comprobante imprimible (80mm y A4)
+- [x] Tests: 12-15
 
-#### 2.4 — Devoluciones
-- [ ] `DevolucionService`
-- [ ] Solicitud y aprobación
-- [ ] Reposición de stock
+#### 2.4 — Devoluciones ✅
+- [x] `DevolucionService`
+- [ ] Solicitud y aprobación (la devolución se registra procesada)
+- [x] Reposición de stock
 - [ ] Reversión proporcional de puntos
-- [ ] Tests: 6-8
+- [x] Tests: 6-8
 
-#### 2.5 — Cierre de caja
-- [ ] `CajaService`
-- [ ] Resumen del día por método de pago
-- [ ] Cierre único por vendedor/día
-- [ ] Exportación PDF
-- [ ] Tests: 4-6
+#### 2.5 — Cierre de caja ✅
+- [x] `CierreCajaService` (nombre final del servicio)
+- [x] Resumen del día por método de pago
+- [x] Cierre único por vendedor/día
+- [ ] Exportación PDF del cierre
+- [x] Tests: 4-6
 
-#### 2.6 — Reportes básicos
-- [ ] Reporte de ventas diarias
-- [ ] Productos más vendidos
-- [ ] Ventas por vendedor
-- [ ] Exportación CSV
+#### 2.6 — Reportes básicos ✅
+- [x] Reporte de ventas diarias
+- [x] Productos más vendidos
+- [x] Ventas por vendedor
+- [x] Exportación CSV
 
 ### Duración estimada: 4 semanas
 
@@ -280,16 +282,17 @@ Pendiente:
 
 ## 📊 Métricas de progreso
 
-Snapshot real (2026-11-04):
+Snapshot real (2026-11-05):
 
 | Métrica | Valor |
 |---|---|
-| Tests | 339 passing (1452 assertions) |
+| Tests | 355 passing (1.535 assertions) |
 | Servicios | 12 |
-| Modelos | 31 |
-| Policies | 7 |
-| Controladores Admin | 15 |
-| FormRequests | 17 |
+| Modelos | 34 |
+| Policies | 8 |
+| Controladores Admin | 16 |
+| FormRequests | 18 |
+| Tablas | 47 |
 
 ---
 
@@ -328,3 +331,9 @@ Ver los sprints completados:
 
 Ver el código actual:
 - [Repositorio GitHub](https://github.com/Aapaza9973/pixel-store)
+
+---
+
+## 🏁 Cierre de Sprint 2
+
+**Sprint 2 cerrado el 2026-11-05.** 355 tests passing (354 de módulos + 1 E2E de cierre), 92 del gate y 12 de `VentaPosTest`. Detalle de aceptación, validación manual y decisiones D2/D3 en [10 — QA final Sprint 2](10-qa-final-sprint2.md).

@@ -4,7 +4,7 @@
 ![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?style=flat-square&logo=php&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind-3-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-339%20passing-success?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-355%20passing-success?style=flat-square)
 ![License](https://img.shields.io/badge/license-private-red?style=flat-square)
 
 Sistema web de ventas, inventario y catálogo online para **Pixel Store**, tienda de computadoras, laptops, componentes y accesorios tecnológicos en La Paz, Bolivia.
@@ -198,7 +198,7 @@ completo (eventos, listeners y middleware) está en
 ```bash
 php artisan migrate:fresh --seed   # schema + migraciones + datos demo
 php artisan serve                  # servidor de desarrollo
-php artisan test                   # suite completa (339 tests)
+php artisan test                   # suite completa (355 tests)
 php artisan test --filter=UserManagementTest
 ./vendor/bin/pint --dirty          # formateo de código
 ```
@@ -233,7 +233,7 @@ php artisan test --filter=ProductoTest
 php artisan test --coverage
 ```
 
-**Estado actual**: ✅ **339 tests passing** (1452 assertions)
+**Estado actual**: ✅ **355 tests passing** (1.535 assertions)
 
 Cobertura por dominio (todos en verde):
 
@@ -258,7 +258,7 @@ Cobertura por dominio (todos en verde):
 | Sprint | Módulo | Estado |
 |:-:|---|:-:|
 | **1** | Inventario completo (productos, categorías, marcas, atributos técnicos, ubicaciones, alertas) | ✅ **100%** |
-| **2** | POS, devoluciones, cierre de caja, reportes, números de serie | ✅ **~90%** (falta Cotizaciones) |
+| **2** | POS, devoluciones, cierre de caja, reportes, cotizaciones, clientes y números de serie | ✅ **100%** |
 | **3** | Catálogo público (ficha de producto, favoritos) | 🚧 Parcial (falta carrito/pedidos) |
 | **4** | Proveedores y órdenes de compra | ✅ · Facturación SIN ⏳ |
 | **5** | Motor de compatibilidad, IA | ⏳ Pendiente |
