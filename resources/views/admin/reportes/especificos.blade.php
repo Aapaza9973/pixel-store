@@ -61,6 +61,10 @@
                    class="rounded-obsidian border border-outline-variant/40 bg-surface-container px-3 py-1.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
                     Exportar PDF
                 </a>
+                <a href="{{ route('admin.reportes.excel', ['tipo' => $tipo, 'desde' => $desde, 'hasta' => $hasta]) }}"
+                   class="ml-2 rounded-obsidian border border-outline-variant/40 bg-surface-container px-3 py-1.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
+                    Exportar Excel
+                </a>
             @endcan
         </div>
         <table class="min-w-full text-body-md">

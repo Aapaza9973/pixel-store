@@ -52,7 +52,7 @@ class OrdenCompraController extends Controller
     public function create(): View
     {
         return view('admin.compras.create', [
-            'proveedores' => Proveedor::query()->activos()->orderBy('nombre')->get(),
+            'proveedores' => Proveedor::query()->activos()->whereIn('tipo', ['Mayorista', 'Importador'])->orderBy('nombre')->get(),
             'productos' => Producto::query()->orderBy('nombre')->get(['id', 'nombre', 'precio_unitario']),
         ]);
     }
@@ -64,6 +64,7 @@ class OrdenCompraController extends Controller
             $request->user(),
             $request->validated('items'),
             [
+                'fecha_emision' => $request->validated('fecha_emision'),
                 'fecha_entrega' => $request->validated('fecha_entrega'),
                 'impuestos' => $request->validated('impuestos') ?? 0,
                 'notas' => $request->validated('notas'),
@@ -135,6 +136,46 @@ class OrdenCompraController extends Controller
         return redirect()
             ->route('admin.compras.show', $orden)
             ->with('success', "Recepción registrada para la orden {$orden->numero}.");
+    }
+
+    /**
+     * Vista previa del documento antes de emitir la orden.
+     */
+    public function preview(OrdenCompra $orden): Response
+    {
+        $this->authorize('view', $orden);
+        $orden->load(['proveedor', 'usuario', 'detalles.producto']);
+
+        return Pdf::loadView('admin.compras.pdf', ['orden' => $orden])
+            ->setPaper('a4', 'portrait')
+            ->stream("vista-previa-orden-{$orden->numero}.pdf");
+    }
+
+    /**
+     * Emite formalmente una orden borrador, cambiando su estado a enviada.
+     * No modifica el esquema: reutiliza el estado existente.
+     */
+    public function emitir(OrdenCompra $orden): RedirectResponse
+    {
+        $this->authorize('update', $orden);
+        $orden->load('proveedor', 'detalles');
+
+        if ($orden->estado !== 'borrador') {
+            return back()->with('error', 'Solo se pueden emitir órdenes que estén en borrador.');
+        }
+
+        if (! $orden->proveedor || ! $orden->proveedor->activo) {
+            return back()->with('error', 'El proveedor debe estar registrado y activo para emitir la orden.');
+        }
+
+        if ($orden->detalles->isEmpty() || (float) $orden->total <= 0) {
+            return back()->with('error', 'La orden debe tener productos y un total válido antes de emitirla.');
+        }
+
+        $orden->update(['estado' => 'enviada']);
+
+        return redirect()->route('admin.compras.show', $orden)
+            ->with('success', "La orden {$orden->numero} fue emitida correctamente. Ya puedes descargar el PDF y enviarlo al proveedor.");
     }
 
     /**

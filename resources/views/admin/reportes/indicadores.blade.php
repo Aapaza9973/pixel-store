@@ -32,6 +32,10 @@
                    class="rounded-obsidian border border-outline-variant/40 bg-surface-container px-4 py-2 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
                     Exportar PDF
                 </a>
+                <a href="{{ route('admin.reportes.excel', ['tipo' => 'indicadores', 'desde' => $desde, 'hasta' => $hasta]) }}"
+                   class="ml-2 rounded-obsidian border border-outline-variant/40 bg-surface-container px-3 py-1.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
+                    Exportar Excel
+                </a>
             @endcan
         </form>
     </div>
@@ -138,18 +142,46 @@
             </table>
         </div>
 
+        {{-- Productos menos vendidos --}}
+        <div class="overflow-hidden rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 backdrop-blur-xl">
+            <div class="border-b border-outline-variant/30 bg-surface-container-low px-5 py-4">
+                <h3 class="font-headline-sm text-headline-sm text-on-surface">Productos menos vendidos</h3>
+                <p class="mt-0.5 font-body-sm text-body-sm text-on-surface-variant">Top 10 con menor cantidad vendida dentro del período</p>
+            </div>
+            <table class="min-w-full text-body-md">
+                <thead class="bg-surface-container-low">
+                    <tr class="text-left">
+                        <th class="px-4 py-3.5 font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Producto</th>
+                        <th class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Cantidad</th>
+                        <th class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($menosVendidos as $fila)
+                        <tr class="border-b border-outline-variant/15 last:border-0">
+                            <td class="px-4 py-3.5 text-on-surface">{{ $fila['nombre'] }}</td>
+                            <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">{{ $fila['cantidad'] }}</td>
+                            <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">{{ $dinero((float) $fila['total']) }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="3" class="px-4 py-12 text-center text-outline">No hay ventas en el período.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
         {{-- Antigüedad de inventario --}}
         <div class="overflow-hidden rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 backdrop-blur-xl">
             <div class="border-b border-outline-variant/30 bg-surface-container-low px-5 py-4">
                 <h3 class="font-headline-sm text-headline-sm text-on-surface">Antigüedad de inventario</h3>
-                <p class="mt-0.5 font-body-sm text-body-sm text-on-surface-variant">Días desde la última venta · productos con stock</p>
+                <p class="mt-0.5 font-body-sm text-body-sm text-on-surface-variant">Días desde la última entrada registrada · productos con stock</p>
             </div>
             <table class="min-w-full text-body-md">
                 <thead class="bg-surface-container-low">
                     <tr class="text-left">
                         <th class="px-4 py-3.5 font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Producto</th>
                         <th class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Stock</th>
-                        <th class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Días sin venta</th>
+                        <th class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Días desde entrada</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -157,8 +189,8 @@
                         <tr class="border-b border-outline-variant/15 last:border-0 hover:bg-primary-container/[0.04]">
                             <td class="px-4 py-3.5 text-on-surface">{{ $fila['nombre'] }}</td>
                             <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">{{ $fila['stock'] }}</td>
-                            <td class="px-4 py-3.5 text-right tabular-nums {{ $fila['dias_sin_venta'] === null ? 'text-outline' : 'text-on-surface' }}">
-                                {{ $fila['dias_sin_venta'] === null ? 'Sin ventas' : $fila['dias_sin_venta'].' d' }}
+                            <td class="px-4 py-3.5 text-right tabular-nums {{ $fila['dias_desde_entrada'] === null ? 'text-outline' : 'text-on-surface' }}">
+                                {{ $fila['dias_desde_entrada'] === null ? 'Sin entrada registrada' : $fila['dias_desde_entrada'].' d' }}
                             </td>
                         </tr>
                     @empty

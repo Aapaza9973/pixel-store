@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Exports\ReporteExport;
+use App\Models\CierreCaja;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReportePeriodoRequest;
 use App\Services\ReporteService;
+use App\Services\CierreCajaService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -46,29 +48,50 @@ class ReporteController extends Controller
     /**
      * Exporta el reporte por período a Excel (.xlsx) — HU-6.5.
      */
-    public function exportarExcel(ReportePeriodoRequest $request, ReporteService $reportes): BinaryFileResponse
+    public function exportarExcel(ReportePeriodoRequest $request, ReporteService $reportes, CierreCajaService $caja): BinaryFileResponse
     {
         $datos = $request->validated();
+        $tipo = (string) $request->input('tipo', 'periodo');
+
+        abort_unless(in_array($tipo, ['diario', 'periodo', 'vendedor', 'categoria', 'metodos', 'indicadores'], true), 422);
 
         $desde = $datos['desde'] ?? Carbon::now()->startOfMonth()->toDateString();
         $hasta = $datos['hasta'] ?? Carbon::now()->toDateString();
         $agrupacion = $datos['agrupacion'] ?? 'dia';
 
-        $filas = $reportes->porPeriodo($desde, $hasta, $agrupacion);
+        $resumen = [];
+        $formatos = [];
 
-        $export = new ReporteExport(
-            array_map(
-                fn (array $fila): array => [
-                    $fila['periodo'],
-                    $fila['cantidad_ventas'],
-                    $fila['total_ventas'],
-                ],
-                $filas
-            ),
-            ['Periodo', 'Cantidad de ventas', 'Total ventas (Bs)'],
-        );
+        if ($tipo === 'diario') {
+            $fecha = $request->validate(['fecha' => ['required', 'date_format:Y-m-d']])['fecha'];
+            [$titulo, $encabezados, $filas, $resumen, $formatos] = $this->datosExcelDiario($fecha, $caja);
+            $desde = $fecha;
+            $hasta = $fecha;
+            $subtitulo = 'Cierre diario de ventas, métodos de pago y arqueo de caja · '.Carbon::parse($fecha)->format('d/m/Y');
+        } elseif ($tipo === 'periodo') {
+            $datosPeriodo = $reportes->porPeriodo($desde, $hasta, $agrupacion);
+            $filas = array_map(fn (array $fila): array => [
+                $fila['periodo'],
+                (int) $fila['cantidad_ventas'],
+                (float) $fila['total_ventas'],
+            ], $datosPeriodo);
+            $titulo = 'Reporte de ventas por período';
+            $encabezados = ['Período', 'Cantidad de ventas', 'Total vendido (Bs)'];
+            $resumen = [
+                ['Rango consultado', Carbon::parse($desde)->format('d/m/Y').' al '.Carbon::parse($hasta)->format('d/m/Y')],
+                ['Agrupación', ucfirst($agrupacion)],
+                ['Ventas registradas', (int) collect($datosPeriodo)->sum('cantidad_ventas')],
+            ];
+            $formatos = ['C' => '"Bs" #,##0.00;[Red]-"Bs" #,##0.00'];
+            $subtitulo = 'Análisis de ventas agrupado por '.strtolower($agrupacion).' · '.Carbon::parse($desde)->format('d/m/Y').' al '.Carbon::parse($hasta)->format('d/m/Y');
+        } else {
+            [$titulo, $encabezados, $filas] = $this->datosPdf($tipo, $desde, $hasta, $agrupacion, $reportes);
+            $subtitulo = 'Período consultado: '.Carbon::parse($desde)->format('d/m/Y').' al '.Carbon::parse($hasta)->format('d/m/Y');
+        }
 
-        return Excel::download($export, "reporte-periodo-{$desde}-a-{$hasta}.xlsx");
+        $export = new ReporteExport($filas, $encabezados, $titulo, $subtitulo, $resumen, $formatos);
+
+        return Excel::download($export, "reporte-{$tipo}-{$desde}-a-{$hasta}.xlsx");
     }
 
     /**
@@ -145,7 +168,8 @@ class ReporteController extends Controller
             'costo' => $costo,
             'utilidadTotal' => $utilidadTotal,
             'margen' => $margen,
-            'ranking' => $reportes->rankingProductos($desde, $hasta),
+            'ranking' => $reportes->rankingProductos($desde, $hasta, 10, 'desc'),
+            'menosVendidos' => $reportes->rankingProductos($desde, $hasta, 10, 'asc'),
             'antiguedad' => $reportes->antiguedadInventario(),
         ]);
     }
@@ -156,13 +180,14 @@ class ReporteController extends Controller
      * Un solo endpoint parametrizado: periodo, vendedor, categoria, metodos o
      * indicadores, siempre con el rango de fechas actual.
      */
-    public function pdf(Request $request, ReporteService $reportes): Response
+    public function pdf(Request $request, ReporteService $reportes, CierreCajaService $caja): Response
     {
         $datos = $request->validate([
-            'tipo' => ['required', Rule::in(['periodo', 'vendedor', 'categoria', 'metodos', 'indicadores'])],
+            'tipo' => ['required', Rule::in(['diario', 'periodo', 'vendedor', 'categoria', 'metodos', 'indicadores'])],
             'desde' => ['nullable', 'date_format:Y-m-d'],
             'hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:desde'],
             'agrupacion' => ['nullable', Rule::in(array_keys(ReporteService::AGRUPACIONES))],
+            'fecha' => ['nullable', 'date_format:Y-m-d'],
         ]);
 
         $tipo = $datos['tipo'];
@@ -170,12 +195,100 @@ class ReporteController extends Controller
         $hasta = $datos['hasta'] ?? Carbon::now()->toDateString();
         $agrupacion = $datos['agrupacion'] ?? 'dia';
 
-        [$titulo, $columnas, $filas] = $this->datosPdf($tipo, $desde, $hasta, $agrupacion, $reportes);
+        if ($tipo === 'diario') {
+            $fecha = $datos['fecha'] ?? Carbon::now()->toDateString();
+            [$titulo, $columnas, $filas] = $this->datosDiario($fecha, $caja);
+            $desde = $fecha;
+            $hasta = $fecha;
+        } else {
+            [$titulo, $columnas, $filas] = $this->datosPdf($tipo, $desde, $hasta, $agrupacion, $reportes);
+        }
 
         $pdf = Pdf::loadView('admin.reportes.pdf', compact('titulo', 'columnas', 'filas', 'desde', 'hasta'))
             ->setPaper('a4', 'portrait');
 
         return $pdf->download("reporte-{$tipo}-{$desde}-{$hasta}.pdf");
+    }
+
+    /**
+     * Datos estructurados y numéricos para el Excel de caja (HU-6.1 / HU-6.5).
+     * Se reutiliza el mismo servicio de cálculo que alimenta la pantalla de caja.
+     */
+    private function datosExcelDiario(string $fecha, CierreCajaService $caja): array
+    {
+        $resumenCaja = $caja->calcularDelDia($fecha);
+        $filas = [];
+
+        foreach ($resumenCaja['por_metodo'] as $metodo => $monto) {
+            $filas[] = ['VENTAS', 'Cobros recibidos', $metodo, (float) $monto, null, null, null];
+        }
+
+        $filas[] = ['AJUSTES', 'Devoluciones del día', 'Devoluciones', null, (float) $resumenCaja['total_devoluciones'], null, null];
+        $filas[] = ['CAJA', 'Efectivo esperado', 'Sistema', null, (float) $resumenCaja['efectivo_esperado'], null, null];
+
+        $cierres = CierreCaja::query()
+            ->with('user:id,name')
+            ->whereDate('fecha', $fecha)
+            ->orderBy('turno')
+            ->get();
+
+        foreach ($cierres as $cierre) {
+            $filas[] = [
+                'CIERRE DE CAJA',
+                'Arqueo de turno',
+                ucfirst($cierre->turno).' · '.($cierre->user?->name ?? 'Sin usuario'),
+                null,
+                (float) $cierre->efectivo_esperado,
+                (float) $cierre->efectivo_real,
+                (float) $cierre->diferencia,
+            ];
+        }
+
+        return [
+            'Reporte diario de ventas y cierre de caja',
+            ['Sección', 'Concepto', 'Método / turno', 'Ventas (Bs)', 'Esperado (Bs)', 'Real (Bs)', 'Diferencia (Bs)'],
+            $filas,
+            [
+                ['Fecha', Carbon::parse($fecha)->format('d/m/Y')],
+                ['Total cobrado (Bs)', (float) $resumenCaja['total_ventas']],
+                ['Efectivo esperado (Bs)', (float) $resumenCaja['efectivo_esperado']],
+            ],
+            [
+                'D' => '"Bs" #,##0.00;[Red]-"Bs" #,##0.00',
+                'E' => '"Bs" #,##0.00;[Red]-"Bs" #,##0.00',
+                'F' => '"Bs" #,##0.00;[Red]-"Bs" #,##0.00',
+                'G' => '"Bs" #,##0.00;[Red]-"Bs" #,##0.00',
+            ],
+        ];
+    }
+
+    /**
+     * Datos exportables del reporte diario de caja, reutilizando el cálculo
+     * oficial del cierre para que los importes coincidan con la pantalla.
+     */
+    private function datosDiario(string $fecha, CierreCajaService $caja): array
+    {
+        $resumen = $caja->calcularDelDia($fecha);
+        $filas = [];
+
+        foreach ($resumen['por_metodo'] as $metodo => $monto) {
+            $filas[] = ['Ventas por método', $metodo, 'Bs '.number_format($monto, 2, ',', '.'), '—'];
+        }
+
+        $filas[] = ['Devoluciones', 'Total', 'Bs '.number_format($resumen['total_devoluciones'], 2, ',', '.'), '—'];
+        $filas[] = ['Efectivo esperado', 'Caja', 'Bs '.number_format($resumen['efectivo_esperado'], 2, ',', '.'), '—'];
+
+        $cierres = CierreCaja::query()->with('user:id,name')->whereDate('fecha', $fecha)->orderBy('turno')->get();
+        foreach ($cierres as $cierre) {
+            $filas[] = [
+                'Cierre de caja',
+                ucfirst($cierre->turno).' · '.($cierre->user?->name ?? '—'),
+                'Esperado Bs '.number_format((float) $cierre->efectivo_esperado, 2, ',', '.'),
+                'Real Bs '.number_format((float) $cierre->efectivo_real, 2, ',', '.').' · Diferencia Bs '.number_format((float) $cierre->diferencia, 2, ',', '.'),
+            ];
+        }
+
+        return ['Reporte diario de ventas y cierre de caja', ['Concepto', 'Detalle', 'Importe', 'Información adicional'], $filas];
     }
 
     /**
@@ -225,15 +338,30 @@ class ReporteController extends Controller
                 ], $reportes->metodosPagoMasUsados($desde, $hasta)),
             ],
             default => [
-                'Indicadores · utilidad neta por producto',
-                ['Producto', 'Cantidad', 'Ingresos', 'Costo', 'Utilidad'],
-                array_map(fn (array $fila): array => [
-                    $fila['nombre'],
-                    (string) $fila['cantidad'],
-                    $dinero((float) $fila['ingresos']),
-                    $fila['costo'] === null ? '—' : $dinero((float) $fila['costo']),
-                    $fila['utilidad'] === null ? '—' : $dinero((float) $fila['utilidad']),
-                ], $reportes->utilidadNetaPorProducto($desde, $hasta)),
+                'Indicadores de la tienda',
+                ['Indicador', 'Producto', 'Cantidad / stock', 'Ingreso / total / días', 'Costo / utilidad'],
+                array_merge(
+                    array_map(fn (array $fila): array => [
+                        'Utilidad por producto', $fila['nombre'], (string) $fila['cantidad'],
+                        $dinero((float) $fila['ingresos']),
+                        $fila['costo'] === null || $fila['utilidad'] === null
+                            ? 'Costo no registrado'
+                            : $dinero((float) $fila['costo']).' / '.$dinero((float) $fila['utilidad']),
+                    ], $reportes->utilidadNetaPorProducto($desde, $hasta)),
+                    array_map(fn (array $fila): array => [
+                        'Más vendidos', $fila['nombre'], (string) $fila['cantidad'],
+                        $dinero((float) $fila['total']), '—',
+                    ], $reportes->rankingProductos($desde, $hasta, 10, 'desc')),
+                    array_map(fn (array $fila): array => [
+                        'Menos vendidos', $fila['nombre'], (string) $fila['cantidad'],
+                        $dinero((float) $fila['total']), '—',
+                    ], $reportes->rankingProductos($desde, $hasta, 10, 'asc')),
+                    array_map(fn (array $fila): array => [
+                        'Antigüedad inventario', $fila['nombre'], (string) $fila['stock'],
+                        $fila['dias_desde_entrada'] === null ? 'Sin entrada registrada' : (string) $fila['dias_desde_entrada'].' días',
+                        '—',
+                    ], $reportes->antiguedadInventario())
+                ),
             ],
         };
     }

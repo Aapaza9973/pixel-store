@@ -178,6 +178,12 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::get('compras/crear', [OrdenCompraController::class, 'create'])
                 ->name('compras.create');
 
+                Route::get('compras/{orden}/vista-previa', [OrdenCompraController::class, 'preview'])
+                ->name('compras.preview');
+
+            Route::post('compras/{orden}/emitir', [OrdenCompraController::class, 'emitir'])
+                ->name('compras.emitir');
+
             Route::post('compras', [OrdenCompraController::class, 'store'])
                 ->name('compras.store');
 

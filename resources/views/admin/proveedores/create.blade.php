@@ -70,18 +70,18 @@
 
                 <div>
                     <label for="telefono" class="mb-1.5 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
-                        Teléfono
+                        Teléfono <span class="text-error">*</span>
                     </label>
-                    <input type="text" name="telefono" id="telefono" value="{{ old('telefono') }}"
+                    <input type="text" name="telefono" id="telefono" required value="{{ old('telefono') }}"
                            class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
                     @error('telefono') <p class="mt-1 font-body-sm text-body-sm text-error">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
                     <label for="email" class="mb-1.5 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
-                        Email
+                        Email <span class="text-error">*</span>
                     </label>
-                    <input type="email" name="email" id="email" value="{{ old('email') }}"
+                    <input type="email" name="email" id="email" required value="{{ old('email') }}"
                            class="w-full rounded-obsidian border border-outline-variant/30 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25">
                     @error('email') <p class="mt-1 font-body-sm text-body-sm text-error">{{ $message }}</p> @enderror
                 </div>

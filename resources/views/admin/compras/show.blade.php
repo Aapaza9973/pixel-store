@@ -36,6 +36,19 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('admin.compras.preview', $orden) }}" target="_blank" rel="noopener"
+               class="rounded-obsidian-lg border border-outline-variant/30 bg-surface-container px-4 py-2 font-body-md text-body-md text-on-surface-variant transition hover:text-on-surface">
+                Vista previa
+            </a>
+            @if ($orden->estado === 'borrador' && auth()->user()->can('editar ordenes-compra'))
+                <form method="POST" action="{{ route('admin.compras.emitir', $orden) }}"
+                      onsubmit="return confirm('¿Confirmas la emisión de esta orden de compra?');">
+                    @csrf
+                    <button type="submit" class="rounded-obsidian-lg bg-primary-container px-4 py-2 font-body-md text-body-md text-on-primary-container transition hover:bg-primary-container/90">
+                        Emitir orden
+                    </button>
+                </form>
+            @endif
             <a href="{{ route('admin.compras.pdf', $orden) }}"
                class="rounded-obsidian-lg border border-outline-variant/30 bg-surface-container px-4 py-2 font-body-md text-body-md text-on-surface-variant transition hover:text-on-surface">
                 Descargar PDF

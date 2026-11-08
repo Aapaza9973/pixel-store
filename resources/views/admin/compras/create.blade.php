@@ -34,8 +34,15 @@
                 </div>
 
                 <div>
-                    <label for="fecha_entrega" class="mb-1 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Fecha de entrega</label>
-                    <input type="date" name="fecha_entrega" id="fecha_entrega" value="{{ old('fecha_entrega') }}"
+                    <label for="fecha_emision" class="mb-1 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Fecha de emisión <span class="text-error">*</span></label>
+                    <input type="date" name="fecha_emision" id="fecha_emision" required value="{{ old('fecha_emision', now()->toDateString()) }}"
+                           class="w-full rounded-obsidian border-outline-variant/40 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface">
+                    @error('fecha_emision') <p class="mt-1 font-body-sm text-body-sm text-error">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="fecha_entrega" class="mb-1 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Fecha de entrega <span class="text-error">*</span></label>
+                    <input type="date" name="fecha_entrega" id="fecha_entrega" required value="{{ old('fecha_entrega') }}"
                            class="w-full rounded-obsidian border-outline-variant/40 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface">
                     @error('fecha_entrega') <p class="mt-1 font-body-sm text-body-sm text-error">{{ $message }}</p> @enderror
                 </div>

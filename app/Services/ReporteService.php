@@ -198,13 +198,22 @@ class ReporteService
     {
         $sentido = $orden === 'asc' ? 'asc' : 'desc';
 
-        $filas = DB::table('detalle_ventas')
-            ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
-            ->join('productos', 'productos.id', '=', 'detalle_ventas.producto_id')
-            ->whereIn('ventas.estado', self::ESTADOS_COBRADOS)
-            ->whereBetween('ventas.fecha', [$this->inicio($desde), $this->fin($hasta)])
-            ->selectRaw('productos.id AS producto_id, productos.nombre AS nombre, SUM(detalle_ventas.cantidad) AS cantidad, SUM(detalle_ventas.cantidad * detalle_ventas.precio_unitario) AS total')
+        // Se parte de productos y se usan LEFT JOIN para incluir también los
+        // productos sin ventas en el rango (cantidad y total = 0).
+        $filas = DB::table('productos')
+            ->leftJoin('detalle_ventas', 'productos.id', '=', 'detalle_ventas.producto_id')
+            ->leftJoin('ventas', function ($join) use ($desde, $hasta): void {
+                $join->on('ventas.id', '=', 'detalle_ventas.venta_id')
+                    ->whereIn('ventas.estado', self::ESTADOS_COBRADOS)
+                    ->whereBetween('ventas.fecha', [$this->inicio($desde), $this->fin($hasta)]);
+            })
+            ->selectRaw(
+                'productos.id AS producto_id, productos.nombre AS nombre,
+                 COALESCE(SUM(CASE WHEN ventas.id IS NOT NULL THEN detalle_ventas.cantidad ELSE 0 END), 0) AS cantidad,
+                 COALESCE(SUM(CASE WHEN ventas.id IS NOT NULL THEN detalle_ventas.cantidad * detalle_ventas.precio_unitario ELSE 0 END), 0) AS total'
+            )
             ->groupBy('productos.id', 'productos.nombre')
+            ->orderBy('cantidad', $sentido)
             ->orderBy('total', $sentido)
             ->limit($limite)
             ->get();
@@ -218,23 +227,25 @@ class ReporteService
     }
 
     /**
-     * Antigüedad del inventario: productos con stock y días desde su última venta
-     * cobrada (HU-6.4.6-6.4.7). `dias_sin_venta` es null si nunca se vendió.
+     * Antigüedad operativa: productos con stock y días desde su última entrada
+     * registrada. No equivale a edad exacta por lote porque no hay trazabilidad FIFO.
      *
-     * @return list<array{producto_id:int, nombre:string, stock:int, dias_sin_venta:int|null}>
+     * @return list<array{producto_id:int, nombre:string, stock:int, dias_desde_entrada:int|null}>
      */
     public function antiguedadInventario(): array
     {
+        // Sin lotes/FIFO no es posible conocer la edad exacta de cada unidad
+        // que permanece en stock. Se usa la última entrada registrada como
+        // indicador operativo, sin alterar el inventario.
         $filas = DB::table('productos')
             ->where('productos.stock', '>', 0)
             ->select('productos.id AS producto_id', 'productos.nombre', 'productos.stock')
             ->selectRaw(
-                '(SELECT MAX(ventas.fecha)
-                    FROM detalle_ventas
-                    INNER JOIN ventas ON ventas.id = detalle_ventas.venta_id
-                   WHERE detalle_ventas.producto_id = productos.id
-                     AND ventas.estado IN (?, ?, ?)) AS ultima_venta',
-                self::ESTADOS_COBRADOS
+                '(SELECT MAX(movimientos_stock.created_at)
+                    FROM movimientos_stock
+                   WHERE movimientos_stock.producto_id = productos.id
+                     AND movimientos_stock.tipo = ?) AS ultima_entrada',
+                ['entrada']
             )
             ->get();
 
@@ -244,14 +255,12 @@ class ReporteService
             'producto_id' => (int) $fila->producto_id,
             'nombre' => $fila->nombre,
             'stock' => (int) $fila->stock,
-            'dias_sin_venta' => $fila->ultima_venta === null
+            'dias_desde_entrada' => $fila->ultima_entrada === null
                 ? null
-                : (int) Carbon::parse($fila->ultima_venta)->startOfDay()->diffInDays($hoy),
-        ])
-            // Nunca vendidos primero: son los más antiguos del inventario.
-            ->sort(fn (array $a, array $b): int => ($b['dias_sin_venta'] ?? PHP_INT_MAX) <=> ($a['dias_sin_venta'] ?? PHP_INT_MAX))
-            ->values()
-            ->all();
+                : (int) Carbon::parse($fila->ultima_entrada)->startOfDay()->diffInDays($hoy),
+        ])->sort(fn (array $a, array $b): int =>
+            ($b['dias_desde_entrada'] ?? PHP_INT_MAX) <=> ($a['dias_desde_entrada'] ?? PHP_INT_MAX)
+        )->values()->all();
     }
 
     private function inicio(string $desde): string

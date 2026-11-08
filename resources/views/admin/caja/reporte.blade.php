@@ -22,10 +22,22 @@
             </button>
         </form>
 
-        <a href="{{ route('admin.caja.index', ['fecha' => $dia]) }}"
-           class="rounded-obsidian border border-outline-variant/40 px-4 py-2 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface transition hover:border-secondary hover:text-secondary">
-            Volver a caja
-        </a>
+        <div class="flex flex-wrap gap-2">
+            @can('ver reportes')
+                <a href="{{ route('admin.reportes.pdf', ['tipo' => 'diario', 'fecha' => $dia]) }}"
+                   class="rounded-obsidian border border-outline-variant/40 px-4 py-2 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
+                    Exportar PDF
+                </a>
+                <a href="{{ route('admin.reportes.excel', ['tipo' => 'diario', 'fecha' => $dia]) }}"
+                   class="rounded-obsidian border border-outline-variant/40 px-4 py-2 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
+                    Exportar Excel
+                </a>
+            @endcan
+            <a href="{{ route('admin.caja.index', ['fecha' => $dia]) }}"
+               class="rounded-obsidian border border-outline-variant/40 px-4 py-2 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface transition hover:border-secondary hover:text-secondary">
+                Volver a caja
+            </a>
+        </div>
     </div>
 
     {{-- Totales por método --}}
