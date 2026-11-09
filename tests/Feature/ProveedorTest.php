@@ -66,6 +66,8 @@ class ProveedorTest extends TestCase
         $response = $this->actingAs($this->admin)->post(route('admin.proveedores.store'), [
             'nombre' => 'Nuevo Mayorista',
             'nit' => '987654321',
+            'telefono' => '71234567',
+            'email' => 'test@proveedor.com',
             'tipo' => 'Mayorista',
             'plazos_pago' => '60 días',
             'tiempo_entrega' => '15 días',
