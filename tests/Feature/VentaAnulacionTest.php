@@ -6,6 +6,8 @@ namespace Tests\Feature;
 
 use App\Models\Categoria;
 use App\Models\DetalleVenta;
+use App\Models\Ingreso;
+use App\Models\NumeroSerie;
 use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
@@ -90,6 +92,59 @@ class VentaAnulacionTest extends TestCase
             'tipo' => 'devolucion',
             'cantidad' => 2,
             'motivo' => 'Anulación Venta #'.$venta->id,
+        ]);
+    }
+
+    public function test_anular_venta_libera_numeros_de_serie(): void
+    {
+        $venta = $this->crearVentaPagada(1);
+
+        $serie = NumeroSerie::create([
+            'producto_id' => $this->producto->id,
+            'numero_serie' => 'SN-ANULA-001',
+            'estado' => 'vendido',
+            'venta_id' => $venta->id,
+            'fecha_ingreso' => now(),
+            'fecha_venta' => now(),
+        ]);
+
+        DetalleVenta::where('venta_id', $venta->id)->update(['numero_serie_id' => $serie->id]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.ventas.anular', $venta))
+            ->assertSessionHas('success');
+
+        $serie->refresh();
+
+        $this->assertSame('disponible', $serie->estado);
+        $this->assertNull($serie->venta_id);
+        $this->assertNull($serie->fecha_venta);
+    }
+
+    public function test_anular_venta_revierte_el_ingreso(): void
+    {
+        $venta = $this->crearVentaPagada(2);
+
+        Ingreso::create([
+            'venta_id' => $venta->id,
+            'user_id' => $this->admin->id,
+            'monto' => 300,
+            'fecha' => now(),
+            'tipo' => 'venta',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.ventas.anular', $venta))
+            ->assertSessionHas('success');
+
+        $neto = round((float) Ingreso::where('venta_id', $venta->id)->sum('monto'), 2);
+
+        $this->assertSame(0.0, $neto);
+
+        $this->assertDatabaseHas('ingresos', [
+            'venta_id' => $venta->id,
+            'tipo' => 'anulacion',
+            'monto' => -300,
         ]);
     }
 
