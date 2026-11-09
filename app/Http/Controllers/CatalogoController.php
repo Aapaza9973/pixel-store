@@ -16,8 +16,12 @@ use Illuminate\View\View;
 /**
  * Catálogo público.
  *
- * Día 1: ficha básica. Día 2: listado con búsqueda, filtros y orden.
+ * Día 1: ficha básica. Día 2: listado con búsqueda, filtros de categoría,
+ * marca y rango de precio, más orden configurable (HU-2.3, 2.6).
  * El layout público definitivo llega cuando exista `layouts.public`.
+ *
+ * Query params (GET /catalogo): buscar, categoria_id, marca_id,
+ * precio_min, precio_max, orden, page.
  */
 class CatalogoController extends Controller
 {
@@ -48,6 +52,8 @@ class CatalogoController extends Controller
             'buscar' => ['nullable', 'string', 'max:100'],
             'categoria_id' => ['nullable', 'integer', Rule::exists('categorias', 'id')],
             'marca_id' => ['nullable', 'integer', Rule::exists('marcas', 'id')],
+            'precio_min' => ['nullable', 'numeric', 'min:0'],
+            'precio_max' => ['nullable', 'numeric', 'min:0'],
             'orden' => ['nullable', 'string', Rule::in(array_keys(self::ORDENES))],
         ]);
 
@@ -60,6 +66,8 @@ class CatalogoController extends Controller
             ->when(filled($filtros['buscar'] ?? null), fn ($query) => $query->buscar($filtros['buscar']))
             ->when(filled($filtros['categoria_id'] ?? null), fn ($query) => $query->where('categoria_id', $filtros['categoria_id']))
             ->when(filled($filtros['marca_id'] ?? null), fn ($query) => $query->where('marca_id', $filtros['marca_id']))
+            ->when(filled($filtros['precio_min'] ?? null), fn ($query) => $query->where('precio_unitario', '>=', $filtros['precio_min']))
+            ->when(filled($filtros['precio_max'] ?? null), fn ($query) => $query->where('precio_unitario', '<=', $filtros['precio_max']))
             ->orderBy($columna, $direccion)
             ->orderBy('id', $direccion)
             ->paginate(self::POR_PAGINA)
