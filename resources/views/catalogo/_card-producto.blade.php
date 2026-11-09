@@ -29,4 +29,28 @@
             'favorito' => in_array((int) $producto->id, $favoritosIds ?? [], true),
         ])
     </div>
+
+    <div class="border-t border-outline-variant/20 px-3 py-2.5">
+        @if ((int) $producto->stock > 0)
+            <button type="button"
+                    x-data="{ agregado: false }"
+                    x-on:click="agregar({
+                        producto_id: {{ (int) $producto->id }},
+                        nombre: @js($producto->nombre),
+                        precio: {{ (float) $producto->precio_unitario }},
+                        imagen: @js($imagenCard?->urlThumbnail()),
+                        stock: {{ (int) $producto->stock }},
+                        slug: @js($producto->slug),
+                    }); agregado = true; setTimeout(() => agregado = false, 1200)"
+                    class="w-full rounded-obsidian-lg border border-primary-container/40 bg-primary-container/10 px-3 py-2 font-label-sm text-label-sm uppercase tracking-[0.14em] text-secondary transition hover:bg-primary-container/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-container/60">
+                <span x-show="! agregado">Agregar</span>
+                <span x-show="agregado" x-cloak>Agregado</span>
+            </button>
+        @else
+            <button type="button" disabled
+                    class="w-full cursor-not-allowed rounded-obsidian-lg border border-outline-variant/30 px-3 py-2 font-label-sm text-label-sm uppercase tracking-[0.14em] text-outline">
+                Sin stock
+            </button>
+        @endif
+    </div>
 </div>
