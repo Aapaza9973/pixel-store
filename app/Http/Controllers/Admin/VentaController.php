@@ -22,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Ramsey\Uuid\Uuid;
 
@@ -33,6 +34,46 @@ use Ramsey\Uuid\Uuid;
  */
 class VentaController extends Controller
 {
+    /**
+     * Historial general de ventas (POS y pedidos web) con filtros.
+     *
+     * Solo lectura: la lógica transaccional sigue viviendo en VentaService.
+     */
+    public function index(Request $request): View
+    {
+        abort_unless($request->user()?->can('ver ventas'), 403);
+
+        $filtros = $request->validate([
+            'origen' => ['nullable', 'string', Rule::in(['pos', 'web'])],
+            'estado' => ['nullable', 'string', Rule::in(['Pagado', 'Pendiente', 'Cancelada'])],
+            'buscar' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $termino = trim((string) ($filtros['buscar'] ?? ''));
+
+        $ventas = Venta::query()
+            ->with(['cliente', 'vendedor'])
+            ->when(filled($filtros['origen'] ?? null), fn ($query) => $query->where('origen', $filtros['origen']))
+            ->when(filled($filtros['estado'] ?? null), fn ($query) => $query->where('estado', $filtros['estado']))
+            ->when($termino !== '', function ($query) use ($termino) {
+                $query->where(function ($subquery) use ($termino) {
+                    $subquery->whereHas('cliente', fn ($cliente) => $cliente->buscar($termino));
+
+                    // También acepta el número visible del pedido: "#000123" o "123".
+                    $numero = ltrim($termino, '#');
+
+                    if ($numero !== '' && ctype_digit($numero)) {
+                        $subquery->orWhere('id', (int) $numero);
+                    }
+                });
+            })
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.ventas.index', compact('ventas', 'filtros'));
+    }
+
     public function create(): View
     {
         // Límite de descuento del rol del cajero para la UI del carrito (HU-5.10).
