@@ -47,7 +47,9 @@ class CotizacionController extends Controller
     {
         return view('admin.cotizaciones.create', [
             'clientes' => Cliente::orderBy('nombre')->get(),
-            'productos' => Producto::query()->where('activo', true)->orderBy('nombre')->get(),
+            // `productos` no tiene columna `activo`: filtrar por ella rompía el
+            // formulario con un 500. Se listan todos los productos del catálogo.
+            'productos' => Producto::query()->orderBy('nombre')->get(),
         ]);
     }
 

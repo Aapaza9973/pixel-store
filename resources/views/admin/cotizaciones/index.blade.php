@@ -13,7 +13,7 @@
         @can('crear cotizaciones')
             <a href="{{ route('admin.cotizaciones.create') }}"
                class="inline-flex items-center gap-2 rounded-obsidian-lg bg-primary-container px-4 py-2.5 font-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90">
-                Nueva cotización
+                + Nueva Cotización
             </a>
         @endcan
     </div>
@@ -76,7 +76,23 @@
                             </td>
                             <td class="px-4 py-3.5 font-label-md text-label-md text-on-surface-variant">{{ $cotizacion->fecha_emision->format('d/m/Y') }}</td>
                             <td class="px-4 py-3.5 text-right">
-                                <a href="{{ route('admin.cotizaciones.show', $cotizacion) }}" class="font-body-sm text-body-sm text-secondary transition hover:text-on-surface">Ver</a>
+                                <div class="inline-flex flex-wrap items-center justify-end gap-3">
+                                    <a href="{{ route('admin.cotizaciones.show', $cotizacion) }}"
+                                       class="font-body-sm text-body-sm text-secondary transition hover:text-on-surface">
+                                        Ver
+                                    </a>
+
+                                    @can('convertir', $cotizacion)
+                                        <form method="POST" action="{{ route('admin.cotizaciones.convertir', $cotizacion) }}"
+                                              onsubmit="return confirm('¿Convertir la cotización {{ $cotizacion->numero }} en una venta?')"
+                                              class="inline">
+                                            @csrf
+                                            <button type="submit" class="font-body-sm text-body-sm text-primary-container transition hover:text-on-surface">
+                                                Convertir a Venta
+                                            </button>
+                                        </form>
+                                    @endcan
+                                </div>
                             </td>
                         </tr>
                     @empty
