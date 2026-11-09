@@ -43,6 +43,7 @@ Route::get('/', function () {
 Route::get('/preview', [PreviewController::class, 'index'])->name('preview');
 
 // Catálogo público (Sprint 2). Layout público definitivo: Día 2+.
+Route::get('/catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
 Route::get('/producto/{slug}', [CatalogoController::class, 'show'])->name('catalogo.producto');
 
 // Favoritos (2.7.3-2.7.4): sirven para visitantes y usuarios autenticados.
@@ -188,7 +189,7 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::get('compras/crear', [OrdenCompraController::class, 'create'])
                 ->name('compras.create');
 
-                Route::get('compras/{orden}/vista-previa', [OrdenCompraController::class, 'preview'])
+            Route::get('compras/{orden}/vista-previa', [OrdenCompraController::class, 'preview'])
                 ->name('compras.preview');
 
             Route::post('compras/{orden}/emitir', [OrdenCompraController::class, 'emitir'])
