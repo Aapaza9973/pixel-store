@@ -21,18 +21,26 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use App\Contracts\CartInterface;
+use App\Contracts\ProductoRepositoryInterface;
+use App\Repositories\DbProductoRepository;
+use App\Services\Cart\SessionCart;
+use Illuminate\Support\Facades\View;
+
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->bind(ProductoRepositoryInterface::class, DbProductoRepository::class);
+        $this->app->bind(CartInterface::class, SessionCart::class);
+
     }
 
     public function boot(): void
     {
+        
         // Admin es super-admin: tiene todos los permisos excepto reglas de negocio sobre usuarios
         Gate::before(function ($user, $ability, array $arguments = []) {
             if (isset($arguments[0]) && ($arguments[0] instanceof \App\Models\User || $arguments[0] === \App\Models\User::class)) {
@@ -77,7 +85,10 @@ class AppServiceProvider extends ServiceProvider
                 request()->cookie('favoritos_token')
             )));
         });
-
+        
+        // Contador del carrito para la tienda pública (layouts.shop)
+        View::composer('layouts.shop', fn ($view) => $view->with('cartCount', app(CartInterface::class)->count()));
+        
         // Auditoría de autenticación
         Event::listen(Login::class, LogSuccessfulLogin::class);
         Event::listen(Login::class, FusionarFavoritosAlLogin::class);

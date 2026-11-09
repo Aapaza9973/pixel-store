@@ -22,7 +22,17 @@ use App\Http\Controllers\FavoritoController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Shop\CartController;
+use App\Http\Controllers\Shop\CheckoutController;
+use App\Http\Controllers\Shop\ShopController;
 use Illuminate\Support\Facades\Route;
+
+
+if ($shopDomain = config('shop.domain')) {
+    Route::domain($shopDomain)->group(function () {
+        Route::get('/', [ShopController::class, 'home']);
+    });
+}
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -222,4 +232,21 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+     //  RUTAS PÚBLICAS DE LA TIENDA Y PROCESO DE COMPRA (E-COMMERCE)
+    Route::get('/tienda', [ShopController::class, 'home'])->name('shop.home');   
+     Route::get('/catalogo', [ShopController::class, 'index'])->name('shop.index');
+        Route::get('/catalogo/producto/{ref}', [ShopController::class, 'show'])->name('shop.show');
+
+    Route::prefix('carrito')->name('cart.')->group(function () {
+        Route::get('/', [CartController::class, 'index'])->name('index');
+        Route::post('/agregar/{producto}', [CartController::class, 'store'])->whereNumber('producto')->name('store');
+        Route::patch('/{producto}', [CartController::class, 'update'])->whereNumber('producto')->name('update');
+        Route::delete('/{producto}', [CartController::class, 'destroy'])->whereNumber('producto')->name('destroy');
+    });
+
+    Route::prefix('checkout')->name('checkout.')->group(function () {
+        Route::get('/', [CheckoutController::class, 'create'])->name('create');
+        Route::post('/', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('store');
+        Route::get('/gracias/{token}', [CheckoutController::class, 'success'])->where('token', '[A-Za-z0-9]{48}')->name('success');
+    });
 require __DIR__.'/auth.php';
