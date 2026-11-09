@@ -49,8 +49,16 @@
 
                 @can('crear ventas')
                     @if (Route::has('admin.ventas.create'))
-                        <x-nav-link :href="route('admin.ventas.create')" :active="request()->routeIs('admin.ventas.*')" icon="cash">
+                        <x-nav-link :href="route('admin.ventas.create')" :active="request()->routeIs('admin.ventas.create')" icon="cash">
                             Punto de Venta
+                        </x-nav-link>
+                    @endif
+                @endcan
+
+                @can('ver ventas')
+                    @if (Route::has('admin.ventas.index'))
+                        <x-nav-link :href="route('admin.ventas.index')" :active="request()->routeIs('admin.ventas.index')" icon="clipboard">
+                            Ventas
                         </x-nav-link>
                     @endif
                 @endcan

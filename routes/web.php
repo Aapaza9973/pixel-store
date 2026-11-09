@@ -90,6 +90,10 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::get('usuarios/{user}/historial', [UserController::class, 'historial'])
                 ->name('usuarios.historial');
 
+            // Historial general (POS + web). Se declara antes de ventas/{venta}.
+            Route::get('ventas', [VentaController::class, 'index'])
+                ->name('ventas.index');
+
             Route::get('ventas/nueva', [VentaController::class, 'create'])
                 ->name('ventas.create');
 
