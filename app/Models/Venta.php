@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property string|null $operacion_id
  * @property \Carbon\Carbon $fecha
- * @property int $user_id
+ * @property int|null $user_id null en pedidos web de invitados
  * @property int|null $cliente_id
  * @property string $total
  * @property string $descuento
@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $autorizado_por
  * @property int $puntos_canjeados
  * @property string $estado
+ * @property string $origen pos|web
  * @property int|null $cotizacion_id
  */
 class Venta extends Model
@@ -34,7 +35,7 @@ class Venta extends Model
     protected $fillable = [
         'operacion_id', 'fecha', 'user_id', 'cliente_id', 'total',
         'descuento', 'descuento_porcentaje', 'autorizado_por',
-        'puntos_canjeados', 'estado', 'cotizacion_id',
+        'puntos_canjeados', 'estado', 'origen', 'cotizacion_id',
     ];
 
     protected $casts = [

@@ -398,6 +398,63 @@ class VentaServiceTest extends TestCase
         $this->assertSame(0, (int) $sinStock->fresh()->stock);
     }
 
+    public function test_pedido_online_crea_venta_pendiente_y_descuenta_stock(): void
+    {
+        $venta = $this->service->crearPedidoOnline(
+            [['producto_id' => $this->producto->id, 'cantidad' => 2]],
+            $this->datosClienteWeb(),
+            (string) Str::uuid()
+        );
+
+        $this->assertSame('Pendiente', $venta->estado);
+        $this->assertSame('web', $venta->origen);
+        $this->assertSame('200.00', $venta->total);
+        $this->assertNull($venta->user_id);
+        $this->assertNotNull($venta->cliente_id);
+
+        $this->assertSame(1, DetalleVenta::where('venta_id', $venta->id)->count());
+        $this->assertSame(0, Pago::where('venta_id', $venta->id)->count());
+        $this->assertDatabaseMissing('ingresos', ['venta_id' => $venta->id]);
+
+        // La reserva descuenta stock de inmediato.
+        $this->assertSame(3, (int) $this->producto->fresh()->stock);
+    }
+
+    public function test_pedido_online_rechaza_sin_stock(): void
+    {
+        $this->producto->update(['stock' => 1]);
+
+        $operacionId = (string) Str::uuid();
+
+        try {
+            $this->service->crearPedidoOnline(
+                [['producto_id' => $this->producto->id, 'cantidad' => 2]],
+                $this->datosClienteWeb(),
+                $operacionId
+            );
+            $this->fail('Se esperaba StockInsuficienteException.');
+        } catch (StockInsuficienteException $e) {
+            $this->assertSame(409, $e->getStatusCode());
+        }
+
+        $this->assertDatabaseMissing('ventas', ['operacion_id' => $operacionId]);
+        $this->assertSame(1, (int) $this->producto->fresh()->stock);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function datosClienteWeb(): array
+    {
+        return [
+            'nombre' => 'Ana Compradora',
+            'nit_ci' => '7654321',
+            'telefono' => '71234567',
+            'email' => 'ana@example.com',
+            'direccion' => 'Av. Siempre Viva 742',
+        ];
+    }
+
     private function insertarVentaDesdeOtraConexion(string $operacionId): int
     {
         $pdo = $this->conexionSecundaria();
