@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\ValidarStockController;
 use App\Http\Controllers\Admin\VentaController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\CatalogoController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavoritoController;
 use App\Http\Controllers\PreviewController;
@@ -35,6 +36,13 @@ Route::get('/preview', [PreviewController::class, 'index'])->name('preview');
 // Catálogo público (Sprint 2). Layout público definitivo: Día 2+.
 Route::get('/catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
 Route::get('/producto/{slug}', [CatalogoController::class, 'show'])->name('catalogo.producto');
+
+// Checkout público: crea el pedido como venta Pendiente (origen web).
+Route::get('/catalogo/checkout', [CheckoutController::class, 'index'])->name('catalogo.checkout');
+Route::post('/catalogo/checkout', [CheckoutController::class, 'store'])->name('catalogo.checkout.store');
+Route::get('/catalogo/gracias/{venta}', [CheckoutController::class, 'gracias'])
+    ->middleware('signed')
+    ->name('catalogo.gracias');
 
 // Favoritos (2.7.3-2.7.4): sirven para visitantes y usuarios autenticados.
 Route::post('/favoritos/{producto}', [FavoritoController::class, 'toggle'])->name('catalogo.favoritos.toggle');
