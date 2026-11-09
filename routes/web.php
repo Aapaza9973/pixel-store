@@ -147,6 +147,10 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::post('ventas/{venta}/devoluciones', [DevolucionController::class, 'store'])
                 ->name('ventas.devoluciones.store');
 
+            // Anulación de una venta cobrada, con reingreso de stock (solo Admin).
+            Route::post('ventas/{venta}/anular', [VentaController::class, 'anular'])
+                ->name('ventas.anular');
+
             Route::get('productos/{producto}/series', [VentaController::class, 'series'])
                 ->name('productos.series');
 
@@ -217,6 +221,10 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
 
             Route::post('compras/{orden}/emitir', [OrdenCompraController::class, 'emitir'])
                 ->name('compras.emitir');
+
+            // UI del sprint: "Enviar Orden" desde el detalle (misma lógica que emitir).
+            Route::post('compras/{orden}/enviar', [OrdenCompraController::class, 'enviar'])
+                ->name('compras.enviar');
 
             Route::post('compras', [OrdenCompraController::class, 'store'])
                 ->name('compras.store');

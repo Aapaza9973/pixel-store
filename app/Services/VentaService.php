@@ -11,6 +11,7 @@ use App\Exceptions\StockInsuficienteException;
 use App\Models\AutorizacionDescuento;
 use App\Models\Cliente;
 use App\Models\DetalleVenta;
+use App\Models\Devolucion;
 use App\Models\Ingreso;
 use App\Models\LogAuditoria;
 use App\Models\Pago;
@@ -397,6 +398,56 @@ class VentaService
 
             throw $e;
         }
+    }
+
+    /**
+     * Anula una venta cobrada: pasa a `Cancelada` y reingresa todo su stock.
+     *
+     * Solo aplica a ventas en `Pagado` sin devoluciones: si ya hubo devoluciones,
+     * esas unidades volvieron por el flujo de devoluciones y reingresarlas otra
+     * vez inflaría el inventario.
+     *
+     * @throws DomainException
+     */
+    public function anular(Venta $venta, ?int $userId = null): Venta
+    {
+        return DB::transaction(function () use ($venta, $userId) {
+            $bloqueada = Venta::whereKey($venta->id)->lockForUpdate()->firstOrFail();
+
+            if ($bloqueada->estado !== 'Pagado') {
+                throw new DomainException('Solo se puede anular una venta cobrada (Pagado).');
+            }
+
+            $tieneDevoluciones = Devolucion::query()
+                ->where('venta_id', $bloqueada->id)
+                ->where('estado', '!=', 'anulada')
+                ->exists();
+
+            if ($tieneDevoluciones) {
+                throw new DomainException('La venta tiene devoluciones registradas; usá el flujo de devoluciones.');
+            }
+
+            $bloqueada->load('detalles.producto');
+
+            foreach ($bloqueada->detalles as $detalle) {
+                if ($detalle->producto === null) {
+                    continue;
+                }
+
+                $this->inventario->ajustarStock(
+                    $detalle->producto,
+                    (int) $detalle->cantidad,
+                    'devolucion',
+                    "Anulación Venta #{$bloqueada->id}",
+                    null,
+                    $userId
+                );
+            }
+
+            $bloqueada->update(['estado' => 'Cancelada']);
+
+            return $bloqueada->fresh(['detalles.producto', 'cliente']);
+        });
     }
 
     /**

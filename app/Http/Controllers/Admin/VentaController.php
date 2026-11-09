@@ -19,6 +19,7 @@ use App\Services\DevolucionService;
 use App\Services\NumeroSerieService;
 use App\Services\VentaService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -211,6 +212,28 @@ class VentaController extends Controller
         $puedeDevolver = $venta->estado !== 'Cancelada' && array_sum($pendientes) > 0;
 
         return view('admin.ventas.show', compact('venta', 'pendientes', 'puedeDevolver'));
+    }
+
+    /**
+     * Anula una venta cobrada desde su detalle (solo Admin).
+     *
+     * El reingreso de stock y el cambio de estado viven en VentaService::anular().
+     */
+    public function anular(Request $request, Venta $venta, VentaService $ventas): RedirectResponse
+    {
+        abort_unless($request->user()?->hasRole('Admin'), 403);
+
+        try {
+            $ventas->anular($venta, (int) $request->user()->id);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getUserMessage());
+        }
+
+        $numero = '#'.str_pad((string) $venta->id, 6, '0', STR_PAD_LEFT);
+
+        return redirect()
+            ->route('admin.ventas.show', $venta)
+            ->with('success', "Venta {$numero} anulada. Se reingresó el stock al inventario.");
     }
 
     /**

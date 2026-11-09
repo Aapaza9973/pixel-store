@@ -179,6 +179,17 @@ class OrdenCompraController extends Controller
     }
 
     /**
+     * "Enviar Orden": alias de la emisión desde el detalle de compras.
+     *
+     * La lógica (validaciones, estado `enviada`, permiso `update`) vive en
+     * {@see emitir()}; este endpoint existe con el nombre que usa la UI.
+     */
+    public function enviar(OrdenCompra $orden): RedirectResponse
+    {
+        return $this->emitir($orden);
+    }
+
+    /**
      * Genera el PDF A4 de una orden de compra.
      *
      * El permiso es el `view` de OrdenCompraPolicy: quien puede ver la orden en
