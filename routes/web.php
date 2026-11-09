@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CotizacionController;
 use App\Http\Controllers\Admin\DevolucionController;
 use App\Http\Controllers\Admin\InventarioController;
 use App\Http\Controllers\Admin\OrdenCompraController;
+use App\Http\Controllers\Admin\PedidoWebController;
 use App\Http\Controllers\Admin\ProductoController;
 use App\Http\Controllers\Admin\ProductoImagenController;
 use App\Http\Controllers\Admin\ProveedorController;
@@ -110,6 +111,16 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
 
             Route::get('ventas/{venta}/comprobante', [VentaController::class, 'comprobante'])
                 ->name('ventas.comprobante');
+
+            // Pedidos del catálogo público: cobro y cancelación con reingreso.
+            Route::get('pedidos-web', [PedidoWebController::class, 'index'])
+                ->name('pedidos-web.index');
+            Route::get('pedidos-web/{venta}', [PedidoWebController::class, 'show'])
+                ->name('pedidos-web.show');
+            Route::post('pedidos-web/{venta}/pagar', [PedidoWebController::class, 'pagar'])
+                ->name('pedidos-web.pagar');
+            Route::post('pedidos-web/{venta}/cancelar', [PedidoWebController::class, 'cancelar'])
+                ->name('pedidos-web.cancelar');
 
             // Debe declararse antes de ventas/{venta}: si no, "buscar-productos" cae en show.
             Route::get('ventas/buscar-productos', [VentaController::class, 'buscarProductos'])
