@@ -427,9 +427,20 @@ class VentaService
                 throw new DomainException('La venta tiene devoluciones registradas; usá el flujo de devoluciones.');
             }
 
-            $bloqueada->load('detalles.producto');
+            $bloqueada->load('detalles.producto', 'detalles.numeroSerie');
 
             foreach ($bloqueada->detalles as $detalle) {
+                // 5.13.15: la serie vuelve al inventario vendible, igual que en
+                // una devolución, para que pueda venderse de nuevo.
+                if ($detalle->numeroSerie !== null) {
+                    $detalle->numeroSerie->update([
+                        'estado' => 'disponible',
+                        'venta_id' => null,
+                        'fecha_venta' => null,
+                        'cliente_id' => null,
+                    ]);
+                }
+
                 if ($detalle->producto === null) {
                     continue;
                 }
@@ -442,6 +453,24 @@ class VentaService
                     null,
                     $userId
                 );
+            }
+
+            // 5.13.15: el asiento original queda intacto como historial y se
+            // agrega su contrapartida negativa, así los reportes netean a cero.
+            $ingreso = Ingreso::query()
+                ->where('venta_id', $bloqueada->id)
+                ->where('tipo', '!=', 'anulacion')
+                ->where('monto', '>', 0)
+                ->first();
+
+            if ($ingreso !== null) {
+                Ingreso::create([
+                    'venta_id' => $bloqueada->id,
+                    'user_id' => $userId ?? (int) $ingreso->user_id,
+                    'monto' => -1 * (float) $ingreso->monto,
+                    'fecha' => now(),
+                    'tipo' => 'anulacion',
+                ]);
             }
 
             $bloqueada->update(['estado' => 'Cancelada']);
