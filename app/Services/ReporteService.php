@@ -227,25 +227,26 @@ class ReporteService
     }
 
     /**
-     * Antigüedad operativa: productos con stock y días desde su última entrada
-     * registrada. No equivale a edad exacta por lote porque no hay trazabilidad FIFO.
+     * Antigüedad operativa: productos con stock y días desde su última venta
+     * cobrada. No equivale a edad exacta por lote porque no hay trazabilidad FIFO.
      *
-     * @return list<array{producto_id:int, nombre:string, stock:int, dias_desde_entrada:int|null}>
+     * @return list<array{producto_id:int, nombre:string, stock:int, dias_sin_venta:int|null}>
      */
     public function antiguedadInventario(): array
     {
         // Sin lotes/FIFO no es posible conocer la edad exacta de cada unidad
-        // que permanece en stock. Se usa la última entrada registrada como
+        // que permanece en stock. Se usa la última venta cobrada como
         // indicador operativo, sin alterar el inventario.
         $filas = DB::table('productos')
             ->where('productos.stock', '>', 0)
             ->select('productos.id AS producto_id', 'productos.nombre', 'productos.stock')
             ->selectRaw(
-                '(SELECT MAX(movimientos_stock.created_at)
-                    FROM movimientos_stock
-                   WHERE movimientos_stock.producto_id = productos.id
-                     AND movimientos_stock.tipo = ?) AS ultima_entrada',
-                ['entrada']
+                '(SELECT MAX(ventas.fecha)
+                    FROM detalle_ventas
+                    JOIN ventas ON ventas.id = detalle_ventas.venta_id
+                   WHERE detalle_ventas.producto_id = productos.id
+                     AND ventas.estado IN (?, ?, ?)) AS ultima_venta',
+                self::ESTADOS_COBRADOS
             )
             ->get();
 
@@ -255,11 +256,10 @@ class ReporteService
             'producto_id' => (int) $fila->producto_id,
             'nombre' => $fila->nombre,
             'stock' => (int) $fila->stock,
-            'dias_desde_entrada' => $fila->ultima_entrada === null
+            'dias_sin_venta' => $fila->ultima_venta === null
                 ? null
-                : (int) Carbon::parse($fila->ultima_entrada)->startOfDay()->diffInDays($hoy),
-        ])->sort(fn (array $a, array $b): int =>
-            ($b['dias_desde_entrada'] ?? PHP_INT_MAX) <=> ($a['dias_desde_entrada'] ?? PHP_INT_MAX)
+                : (int) Carbon::parse($fila->ultima_venta)->startOfDay()->diffInDays($hoy),
+        ])->sort(fn (array $a, array $b): int => ($b['dias_sin_venta'] ?? PHP_INT_MAX) <=> ($a['dias_sin_venta'] ?? PHP_INT_MAX)
         )->values()->all();
     }
 

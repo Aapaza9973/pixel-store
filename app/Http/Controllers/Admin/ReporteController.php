@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Exports\ReporteExport;
-use App\Models\CierreCaja;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReportePeriodoRequest;
-use App\Services\ReporteService;
+use App\Models\CierreCaja;
 use App\Services\CierreCajaService;
+use App\Services\ReporteService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -358,7 +358,7 @@ class ReporteController extends Controller
                     ], $reportes->rankingProductos($desde, $hasta, 10, 'asc')),
                     array_map(fn (array $fila): array => [
                         'Antigüedad inventario', $fila['nombre'], (string) $fila['stock'],
-                        $fila['dias_desde_entrada'] === null ? 'Sin entrada registrada' : (string) $fila['dias_desde_entrada'].' días',
+                        $fila['dias_sin_venta'] === null ? 'Sin ventas registradas' : (string) $fila['dias_sin_venta'].' días',
                         '—',
                     ], $reportes->antiguedadInventario())
                 ),

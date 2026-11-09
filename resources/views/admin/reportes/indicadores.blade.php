@@ -174,14 +174,14 @@
         <div class="overflow-hidden rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 backdrop-blur-xl">
             <div class="border-b border-outline-variant/30 bg-surface-container-low px-5 py-4">
                 <h3 class="font-headline-sm text-headline-sm text-on-surface">Antigüedad de inventario</h3>
-                <p class="mt-0.5 font-body-sm text-body-sm text-on-surface-variant">Días desde la última entrada registrada · productos con stock</p>
+                <p class="mt-0.5 font-body-sm text-body-sm text-on-surface-variant">Días desde la última venta registrada · productos con stock</p>
             </div>
             <table class="min-w-full text-body-md">
                 <thead class="bg-surface-container-low">
                     <tr class="text-left">
                         <th class="px-4 py-3.5 font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Producto</th>
                         <th class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Stock</th>
-                        <th class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Días desde entrada</th>
+                        <th class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Días sin venta</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -189,8 +189,8 @@
                         <tr class="border-b border-outline-variant/15 last:border-0 hover:bg-primary-container/[0.04]">
                             <td class="px-4 py-3.5 text-on-surface">{{ $fila['nombre'] }}</td>
                             <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">{{ $fila['stock'] }}</td>
-                            <td class="px-4 py-3.5 text-right tabular-nums {{ $fila['dias_desde_entrada'] === null ? 'text-outline' : 'text-on-surface' }}">
-                                {{ $fila['dias_desde_entrada'] === null ? 'Sin entrada registrada' : $fila['dias_desde_entrada'].' d' }}
+                            <td class="px-4 py-3.5 text-right tabular-nums {{ $fila['dias_sin_venta'] === null ? 'text-outline' : 'text-on-surface' }}">
+                                {{ $fila['dias_sin_venta'] === null ? 'Sin ventas registradas' : $fila['dias_sin_venta'].' d' }}
                             </td>
                         </tr>
                     @empty
