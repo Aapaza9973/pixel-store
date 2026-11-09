@@ -59,6 +59,17 @@
                         </button>
                     @endif
                 @endcan
+
+                @if ($venta->estado === 'Pagado' && auth()->user()?->hasRole('Admin'))
+                    <form method="POST" action="{{ route('admin.ventas.anular', $venta) }}"
+                          onsubmit="return confirm('¿Anular la venta {{ $numero }}? Se reingresará el stock y la venta quedará cancelada.');">
+                        @csrf
+                        <button type="submit"
+                                class="rounded-lg border border-red-500/40 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/10">
+                            Anular Venta
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
     </x-card>

@@ -41,11 +41,11 @@
                 Vista previa
             </a>
             @if ($orden->estado === 'borrador' && auth()->user()->can('editar ordenes-compra'))
-                <form method="POST" action="{{ route('admin.compras.emitir', $orden) }}"
-                      onsubmit="return confirm('¿Confirmas la emisión de esta orden de compra?');">
+                <form method="POST" action="{{ route('admin.compras.enviar', $orden) }}"
+                      onsubmit="return confirm('¿Confirmas el envío de esta orden de compra al proveedor?');">
                     @csrf
                     <button type="submit" class="rounded-obsidian-lg bg-primary-container px-4 py-2 font-body-md text-body-md text-on-primary-container transition hover:bg-primary-container/90">
-                        Emitir orden
+                        Enviar Orden
                     </button>
                 </form>
             @endif
