@@ -30,6 +30,8 @@ class ProveedorCondicionesTest extends TestCase
         $response = $this->actingAs($this->admin)->post(route('admin.proveedores.store'), [
             'nombre' => 'Andes Comercial SRL',
             'nit' => '556677889',
+            'telefono' => '71234567',
+            'email' => 'test@proveedor.com',
             'tipo' => 'Distribuidor',
             'plazos_pago' => '45 días',
             'tiempo_entrega' => '10 días hábiles',
