@@ -90,6 +90,14 @@
                     @endif
                 @endcan
 
+                @can('ver ventas')
+                    @if (Route::has('admin.pedidos-web.index'))
+                        <x-nav-link :href="route('admin.pedidos-web.index')" :active="request()->routeIs('admin.pedidos-web.*')" icon="clipboard">
+                            Pedidos web
+                        </x-nav-link>
+                    @endif
+                @endcan
+
                 @can('ver inventario')
                     @if (Route::has('admin.inventario.index'))
                         <x-nav-link :href="route('admin.inventario.index')" :active="request()->routeIs('admin.inventario.*')" icon="archive">

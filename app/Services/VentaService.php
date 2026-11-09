@@ -400,6 +400,88 @@ class VentaService
     }
 
     /**
+     * Marca como cobrado un pedido web: pasa a `Pagado` y registra el ingreso.
+     *
+     * Solo aplica a pedidos web pendientes; el POS sigue cobrando con
+     * {@see confirmar()}.
+     *
+     * @throws DomainException
+     */
+    public function pagarPedidoWeb(Venta $venta, ?int $userId = null): Venta
+    {
+        return DB::transaction(function () use ($venta, $userId) {
+            $bloqueada = Venta::whereKey($venta->id)->lockForUpdate()->firstOrFail();
+
+            if ($bloqueada->origen !== 'web') {
+                throw new DomainException('Solo los pedidos del catálogo web se gestionan acá.');
+            }
+
+            if ($bloqueada->estado !== 'Pendiente') {
+                throw new DomainException('Solo se puede cobrar un pedido pendiente.');
+            }
+
+            $bloqueada->update(['estado' => 'Pagado']);
+
+            // 5.13.9: no existe venta cobrada sin asiento económico.
+            Ingreso::firstOrCreate(
+                ['venta_id' => $bloqueada->id],
+                [
+                    'user_id' => $userId ?? auth()->id(),
+                    'monto' => $bloqueada->total,
+                    'tipo' => 'venta',
+                    'fecha' => now(),
+                ]
+            );
+
+            return $bloqueada->fresh(['detalles.producto', 'cliente']);
+        });
+    }
+
+    /**
+     * Cancela un pedido web pendiente y reingresa el stock reservado.
+     *
+     * El reingreso usa el mismo punto de mutación que el resto del sistema,
+     * así que deja movimiento trazable y dispara las alertas correspondientes.
+     *
+     * @throws DomainException
+     */
+    public function cancelarPedidoWeb(Venta $venta, ?int $userId = null): Venta
+    {
+        return DB::transaction(function () use ($venta, $userId) {
+            $bloqueada = Venta::whereKey($venta->id)->lockForUpdate()->firstOrFail();
+
+            if ($bloqueada->origen !== 'web') {
+                throw new DomainException('Solo los pedidos del catálogo web se gestionan acá.');
+            }
+
+            if ($bloqueada->estado !== 'Pendiente') {
+                throw new DomainException('Solo se puede cancelar un pedido pendiente.');
+            }
+
+            $bloqueada->load('detalles.producto');
+
+            foreach ($bloqueada->detalles as $detalle) {
+                if ($detalle->producto === null) {
+                    continue;
+                }
+
+                $this->inventario->ajustarStock(
+                    $detalle->producto,
+                    (int) $detalle->cantidad,
+                    'devolucion',
+                    "Cancelación Pedido Web #{$bloqueada->id}",
+                    null,
+                    $userId
+                );
+            }
+
+            $bloqueada->update(['estado' => 'Cancelada']);
+
+            return $bloqueada->fresh(['detalles.producto', 'cliente']);
+        });
+    }
+
+    /**
      * Reusa el cliente por NIT/CI o email y, si no existe, lo crea con los datos
      * del checkout para no perder el contacto de la entrega.
      *
