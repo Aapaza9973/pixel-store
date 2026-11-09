@@ -9,6 +9,7 @@ use App\Exceptions\PagoInsuficienteException;
 use App\Exceptions\SerieNoDisponibleException;
 use App\Exceptions\StockInsuficienteException;
 use App\Models\AutorizacionDescuento;
+use App\Models\Cliente;
 use App\Models\DetalleVenta;
 use App\Models\Ingreso;
 use App\Models\LogAuditoria;
@@ -290,6 +291,153 @@ class VentaService
 
             throw $e;
         }
+    }
+
+    /**
+     * Crea un pedido del catálogo público en estado `Pendiente` (origen web).
+     *
+     * No exige pago: el pedido se cobra al entregar, así que no se crea Pago ni
+     * Ingreso. La reserva de stock sí es inmediata, para no vender dos veces la
+     * misma unidad; los precios y el total salen de la base, nunca del cliente.
+     *
+     * @param  array<int, array{producto_id:int, cantidad:int}>  $items
+     * @param  array{nombre:string, nit_ci:string, telefono:string, email:string, direccion:string}  $cliente
+     *
+     * @throws StockInsuficienteException
+     * @throws DomainException
+     */
+    public function crearPedidoOnline(array $items, array $cliente, string $operacionId): Venta
+    {
+        if ($items === []) {
+            throw new DomainException('El pedido debe incluir al menos un producto.');
+        }
+
+        foreach ($items as $item) {
+            if ((int) ($item['cantidad'] ?? 0) <= 0) {
+                throw new DomainException('La cantidad de cada producto debe ser mayor que cero.');
+            }
+        }
+
+        // Misma idempotencia que `confirmar`: un reintento con el mismo
+        // operacion_id devuelve el pedido ya creado.
+        if ($operacionId !== '') {
+            $existente = Venta::where('operacion_id', $operacionId)->first();
+
+            if ($existente !== null) {
+                return $existente->load(['detalles.producto', 'cliente']);
+            }
+        }
+
+        try {
+            return DB::transaction(function () use ($items, $cliente, $operacionId) {
+                $productos = $this->bloquearProductos($items);
+                $cantidades = $this->cantidadesPorProducto($items);
+
+                foreach ($cantidades as $productoId => $cantidad) {
+                    $producto = $productos[$productoId];
+
+                    if ($producto->stock < $cantidad) {
+                        throw new StockInsuficienteException(
+                            "Stock insuficiente para {$producto->nombre}. "
+                            ."Disponible: {$producto->stock}, solicitado: {$cantidad}."
+                        );
+                    }
+                }
+
+                $total = $this->calcularTotal($items, $productos);
+                $comprador = $this->resolverCliente($cliente);
+
+                $venta = Venta::create([
+                    'operacion_id' => $operacionId !== '' ? $operacionId : null,
+                    'fecha' => now(),
+                    'user_id' => auth()->id(),
+                    'cliente_id' => $comprador?->id,
+                    'total' => $total,
+                    'descuento' => 0,
+                    'descuento_porcentaje' => 0,
+                    'estado' => 'Pendiente',
+                    'origen' => 'web',
+                ]);
+
+                foreach ($items as $item) {
+                    $producto = $productos[(int) $item['producto_id']];
+
+                    DetalleVenta::create([
+                        'venta_id' => $venta->id,
+                        'producto_id' => $producto->id,
+                        'cantidad' => (int) $item['cantidad'],
+                        'precio_unitario' => $producto->precio_unitario,
+                        'precio_costo' => $producto->costo ?? null,
+                    ]);
+                }
+
+                // Reserva: se descuenta después de persistir la venta para que
+                // el motivo del movimiento referencie el pedido.
+                foreach ($items as $item) {
+                    $this->inventario->ajustarStock(
+                        $productos[(int) $item['producto_id']],
+                        -(int) $item['cantidad'],
+                        'venta',
+                        "Pedido web #{$venta->id}",
+                        null,
+                        auth()->id()
+                    );
+                }
+
+                return $venta->load(['detalles.producto', 'cliente']);
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            if ($operacionId !== '') {
+                $existente = Venta::where('operacion_id', $operacionId)->first();
+
+                if ($existente !== null) {
+                    return $existente->load(['detalles.producto', 'cliente']);
+                }
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Reusa el cliente por NIT/CI o email y, si no existe, lo crea con los datos
+     * del checkout para no perder el contacto de la entrega.
+     *
+     * @param  array{nombre?:string, nit_ci?:string, telefono?:string, email?:string, direccion?:string}  $datos
+     */
+    private function resolverCliente(array $datos): ?Cliente
+    {
+        $nitCi = trim((string) ($datos['nit_ci'] ?? ''));
+        $email = trim((string) ($datos['email'] ?? ''));
+
+        if ($nitCi === '' && $email === '') {
+            return null;
+        }
+
+        $existente = Cliente::query()
+            ->where(function ($query) use ($nitCi, $email) {
+                if ($nitCi !== '') {
+                    $query->orWhere('nit_ci', $nitCi);
+                }
+
+                if ($email !== '') {
+                    $query->orWhere('email', $email);
+                }
+            })
+            ->first();
+
+        if ($existente !== null) {
+            return $existente;
+        }
+
+        return Cliente::create([
+            'nombre' => (string) ($datos['nombre'] ?? 'Cliente web'),
+            'nit_ci' => $nitCi !== '' ? $nitCi : null,
+            'telefono' => $datos['telefono'] ?? null,
+            'email' => $email !== '' ? $email : null,
+            'direccion' => $datos['direccion'] ?? null,
+            'activo' => true,
+        ]);
     }
 
     /**
