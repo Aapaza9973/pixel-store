@@ -47,6 +47,12 @@
                     Dashboard
                 </x-nav-link>
 
+                @if (Route::has('catalogo.index'))
+                    <x-nav-link :href="route('catalogo.index')" :active="request()->routeIs('catalogo.*')" icon="cube">
+                        Catálogo
+                    </x-nav-link>
+                @endif
+
                 @can('ver productos')
                     @if (Route::has('alertas.index'))
                         <x-nav-link :href="route('alertas.index')" :active="request()->routeIs('alertas.*')" icon="bell">
