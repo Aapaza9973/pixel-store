@@ -17,6 +17,7 @@ class PasswordChanged extends Notification
         return ['mail'];
     }
 
+
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
