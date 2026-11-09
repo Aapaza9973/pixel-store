@@ -24,6 +24,9 @@ const aNumero = (valor, porDefecto = 0) => {
 Alpine.data('carritoPublico', () => ({
     items: [],
     abierto: false,
+    procesando: false,
+    checkoutError: '',
+    operacionId: '',
 
     init() {
         this.items = this.leerGuardado();
@@ -141,6 +144,59 @@ Alpine.data('carritoPublico', () => ({
 
     get totalItems() {
         return this.items.reduce((suma, item) => suma + item.cantidad, 0);
+    },
+
+    // --- Checkout -------------------------------------------------------
+    async confirmarPedido(form) {
+        if (this.procesando || this.items.length === 0) {
+            return;
+        }
+
+        this.procesando = true;
+        this.checkoutError = '';
+
+        // Se reusa en reintentos para que el servidor responda idempotente.
+        this.operacionId = this.operacionId
+            || (globalThis.crypto?.randomUUID?.() ?? String(Date.now()));
+
+        const datos = Object.fromEntries(new FormData(form).entries());
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+        try {
+            const respuesta = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                },
+                body: JSON.stringify({
+                    ...datos,
+                    operacion_id: this.operacionId,
+                    items: this.items.map((item) => ({
+                        producto_id: item.producto_id,
+                        cantidad: item.cantidad,
+                    })),
+                }),
+            });
+
+            const cuerpo = await respuesta.json().catch(() => ({}));
+
+            if (! respuesta.ok) {
+                this.checkoutError = cuerpo.message
+                    ?? 'No pudimos registrar tu pedido. Intentá de nuevo.';
+
+                return;
+            }
+
+            this.items = [];
+            this.guardar();
+            window.location.assign(cuerpo.redirect);
+        } catch {
+            this.checkoutError = 'No pudimos conectar con la tienda. Revisá tu conexión e intentá de nuevo.';
+        } finally {
+            this.procesando = false;
+        }
     },
 
     cantidadDe(productoId) {
