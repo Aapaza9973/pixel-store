@@ -54,7 +54,7 @@ class CatalogoIndexTest extends TestCase
         ], $cambios));
     }
 
-    public function test_invitado_ve_la_grilla_de_productos_visibles(): void
+    public function test_invitado_ve_el_catalogo_con_productos_visibles(): void
     {
         $this->crearProducto(['nombre' => 'Fuente Visible 850W', 'slug' => 'fuente-visible-850w']);
         $this->crearProducto(['nombre' => 'Producto Oculto Del Catálogo', 'slug' => 'producto-oculto', 'visible_catalogo' => false]);
@@ -105,7 +105,7 @@ class CatalogoIndexTest extends TestCase
         $porMarca->assertDontSee('Placa Madre Alfa');
     }
 
-    public function test_ordenamiento_por_precio_funciona(): void
+    public function test_ordenamiento_por_precio_ascendente(): void
     {
         $this->crearProducto(['nombre' => 'Precio Alto', 'slug' => 'precio-alto', 'precio_unitario' => 1500]);
         $this->crearProducto(['nombre' => 'Precio Bajo', 'slug' => 'precio-bajo', 'precio_unitario' => 90]);
@@ -120,5 +120,19 @@ class CatalogoIndexTest extends TestCase
 
         $descendente->assertOk();
         $descendente->assertSeeInOrder(['Precio Alto', 'Precio Medio', 'Precio Bajo']);
+    }
+
+    public function test_filtros_de_precio_funcionan(): void
+    {
+        $this->crearProducto(['nombre' => 'Barato Extremo', 'slug' => 'barato-extremo', 'precio_unitario' => 90]);
+        $this->crearProducto(['nombre' => 'Rango Medio', 'slug' => 'rango-medio', 'precio_unitario' => 480]);
+        $this->crearProducto(['nombre' => 'Caro Extremo', 'slug' => 'caro-extremo', 'precio_unitario' => 1500]);
+
+        $response = $this->get(route('catalogo.index', ['precio_min' => 200, 'precio_max' => 1000]));
+
+        $response->assertOk();
+        $response->assertSee('Rango Medio');
+        $response->assertDontSee('Barato Extremo');
+        $response->assertDontSee('Caro Extremo');
     }
 }
