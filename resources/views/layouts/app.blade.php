@@ -23,7 +23,7 @@
     {{-- Scripts --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="antialiased bg-surface text-on-surface font-body-md">
+<body class="antialiased bg-surface text-on-surface font-body-md" x-data="carritoPublico()">
     <div class="min-h-screen flex">
 
         {{-- SIDEBAR --}}
@@ -60,18 +60,18 @@
                         Catálogo
                     </x-nav-link>
 
-                    {{-- Carrito: placeholder del Bloque 2, sin ruta todavía. --}}
-                    <span data-carrito-contador="0"
-                          title="Carrito: 0 artículos"
-                          class="flex cursor-default items-center gap-3 rounded-obsidian-lg px-3 py-2 font-body-md text-body-md text-on-surface-variant/70">
+                    {{-- Carrito público: abre el drawer del layout. --}}
+                    <button type="button" x-on:click="abierto = true"
+                            x-bind:aria-label="`Carrito: ${totalItems} artículos`"
+                            class="flex w-full items-center gap-3 rounded-obsidian-lg px-3 py-2 font-body-md text-body-md text-on-surface-variant transition-colors hover:bg-surface-container-low/60 hover:text-on-surface">
                         <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
                         <span>Carrito</span>
-                        <span data-carrito-contador-valor
-                              class="ml-auto rounded-obsidian bg-surface-container-low px-1.5 py-0.5 font-label-sm text-label-sm tabular-nums text-outline">0</span>
-                    </span>
+                        <span x-show="totalItems > 0" x-cloak x-text="totalItems"
+                              class="ml-auto min-w-[1.25rem] rounded-full bg-primary-container px-1.5 py-0.5 text-center font-label-sm text-label-sm tabular-nums text-on-primary-container"></span>
+                    </button>
                 @endif
 
                 @can('ver productos')
@@ -289,6 +289,102 @@
                 <span>Laravel {{ app()->version() }} · PostgreSQL</span>
             </footer>
         </div>
+    </div>
+
+    {{-- CARRITO PÚBLICO (Alpine + localStorage) --}}
+    <div x-cloak x-show="abierto" x-on:keydown.escape.window="abierto = false"
+         class="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Carrito de compras">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" x-on:click="abierto = false"></div>
+
+        <aside class="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-outline-variant/40 bg-surface-container-lowest shadow-2xl"
+               x-transition:enter="transition ease-out duration-200"
+               x-transition:enter-start="translate-x-full"
+               x-transition:enter-end="translate-x-0"
+               x-transition:leave="transition ease-in duration-150"
+               x-transition:leave-start="translate-x-0"
+               x-transition:leave-end="translate-x-full">
+
+            <header class="flex items-center justify-between border-b border-outline-variant/30 px-5 py-4">
+                <div>
+                    <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Pixel Store</p>
+                    <h2 class="mt-0.5 font-headline-sm text-headline-sm text-on-surface">Carrito</h2>
+                </div>
+                <button type="button" x-on:click="abierto = false" aria-label="Cerrar carrito"
+                        class="rounded-obsidian border border-outline-variant/40 p-1.5 text-on-surface-variant transition hover:border-primary-container/40 hover:text-on-surface">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </header>
+
+            <template x-if="items.length === 0">
+                <div class="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+                    <p class="font-body-md text-body-md text-on-surface-variant">Tu carrito está vacío.</p>
+                    <a href="{{ route('catalogo.index') }}" x-on:click="abierto = false"
+                       class="rounded-obsidian-lg border border-outline-variant/40 px-4 py-2 font-label-sm text-label-sm uppercase tracking-[0.18em] text-on-surface-variant transition hover:border-primary-container/40 hover:text-on-surface">
+                        Ver catálogo
+                    </a>
+                </div>
+            </template>
+
+            <template x-if="items.length > 0">
+                <ul class="flex-1 divide-y divide-outline-variant/15 overflow-y-auto">
+                    <template x-for="(item, index) in items" :key="item.producto_id">
+                        <li class="flex gap-3 p-4">
+                            <template x-if="item.imagen">
+                                <img x-bind:src="item.imagen" x-bind:alt="item.nombre"
+                                     class="h-16 w-16 flex-shrink-0 rounded-obsidian object-cover">
+                            </template>
+                            <template x-if="! item.imagen">
+                                <div class="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-obsidian bg-surface-container-low">
+                                    <span class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-outline">—</span>
+                                </div>
+                            </template>
+
+                            <div class="min-w-0 flex-1">
+                                <p class="line-clamp-2 font-body-sm text-body-sm text-on-surface" x-text="item.nombre"></p>
+                                <p class="mt-0.5 font-label-md text-label-md tabular-nums text-on-surface-variant" x-text="formato(item.precio)"></p>
+
+                                <div class="mt-2 flex items-center gap-2">
+                                    <button type="button" x-on:click="cambiarCantidad(index, -1)" aria-label="Quitar una unidad"
+                                            class="h-7 w-7 rounded-obsidian border border-outline-variant/40 font-label-md text-label-md text-on-surface transition hover:border-primary-container/50">−</button>
+                                    <span class="min-w-[2rem] text-center font-label-md text-label-md tabular-nums text-on-surface" x-text="item.cantidad"></span>
+                                    <button type="button" x-on:click="cambiarCantidad(index, 1)"
+                                            x-bind:disabled="item.cantidad >= item.stock" aria-label="Agregar una unidad"
+                                            class="h-7 w-7 rounded-obsidian border border-outline-variant/40 font-label-md text-label-md text-on-surface transition hover:border-primary-container/50 disabled:cursor-not-allowed disabled:opacity-40">+</button>
+
+                                    <button type="button" x-on:click="quitar(index)"
+                                            class="ml-auto font-label-sm text-label-sm uppercase tracking-[0.14em] text-error transition hover:text-error/80">
+                                        Quitar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p class="font-label-md text-label-md tabular-nums text-on-surface" x-text="formato(item.precio * item.cantidad)"></p>
+                        </li>
+                    </template>
+                </ul>
+            </template>
+
+            <footer class="space-y-3 border-t border-outline-variant/30 p-5">
+                <div class="flex items-baseline justify-between">
+                    <span class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Subtotal</span>
+                    <span class="font-headline-sm text-headline-sm tabular-nums text-on-surface" x-text="formato(subtotal)"></span>
+                </div>
+
+                <a href="{{ url('/catalogo/checkout') }}"
+                   x-bind:class="items.length === 0 ? 'pointer-events-none opacity-40' : ''"
+                   x-bind:aria-disabled="items.length === 0"
+                   class="flex w-full items-center justify-center rounded-obsidian-lg bg-primary-container px-4 py-2.5 font-body-md text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90">
+                    Ir a pagar
+                </a>
+
+                <button type="button" x-on:click="vaciar()" x-show="items.length > 0" x-cloak
+                        class="w-full font-label-sm text-label-sm uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-error">
+                    Vaciar carrito
+                </button>
+            </footer>
+        </aside>
     </div>
 
     {{-- SESSION TIMEOUT --}}

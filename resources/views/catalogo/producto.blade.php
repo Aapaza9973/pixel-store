@@ -107,8 +107,31 @@
                 </p>
 
                 <div class="mt-4 flex flex-wrap items-center gap-3">
+                    @if ((int) $producto->stock > 0)
+                        <button type="button"
+                                x-on:click="agregar({
+                                    producto_id: {{ (int) $producto->id }},
+                                    nombre: @js($producto->nombre),
+                                    precio: {{ (float) $producto->precio_unitario }},
+                                    imagen: @js($principal?->urlThumbnail()),
+                                    stock: {{ (int) $producto->stock }},
+                                    slug: @js($producto->slug),
+                                })"
+                                class="inline-flex items-center gap-2 rounded-obsidian-lg bg-primary-container px-4 py-2.5 text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-container/60">
+                            Agregar al carrito
+                            <span x-show="cantidadDe({{ (int) $producto->id }}) > 0" x-cloak
+                                  x-text="cantidadDe({{ (int) $producto->id }})"
+                                  class="min-w-[1.25rem] rounded-full bg-black/20 px-1.5 py-0.5 text-center font-label-sm text-label-sm tabular-nums"></span>
+                        </button>
+                    @else
+                        <button type="button" disabled
+                                class="inline-flex cursor-not-allowed items-center gap-2 rounded-obsidian-lg border border-outline-variant/40 px-4 py-2.5 text-body-md font-medium text-outline">
+                            Agotado
+                        </button>
+                    @endif
+
                     <a href="mailto:ventas@pixelstore.com?subject={{ rawurlencode('Consulta: '.$producto->nombre) }}"
-                       class="inline-flex items-center gap-2 rounded-obsidian-lg bg-primary-container px-4 py-2.5 text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90">
+                       class="inline-flex items-center gap-2 rounded-obsidian-lg border border-outline-variant/40 px-4 py-2.5 text-body-md font-medium text-on-surface-variant transition hover:border-primary-container/40 hover:text-on-surface">
                         Consultar disponibilidad
                     </a>
 
