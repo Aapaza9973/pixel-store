@@ -47,6 +47,14 @@
                     Dashboard
                 </x-nav-link>
 
+                @can('crear ventas')
+                    @if (Route::has('admin.ventas.create'))
+                        <x-nav-link :href="route('admin.ventas.create')" :active="request()->routeIs('admin.ventas.*')" icon="cash">
+                            Punto de Venta
+                        </x-nav-link>
+                    @endif
+                @endcan
+
                 @if (Route::has('catalogo.index'))
                     <x-nav-link :href="route('catalogo.index')" :active="request()->routeIs('catalogo.*')" icon="cube">
                         Catálogo
