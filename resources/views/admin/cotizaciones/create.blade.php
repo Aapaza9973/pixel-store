@@ -5,6 +5,13 @@
 
 @section('content')
 <div class="max-w-4xl" x-data="cotizacionForm()">
+    {{-- La emisión la fija el servidor al guardar; se muestra para que el
+         usuario sepa con qué fecha quedará la cotización. --}}
+    <p class="mb-4 font-body-sm text-body-sm text-on-surface-variant">
+        Fecha de emisión: <span class="text-on-surface">{{ now()->format('d/m/Y') }}</span>
+        · vence según la validez indicada.
+    </p>
+
     <form method="POST" action="{{ route('admin.cotizaciones.store') }}" class="space-y-6">
         @csrf
 

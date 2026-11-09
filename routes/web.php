@@ -165,8 +165,11 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
                 ->parameters(['proveedores' => 'proveedor']);
 
             // HU Fase 2.1: cotizaciones formales.
+            // Solo las acciones implementadas: `edit`, `update` y `destroy` no
+            // existen en el controlador y cualquier enlace a ellas daba 500.
             Route::resource('cotizaciones', CotizacionController::class)
-                ->parameters(['cotizaciones' => 'cotizacion']);
+                ->parameters(['cotizaciones' => 'cotizacion'])
+                ->only(['index', 'create', 'store', 'show']);
             Route::get('cotizaciones/{cotizacion}/pdf', [CotizacionController::class, 'pdf'])
                 ->name('cotizaciones.pdf');
             Route::post('cotizaciones/{cotizacion}/convertir', [CotizacionController::class, 'convertir'])
