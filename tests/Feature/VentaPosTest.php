@@ -172,4 +172,23 @@ class VentaPosTest extends TestCase
         $response->assertSee('id="producto-busqueda"', false);
         $response->assertSee('debounce.300ms="buscarProductos()"', false);
     }
+
+    public function test_el_menu_lateral_muestra_el_enlace_al_pos(): void
+    {
+        $this->actingAs($this->vendedor)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Punto de Venta')
+            ->assertSee(route('admin.ventas.create'));
+
+        // Inventario no tiene el permiso `crear ventas`: el enlace no debe aparecer.
+        $inventario = User::where('email', 'inventario@pixelstore.com')->firstOrFail();
+
+        $this->actingAs($inventario)
+            ->followingRedirects()
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Punto de Venta')
+            ->assertDontSee(route('admin.ventas.create'));
+    }
 }
