@@ -36,6 +36,7 @@ class Venta extends Model
         'operacion_id', 'fecha', 'user_id', 'cliente_id', 'total',
         'descuento', 'descuento_porcentaje', 'autorizado_por',
         'puntos_canjeados', 'estado', 'origen', 'cotizacion_id',
+        'token_confirmacion', 'confirmado_en',
     ];
 
     protected $casts = [
@@ -44,6 +45,7 @@ class Venta extends Model
         'descuento' => 'decimal:2',
         'descuento_porcentaje' => 'decimal:2',
         'puntos_canjeados' => 'integer',
+        'confirmado_en' => 'datetime',
     ];
 
     public function cliente(): BelongsTo

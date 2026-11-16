@@ -101,6 +101,7 @@
                         <th class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Real</th>
                         <th class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Diferencia</th>
                         <th class="px-4 py-3.5 font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Notas</th>
+                        <th class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Comprobante</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -128,10 +129,16 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3.5 text-on-surface-variant">{{ $cierre->notas ?: '—' }}</td>
+                            <td class="px-4 py-3.5 text-right">
+                                <a href="{{ route('admin.caja.pdf', $cierre) }}"
+                                   class="font-body-sm text-body-sm text-secondary transition hover:text-on-surface">
+                                    PDF
+                                </a>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-12 text-center font-body-md text-body-md text-outline">
+                            <td colspan="7" class="px-4 py-12 text-center font-body-md text-body-md text-outline">
                                 No hay cierres registrados para este día.
                             </td>
                         </tr>

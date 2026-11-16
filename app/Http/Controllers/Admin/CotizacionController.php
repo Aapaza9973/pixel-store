@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Exceptions\DomainException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCotizacionRequest;
+use App\Mail\CotizacionEnviada;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\Producto;
@@ -14,6 +15,7 @@ use App\Services\CotizacionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class CotizacionController extends Controller
@@ -109,5 +111,30 @@ class CotizacionController extends Controller
         return redirect()
             ->route('admin.cotizaciones.show', $cotizacion)
             ->with('success', "Cotización {$cotizacion->numero} anulada.");
+    }
+
+    /**
+     * HU-2.1b: envía la cotización por correo al cliente.
+     */
+    public function enviar(Request $request, Cotizacion $cotizacion): RedirectResponse
+    {
+        $this->authorize('view', $cotizacion);
+
+        $datos = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ], [
+            'email.required' => 'Indique el correo del cliente.',
+            'email.email' => 'Ingrese un correo válido.',
+        ]);
+
+        try {
+            Mail::to($datos['email'])->send(new CotizacionEnviada($cotizacion->load('items')));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'No se pudo enviar el correo. Verifique la configuración de correo.');
+        }
+
+        return back()->with('success', "Cotización {$cotizacion->numero} enviada a {$datos['email']}.");
     }
 }

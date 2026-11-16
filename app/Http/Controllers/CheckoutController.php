@@ -6,11 +6,13 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\StockInsuficienteException;
 use App\Http\Requests\CheckoutRequest;
+use App\Mail\PedidoConfirmacion;
 use App\Models\Venta;
 use App\Services\VentaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -70,6 +72,8 @@ class CheckoutController extends Controller
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        $this->enviarConfirmacion($venta);
+
         // URL firmada: el pedido contiene datos del comprador y el id es
         // secuencial, así que no debe poder enumerarse.
         $destino = URL::signedRoute('catalogo.gracias', ['venta' => $venta->id]);
@@ -82,6 +86,26 @@ class CheckoutController extends Controller
         }
 
         return redirect()->to($destino);
+    }
+
+    /**
+     * Correo con los enlaces de confirmar/cancelar (HU-3.3). Un fallo de mail
+     * no debe romper el checkout: se reporta y el pedido queda creado.
+     */
+    private function enviarConfirmacion(Venta $venta): void
+    {
+        try {
+            $venta->loadMissing('cliente');
+            $email = $venta->cliente?->email;
+
+            if (! is_string($email) || $email === '' || $venta->token_confirmacion === null) {
+                return;
+            }
+
+            Mail::to($email)->send(new PedidoConfirmacion($venta));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     public function gracias(Request $request, Venta $venta): View

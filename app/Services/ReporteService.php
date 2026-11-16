@@ -263,6 +263,21 @@ class ReporteService
         )->values()->all();
     }
 
+    /**
+     * Comparativa de los últimos meses (HU-4.3.3).
+     *
+     * Se apoya en `porPeriodo()` con agrupación mensual para no duplicar SQL.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function comparativaMeses(int $meses = 6): array
+    {
+        $meses = max(1, min(24, $meses));
+        $desde = Carbon::now()->subMonths($meses - 1)->startOfMonth()->toDateString();
+
+        return $this->porPeriodo($desde, Carbon::now()->toDateString(), 'mes');
+    }
+
     private function inicio(string $desde): string
     {
         return Carbon::parse($desde)->startOfDay()->toDateTimeString();

@@ -292,6 +292,18 @@ class ReporteController extends Controller
     }
 
     /**
+     * Comparativa de los últimos meses (HU-4.3.3).
+     */
+    public function comparativa(Request $request, ReporteService $reportes): View
+    {
+        abort_unless($request->user()?->can('ver reportes'), 403);
+
+        $filas = $reportes->comparativaMeses(6);
+
+        return view('admin.reportes.comparativa', compact('filas'));
+    }
+
+    /**
      * Arma título, columnas y filas del PDF según el tipo de reporte.
      *
      * @return array{0: string, 1: list<string>, 2: list<list<string>>}
