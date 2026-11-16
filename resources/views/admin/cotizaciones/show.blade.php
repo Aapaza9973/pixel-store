@@ -30,6 +30,41 @@
         </div>
     </div>
 
+    {{-- HU-2.1b: envío por correo y compartir por WhatsApp --}}
+    @can('ver cotizaciones')
+        @php
+            $telefono = preg_replace('/\D/', '', (string) $cotizacion->telefono);
+            $textoWhatsapp = rawurlencode(
+                "Cotización {$cotizacion->numero} de Pixel Store para {$cotizacion->nombre_cliente}. "
+                ."Total: Bs ".number_format((float) $cotizacion->total, 2, ',', '.')."."
+            );
+            $urlWhatsapp = 'https://wa.me/'.($telefono !== '' ? '591'.$telefono : '').'?text='.$textoWhatsapp;
+        @endphp
+
+        <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
+            <form method="POST" action="{{ route('admin.cotizaciones.enviar', $cotizacion) }}" class="flex flex-wrap items-end gap-3">
+                @csrf
+                <div class="min-w-[240px] flex-1">
+                    <label for="email" class="mb-1 block font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Enviar por correo</label>
+                    <input type="email" name="email" id="email" value="{{ old('email', $cotizacion->email) }}"
+                           placeholder="cliente@correo.com"
+                           class="w-full rounded-obsidian border-outline-variant/40 bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface">
+                    @error('email')
+                        <p class="mt-1 font-body-sm text-body-sm text-error">{{ $message }}</p>
+                    @enderror
+                </div>
+                <button type="submit"
+                        class="rounded-obsidian bg-primary-container px-4 py-2 font-label-md text-label-md uppercase tracking-[0.14em] text-white transition hover:bg-primary-container/85">
+                    Enviar
+                </button>
+                <a href="{{ $urlWhatsapp }}" target="_blank" rel="noopener"
+                   class="rounded-obsidian border border-emerald-500/30 px-4 py-2 font-label-md text-label-md uppercase tracking-[0.14em] text-emerald-400 transition hover:bg-emerald-500/10">
+                    WhatsApp
+                </a>
+            </form>
+        </div>
+    @endcan
+
     <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-6 backdrop-blur-xl">
         <dl class="grid grid-cols-1 gap-4 text-body-md md:grid-cols-2">
             <div>

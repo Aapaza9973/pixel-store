@@ -155,6 +155,46 @@
                     @endif
                 @endcan
 
+                @can('ver devoluciones')
+                    @if (Route::has('admin.devoluciones.index'))
+                        <x-nav-link :href="route('admin.devoluciones.index')" :active="request()->routeIs('admin.devoluciones.*')" icon="clipboard">
+                            Devoluciones
+                        </x-nav-link>
+                    @endif
+                @endcan
+
+                @can('ver numeros-serie')
+                    @if (Route::has('admin.series.index'))
+                        <x-nav-link :href="route('admin.series.index')" :active="request()->routeIs('admin.series.*')" icon="bookmark">
+                            Números de Serie
+                        </x-nav-link>
+                    @endif
+                @endcan
+
+                @can('ver encuestas')
+                    @if (Route::has('admin.encuestas.index'))
+                        <x-nav-link :href="route('admin.encuestas.index')" :active="request()->routeIs('admin.encuestas.*')" icon="adjustments">
+                            Encuestas
+                        </x-nav-link>
+                    @endif
+                @endcan
+
+                @can('ver facturacion')
+                    @if (Route::has('admin.facturacion.index'))
+                        <x-nav-link :href="route('admin.facturacion.index')" :active="request()->routeIs('admin.facturacion.*')" icon="cash">
+                            Facturación
+                        </x-nav-link>
+                    @endif
+                @endcan
+
+                @can('ver auditoria')
+                    @if (Route::has('admin.auditoria.index'))
+                        <x-nav-link :href="route('admin.auditoria.index')" :active="request()->routeIs('admin.auditoria.*')" icon="archive">
+                            Auditoría
+                        </x-nav-link>
+                    @endif
+                @endcan
+
                 @if (Route::has('admin.caja.index') && auth()->user()?->hasAnyRole(['Admin', 'Cajero']))
                     <x-nav-link :href="route('admin.caja.index')" :active="request()->routeIs('admin.caja.*')" icon="archive">
                         Caja

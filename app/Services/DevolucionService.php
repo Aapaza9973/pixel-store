@@ -9,6 +9,7 @@ use App\Models\DetalleVenta;
 use App\Models\Devolucion;
 use App\Models\DevolucionDetalle;
 use App\Models\Producto;
+use App\Models\Punto;
 use App\Models\Venta;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -37,10 +38,12 @@ class DevolucionService
         array $items,
         string $motivo,
         string $operacionId,
-        int $userId
+        int $userId,
+        bool $aplicar = true,
+        string $estado = 'procesada'
     ): Devolucion {
         try {
-            return DB::transaction(function () use ($ventaId, $items, $motivo, $operacionId, $userId) {
+            return DB::transaction(function () use ($ventaId, $items, $motivo, $operacionId, $userId, $aplicar, $estado) {
                 // Idempotencia mínima (5.14.10 la completa): operacion_id es UNIQUE,
                 // así que el guard evita el 500 en el reintento del POS.
                 $existente = Devolucion::where('operacion_id', $operacionId)->first();
@@ -117,7 +120,7 @@ class DevolucionService
                     'venta_id' => $venta->id,
                     'user_id' => $userId,
                     'motivo' => $motivo,
-                    'estado' => 'procesada',
+                    'estado' => $estado,
                     'total_devuelto' => round($totalDevuelto, 2),
                 ]);
 
@@ -136,8 +139,11 @@ class DevolucionService
                     ]);
                 }
 
-                $this->reingresarStock($devolucion, $userId);
-                $this->actualizarEstadoVenta($venta, $devolucion);
+                if ($aplicar) {
+                    $this->reingresarStock($devolucion, $userId);
+                    $this->revertirPuntos($devolucion, $userId);
+                    $this->actualizarEstadoVenta($venta, $devolucion);
+                }
 
                 return $devolucion->load('detalles');
             });
@@ -192,13 +198,117 @@ class DevolucionService
     {
         $devuelto = (float) Devolucion::query()
             ->where('venta_id', $venta->id)
-            ->where('estado', '!=', 'anulada')
+            ->where('estado', 'procesada')
             ->sum('total_devuelto');
 
         $venta->update([
             'estado' => $devuelto >= (float) $venta->total - 0.01
                 ? 'totalmente_devuelta'
                 : 'parcialmente_devuelta',
+        ]);
+    }
+
+    /**
+     * HU-2.4b: registra la devolución como solicitud, sin tocar stock ni puntos.
+     *
+     * @param  array<int, array{venta_detalle_id:int, cantidad:int}>  $items
+     *
+     * @throws DomainException
+     */
+    public function solicitar(
+        int $ventaId,
+        array $items,
+        string $motivo,
+        string $operacionId,
+        int $userId
+    ): Devolucion {
+        return $this->registrar($ventaId, $items, $motivo, $operacionId, $userId, false, 'pendiente');
+    }
+
+    /**
+     * Aprueba una solicitud: reingresa stock, libera series, revierte puntos y
+     * recalcula el estado de la venta.
+     *
+     * @throws DomainException
+     */
+    public function aprobar(Devolucion $devolucion, int $userId): Devolucion
+    {
+        return DB::transaction(function () use ($devolucion, $userId) {
+            $bloqueada = Devolucion::whereKey($devolucion->id)->lockForUpdate()->firstOrFail();
+
+            if ($bloqueada->estado !== 'pendiente') {
+                throw new DomainException('Solo se aprueba una devolución pendiente.');
+            }
+
+            $venta = Venta::whereKey($bloqueada->venta_id)->firstOrFail();
+
+            $this->reingresarStock($bloqueada, $userId);
+            $this->revertirPuntos($bloqueada, $userId);
+
+            $bloqueada->update([
+                'estado' => 'procesada',
+                'aprobada_por' => $userId,
+                'aprobada_en' => now(),
+            ]);
+
+            $this->actualizarEstadoVenta($venta, $bloqueada);
+
+            return $bloqueada->fresh('detalles');
+        });
+    }
+
+    /**
+     * Rechaza una solicitud sin mover stock ni puntos.
+     *
+     * @throws DomainException
+     */
+    public function rechazar(Devolucion $devolucion, string $motivo, int $userId): Devolucion
+    {
+        return DB::transaction(function () use ($devolucion, $motivo, $userId) {
+            $bloqueada = Devolucion::whereKey($devolucion->id)->lockForUpdate()->firstOrFail();
+
+            if ($bloqueada->estado !== 'pendiente') {
+                throw new DomainException('Solo se rechaza una devolución pendiente.');
+            }
+
+            $bloqueada->update([
+                'estado' => 'rechazada',
+                'motivo_rechazo' => $motivo,
+                'aprobada_por' => $userId,
+                'aprobada_en' => now(),
+            ]);
+
+            return $bloqueada->fresh('detalles');
+        });
+    }
+
+    /**
+     * Revierte los puntos proporcionales al monto devuelto (1 punto por cada
+     * `puntos.bs_por_punto` bolivianos). Sin cliente asociado no hay puntos.
+     */
+    private function revertirPuntos(Devolucion $devolucion, int $userId): void
+    {
+        $venta = Venta::whereKey($devolucion->venta_id)->first();
+        $clienteId = (int) ($venta?->cliente_id ?? 0);
+
+        if ($venta === null || $clienteId === 0) {
+            return;
+        }
+
+        $porBs = max(1, (int) config('puntos.bs_por_punto', 10));
+        $puntos = (int) floor((float) $devolucion->total_devuelto / $porBs);
+
+        if ($puntos <= 0) {
+            return;
+        }
+
+        Punto::create([
+            'cliente_id' => $clienteId,
+            'venta_id' => $venta->id,
+            'user_id' => $userId,
+            'tipo' => 'ajuste',
+            'puntos' => -$puntos,
+            'concepto' => "Devolución #{$devolucion->id}",
         ]);
     }
 
@@ -228,7 +338,7 @@ class DevolucionService
         return (int) DevolucionDetalle::query()
             ->join('devoluciones', 'devoluciones.id', '=', 'devolucion_detalles.devolucion_id')
             ->where('devolucion_detalles.venta_detalle_id', $ventaDetalleId)
-            ->where('devoluciones.estado', '!=', 'anulada')
+            ->where('devoluciones.estado', 'procesada')
             ->sum('devolucion_detalles.cantidad');
     }
 }

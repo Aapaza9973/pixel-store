@@ -37,15 +37,14 @@ prioridad y sprint objetivo.
   resolviendo `AlertaStockPolicy` vía `authorizeResource`.
 - **Detectado**: Wave 2 Bloque 2 (commit `bc621e1`)
 
-### Refactor pendiente — `app/Models/MovimientoStock.php`
-No sigue el patrón profesional de las skills:
-- [ ] Agregar `declare(strict_types=1)`
-- [ ] Agregar PHPDoc con `@property`
-- [ ] Agregar `HasFactory` trait
-- [ ] Agregar scopes (`buscar`, por tipo, por rango de fechas)
-- [ ] Agregar método `estaDisponible()` o similar
+### Refactor — `app/Models/MovimientoStock.php`
+- [x] `declare(strict_types=1)`
+- [x] PHPDoc con `@property`
+- [x] `HasFactory`
+- [x] Scopes (`porTipo`, `enRango`)
+- [x] Helpers `esEntrada()` / `esSalida()`
 
-**Cuándo arreglarlo**: cuando se toque el módulo de movimientos (Sprint 2).
+**Cerrado (2026-11-16)**: el modelo ya cumple el patrón; no quedaba nada por hacer.
 
 ### Refactor — Servicios de inventario consolidados
 - [x] Unificar `InventarioService` (métricas de solo lectura) dentro de
@@ -57,7 +56,8 @@ No sigue el patrón profesional de las skills:
   regla "no mezclar idiomas". El usuario eligió `InventoryService` como canónico.
 
 ### Tailwind — dependencia `@tailwindcss/vite` (v4) colgada + plan de migración
-- [ ] Decidir y ejecutar una de las dos rutas (ver plan abajo).
+- [x] Decidir y ejecutar una de las dos rutas (ver plan abajo).
+- **Cerrado (2026-11-16)**: `package.json` ya no declara `@tailwindcss/vite`; el build usa Tailwind v3 vía PostCSS. No hay migración pendiente.
 - **Situación**: `package.json` declara `@tailwindcss/vite@^4.3.3` **y**
   `tailwindcss@^3.1.0`. El build real usa **Tailwind v3** vía `postcss.config.js`
   + `tailwind.config.js` (config v3 con `theme.extend`); `vite.config.js` **no**
@@ -97,11 +97,15 @@ No sigue el patrón profesional de las skills:
 - **Cerrado**: Bloque 3 (commit `fix(usuarios): crear vista historial`)
 
 ### Auditoría — homogeneizar try/catch best-effort
-- [ ] Verificar que los 3 métodos de `AuditoriaService`
+- [x] Verificar que los 3 métodos de `AuditoriaService`
       (`registrarLoginExitoso`, `registrarLogout`, `registrarIntentoFallido`)
       no propaguen excepciones al usuario. Si sus callers (listeners)
       no los protegen, agregar `try/catch + report()` internos.
-- [ ] Verificar lo mismo en `CheckUserHasRole` middleware
+- [x] Verificar lo mismo en `CheckUserHasRole` middleware
+- **Cerrado (2026-11-16)**: los tres listeners (`LogSuccessfulLogin`,
+      `LogSuccessfulLogout`, `LogFailedLogin`) y `CheckUserHasRole` envuelven la
+      escritura en `try/catch` + `report()`; un fallo de auditoría nunca corta
+      el login ni el request.
 - **Detectado**: durante tarea 2.B (discrepancia entre la asunción del
   prompt y el código real)
 - **Cuándo arreglarlo**: Sprint 2 al refactorizar auditoría
@@ -117,22 +121,30 @@ No sigue el patrón profesional de las skills:
 
 ---
 
+### Facturación y pagos en modo simulación
+- [ ] Integrar CUCU / Libélula (SIN) y Stripe / PayPal con credenciales reales.
+- **Situación**: `FacturacionService` y `PagoPedidoController` funcionan en modo
+  simulación (`config/pagos.php`), con el esquema definitivo y tests.
+- **Riesgo**: una factura emitida en simulación **no tiene validez tributaria**;
+  la pantalla lo advierte y el XML lleva `<modo>simulacion</modo>`.
+- **Cuándo arreglarlo**: cuando el negocio contrate y entregue las claves.
+
 ## 🟢 Prioridad baja
 
 ### UX — Usuario sin rol puede ver `/dashboard`
-- [ ] Un usuario autenticado sin rol puede acceder a `/dashboard` (solo está
-      protegido por `auth` + `verified` + `user.active`); `/admin/*` sí exige
-      `user.has.role`.
-- **Impacto**: bajo (sin rol no puede operar nada), pero el dashboard muestra
-      una UI vacía sin contexto.
-- **Fix sugerido**: mover `/dashboard` detrás de `user.has.role`, o mostrar un
-      empty-state "sin permisos asignados".
+- [x] Resuelto como **decisión de producto**, no como fix: el acceso está
+      cubierto por `LoginRedirectTest::test_usuario_sin_rol_accede_al_dashboard_pero_no_al_admin`
+      (200 en `/dashboard`, 403 en `/admin/*`).
+- **Impacto**: bajo (sin rol no puede operar nada).
+- **Nota**: si se decide cerrar `/dashboard`, hay que cambiar ese test y el
+      redirect de `panelHome()` a la vez.
 - **Detectado**: Wave 2 Bloque 3 (commit `a8bdbad`)
-- **Cuándo arreglarlo**: cuando se defina el flujo completo de usuario sin rol.
 
 ### Middleware en ruta de movimientos
-- [ ] Agregar `->middleware('can:editar productos')` a la ruta
+- [x] Agregar `->middleware('can:editar productos')` a la ruta
       `admin.movimientos.salida` en `routes/web.php`
+- **Cerrado (2026-11-16)**: la ruta ya tiene el middleware y vive dentro del
+      grupo `admin` + `user.has.role`.
 
 **Actual**: cualquier usuario autenticado puede invocarla si conoce la URL.
 **Riesgo**: bajo (no hay UI, requiere conocer la URL exacta, el service valida stock).

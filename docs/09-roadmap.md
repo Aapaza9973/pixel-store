@@ -10,8 +10,8 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 |:-:|---|---|:-:|
 | 1 | Fundación | 4 semanas | ✅ **100%** |
 | 2 | Trazabilidad y cotizaciones | 4 semanas | ✅ **100%** (cerrado 2026-11-05) |
-| 3 | Catálogo público y pedidos | 4 semanas | 🚧 Parcial (ficha + favoritos) |
-| 4 | Facturación y proveedores | 4 semanas | 🚧 Parcial (proveedores/OC ✅) |
+| 3 | Catálogo público y pedidos | 4 semanas | 🚧 Parcial (catálogo, checkout, pedidos web, encuesta) |
+| 4 | Facturación y proveedores | 4 semanas | ✅ **100%** (facturación en modo simulación) |
 | 5 | Motor de compatibilidad e IA | 4 semanas | ⏳ Pendiente |
 | 6 | Escalabilidad y multi-sucursal | Futuro | ⏳ Pendiente |
 
@@ -61,9 +61,10 @@ Implementado y con tests:
 - Clientes (CRUD, historial y puntos)
 - Números de serie (`NumeroSerieService`, vinculación en venta y liberación en devolución)
 
-Pendiente:
-- CRUD completo de números de serie y consulta de garantías (hoy cubierto a nivel de servicio)
-- Envío automático de cotizaciones por WhatsApp/correo (se comparte el PDF)
+Cerrado el 2026-11-16:
+- Cotizaciones enviables por correo y compartibles por WhatsApp (`admin.cotizaciones.enviar`)
+- Devoluciones con solicitud, aprobación, rechazo y reversión proporcional de puntos
+- Número de serie obligatorio vía `productos.maneja_numero_serie` en el POS
 
 ### Tareas planificadas
 
@@ -73,15 +74,15 @@ Pendiente:
 - [x] Generación de PDF con DomPDF
 - [x] Validez configurable (default 4 días)
 - [x] Estados: Vigente, Vencida, Convertida, Anulada
-- [ ] Envío por WhatsApp/correo (se descarga/comparte el PDF)
+- [x] Envío por WhatsApp/correo (`CotizacionEnviada` + enlace `wa.me`)
 - [x] Conversión de cotización a venta
 - [x] Tests: 8-10
 
 #### 2.2 — Números de serie (parcial)
 - [x] `NumeroSerieService`
-- [ ] CRUD de números de serie (sin controller ni vistas propias)
+- [x] CRUD de números de serie (`admin/series`, 7 rutas + policy + tests)
 - [x] Vinculación automática al vender
-- [ ] Consulta por número de serie (garantías)
+- [x] Consulta por número de serie (garantías) en el listado y el detalle
 - [x] Estados: disponible, vendido, devuelto, defectuoso, baja
 - [x] Tests: 10-12
 
@@ -91,22 +92,22 @@ Pendiente:
 - [x] Validación de stock en tiempo real
 - [x] Pago mixto (efectivo + tarjeta + transferencia)
 - [x] Descuentos por rol (10% vendedor, 5% cajero, 100% admin) + autorización
-- [ ] Registro de número de serie obligatorio por categoría (hoy se valida si se envía)
+- [x] Número de serie obligatorio (por producto con `maneja_numero_serie`, validado en `VentaService`)
 - [x] Comprobante imprimible (80mm y A4)
 - [x] Tests: 12-15
 
 #### 2.4 — Devoluciones ✅
 - [x] `DevolucionService`
-- [ ] Solicitud y aprobación (la devolución se registra procesada)
+- [x] Solicitud y aprobación (`devoluciones.index`, estados pendiente/procesada/rechazada)
 - [x] Reposición de stock
-- [ ] Reversión proporcional de puntos
+- [x] Reversión proporcional de puntos (1 punto por Bs 10, configurable)
 - [x] Tests: 6-8
 
 #### 2.5 — Cierre de caja ✅
 - [x] `CierreCajaService` (nombre final del servicio)
 - [x] Resumen del día por método de pago
 - [x] Cierre único por vendedor/día
-- [ ] Exportación PDF del cierre
+- [x] Exportación PDF del cierre (`admin.caja.pdf`)
 - [x] Tests: 4-6
 
 #### 2.6 — Reportes básicos ✅
@@ -119,7 +120,7 @@ Pendiente:
 
 ---
 
-## 🚧 Fase 3 — Catálogo público y pedidos (parcial: ficha + favoritos)
+## 🚧 Fase 3 — Catálogo público y pedidos (parcial)
 
 ### Objetivos
 - Catálogo público sin autenticación
@@ -128,38 +129,54 @@ Pendiente:
 - Encuestas anónimas
 - Notificaciones WhatsApp/correo
 
+### Estado real (2026-11-16)
+
+Implementado y con tests:
+- Catálogo público (`/catalogo`, ficha `/producto/{slug}`, filtros, favoritos)
+- Carrito en localStorage + checkout sin cuenta (`catalogo.checkout.*`)
+- Pedido web como venta `Pendiente` con reserva de stock
+- Token de 48 caracteres para confirmar/cancelar desde el correo (`pedido.confirmar`, `pedido.cancelar`)
+- Correo de confirmación (`App\Mail\PedidoConfirmacion`)
+- Bandeja interna `admin/pedidos-web` con cobro y cancelación
+- Encuesta anónima de 3 preguntas + panel `admin/encuestas`
+
+Pendiente:
+- Pagos en línea (Stripe/PayPal) y webhook firmado: requiere proveedor y claves
+- Filtros por atributos EAV y búsqueda `pg_trgm`
+- Notificaciones por WhatsApp
+
 ### Tareas planificadas
 
 #### 3.1 — Catálogo público
-- [ ] Rutas `/catalogo`
-- [ ] Filtros avanzados (categoría, marca, precio, disponibilidad)
+- [x] Rutas `/catalogo`
+- [x] Filtros avanzados (categoría, marca, precio, disponibilidad)
 - [ ] Filtros por atributos técnicos (EAV)
-- [ ] Ficha de producto con especificaciones
-- [ ] Productos similares
+- [x] Ficha de producto con especificaciones
+- [x] Productos similares
 - [ ] Búsqueda con `pg_trgm`
 
 #### 3.2 — Carrito y checkout
-- [ ] Carrito en sesión
-- [ ] Checkout sin cuenta
-- [ ] Validación de stock
-- [ ] Confirmación de pedido
+- [x] Carrito (localStorage, no sesión)
+- [x] Checkout sin cuenta
+- [x] Validación de stock
+- [x] Confirmación de pedido
 
 #### 3.3 — Pedidos online
-- [ ] `PedidoService`
-- [ ] Token de 48 chars para confirmar/cancelar
-- [ ] Correo de confirmación
-- [ ] Bandeja de pedidos interna
-- [ ] Conversión de pedido a venta
+- [x] `PedidoService` (cubierto por `VentaService`: alta, cobro y cancelación)
+- [x] Token de 48 chars para confirmar/cancelar
+- [x] Correo de confirmación
+- [x] Bandeja de pedidos interna
+- [x] Conversión de pedido a venta (el pedido ya es una venta `Pendiente`)
 
-#### 3.4 — Pagos en línea
+#### 3.4 — Pagos en línea (simulación lista; pasarelas reales pendientes)
 - [ ] Stripe Checkout
 - [ ] PayPal Orders
 - [ ] Webhook firmado
-- [ ] Modo simulación sin claves
+- [x] Modo simulación sin claves (`config/pagos.php`, `pedido.pagar`)
 
 #### 3.5 — Encuesta anónima
-- [ ] Formulario de 3 preguntas
-- [ ] Resultados internos
+- [x] Formulario de 3 preguntas (`/encuesta`, sin IP ni usuario)
+- [x] Resultados internos (`admin/encuestas`)
 
 ### Duración estimada: 4 semanas
 
@@ -175,13 +192,13 @@ Pendiente:
 
 ### Tareas planificadas
 
-#### 4.1 — Facturación electrónica
-- [ ] `FacturacionService`
-- [ ] Integración con CUCU API / Libélula
-- [ ] Generación de CUF + firma digital
-- [ ] PDF/XML
-- [ ] Anulación de facturas
-- [ ] Registro en `facturas_electronicas`
+#### 4.1 — Facturación electrónica (simulación completa)
+- [x] `FacturacionService`
+- [ ] Integración con CUCU API / Libélula (requiere credenciales del proveedor)
+- [x] Generación de CUF + XML (simulados; la firma digital real depende del proveedor)
+- [x] XML descargable desde el detalle (PDF fiscal queda con el proveedor)
+- [x] Anulación de facturas con motivo
+- [x] Registro en `facturas_electronicas`
 
 #### 4.2 — Proveedores
 - [ ] CRUD de proveedores
@@ -190,15 +207,15 @@ Pendiente:
 - [ ] Actualización de stock y costos
 
 #### 4.3 — Reportes avanzados
-- [ ] Utilidad neta por producto
-- [ ] Antigüedad de inventario
-- [ ] Comparativa de meses
-- [ ] Exportación PDF/Excel
+- [x] Utilidad neta por producto (dentro de Indicadores)
+- [x] Antigüedad de inventario (dentro de Indicadores)
+- [x] Comparativa de meses (`admin/reportes/comparativa`)
+- [x] Exportación PDF (indicadores) y Excel de caja
 
 #### 4.4 — Auditoría
-- [ ] `logs_auditoria` con quién, cuándo, qué
-- [ ] Consulta por usuario, acción, fecha
-- [ ] Exportación CSV
+- [x] `logs_auditoria` con quién, cuándo, qué
+- [x] Consulta por usuario, acción, fecha (`admin/auditoria`)
+- [x] Exportación CSV con los filtros aplicados
 
 ### Duración estimada: 4 semanas
 
@@ -282,17 +299,18 @@ Pendiente:
 
 ## 📊 Métricas de progreso
 
-Snapshot real (2026-11-05):
+Snapshot real (2026-11-16):
 
 | Métrica | Valor |
 |---|---|
-| Tests | 355 passing (1.535 assertions) |
-| Servicios | 12 |
-| Modelos | 34 |
-| Policies | 8 |
-| Controladores Admin | 16 |
-| FormRequests | 18 |
-| Tablas | 47 |
+| Tests | 428 passing (1.797 assertions) |
+| Servicios | 13 |
+| Modelos | 37 |
+| Policies | 9 |
+| Controladores Admin | 21 |
+| FormRequests | 20 |
+| Rutas | 205 |
+| Tablas | 48 |
 
 ---
 

@@ -174,6 +174,14 @@
                                   class="mt-1 w-full rounded-lg border-slate-700 bg-slate-950 text-white"></textarea>
                     </div>
 
+                    <div class="mt-4 flex items-center gap-2">
+                        <input type="checkbox" id="requiere-aprobacion" class="rounded border-slate-700 bg-slate-950"
+                               x-model="requiereAprobacion">
+                        <label for="requiere-aprobacion" class="text-sm text-slate-400">
+                            Requiere aprobación (queda pendiente, sin mover stock)
+                        </label>
+                    </div>
+
                     <template x-if="error">
                         <p class="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300" x-text="error"></p>
                     </template>
@@ -206,6 +214,7 @@
                 enviando: false,
                 error: '',
                 motivo: '',
+                requiereAprobacion: false,
                 lineas,
 
                 abrir() {
@@ -236,7 +245,11 @@
 
                     try {
                         const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
-                        const respuesta = await fetch('{{ route('admin.ventas.devoluciones.store', $venta) }}', {
+                        const url = this.requiereAprobacion
+                            ? '{{ route('admin.devoluciones.solicitar', $venta) }}'
+                            : '{{ route('admin.ventas.devoluciones.store', $venta) }}';
+
+                        const respuesta = await fetch(url, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

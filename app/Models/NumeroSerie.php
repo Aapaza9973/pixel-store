@@ -29,6 +29,13 @@ class NumeroSerie extends Model
 {
     use HasFactory;
 
+    /**
+     * Estados canónicos del enum `enum_numero_serie_estado`.
+     *
+     * @var list<string>
+     */
+    public const ESTADOS = ['disponible', 'vendido', 'reservado', 'devuelto', 'defectuoso', 'baja'];
+
     protected $table = 'numeros_serie';
 
     protected $fillable = [
@@ -67,6 +74,20 @@ class NumeroSerie extends Model
     public function scopeDisponibles($query)
     {
         return $query->where('estado', 'disponible');
+    }
+
+    /**
+     * Búsqueda por serie exacta, nombre o SKU del producto.
+     */
+    public function scopeBuscar($query, string $termino)
+    {
+        return $query->where(function ($query) use ($termino) {
+            $query->where('numero_serie', 'ILIKE', "%{$termino}%")
+                ->orWhereHas('producto', function ($producto) use ($termino) {
+                    $producto->where('nombre', 'ILIKE', "%{$termino}%")
+                        ->orWhere('sku', 'ILIKE', "%{$termino}%");
+                });
+        });
     }
 
     public function estaDisponible(): bool

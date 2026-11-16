@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditoriaController;
 use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\CierreCajaController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\CotizacionController;
 use App\Http\Controllers\Admin\DevolucionController;
+use App\Http\Controllers\Admin\FacturaController;
 use App\Http\Controllers\Admin\InventarioController;
+use App\Http\Controllers\Admin\NumeroSerieController;
 use App\Http\Controllers\Admin\OrdenCompraController;
 use App\Http\Controllers\Admin\PedidoWebController;
 use App\Http\Controllers\Admin\ProductoController;
@@ -20,7 +23,10 @@ use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EncuestaController;
 use App\Http\Controllers\FavoritoController;
+use App\Http\Controllers\PagoPedidoController;
+use App\Http\Controllers\PedidoPublicoController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
@@ -58,6 +64,23 @@ Route::get('/catalogo/gracias/{venta}', [CheckoutController::class, 'gracias'])
 // Favoritos (2.7.3-2.7.4): sirven para visitantes y usuarios autenticados.
 Route::post('/favoritos/{producto}', [FavoritoController::class, 'toggle'])->name('catalogo.favoritos.toggle');
 Route::get('/favoritos', [FavoritoController::class, 'index'])->name('catalogo.favoritos.index');
+
+// HU-3.5: encuesta anónima (sin cuenta, sin IP, sin usuario).
+Route::get('/encuesta', [EncuestaController::class, 'create'])->name('encuesta.create');
+Route::post('/encuesta', [EncuestaController::class, 'store'])->name('encuesta.store');
+Route::get('/encuesta/gracias', [EncuestaController::class, 'gracias'])->name('encuesta.gracias');
+
+// HU-3.3: enlaces del correo del pedido. El token es la única credencial.
+Route::get('/pedido/{venta}/confirmar/{token}', [PedidoPublicoController::class, 'confirmar'])
+    ->name('pedido.confirmar');
+Route::get('/pedido/{venta}/cancelar/{token}', [PedidoPublicoController::class, 'cancelar'])
+    ->name('pedido.cancelar');
+
+// HU-3.4: pago en línea (modo simulación hasta integrar Stripe/PayPal).
+Route::get('/pedido/{venta}/pagar/{token}', [PagoPedidoController::class, 'show'])
+    ->name('pedido.pagar.form');
+Route::post('/pedido/{venta}/pagar/{token}', [PagoPedidoController::class, 'store'])
+    ->name('pedido.pagar');
 
 Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -170,12 +193,55 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
             Route::resource('cotizaciones', CotizacionController::class)
                 ->parameters(['cotizaciones' => 'cotizacion'])
                 ->only(['index', 'create', 'store', 'show']);
+
+            // Trazabilidad de hardware (HU-2.2b): CRUD y consulta de garantía.
+            Route::resource('series', NumeroSerieController::class)
+                ->parameters(['series' => 'numeroSerie'])
+                ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
+
+            // HU-2.1b: envío de la cotización por correo.
+            Route::post('cotizaciones/{cotizacion}/enviar', [CotizacionController::class, 'enviar'])
+                ->name('cotizaciones.enviar');
+
+            // HU-2.4b: bandeja de devoluciones con aprobación/rechazo.
+            Route::get('devoluciones', [DevolucionController::class, 'index'])
+                ->name('devoluciones.index');
+            Route::post('devoluciones/{venta}/solicitar', [DevolucionController::class, 'solicitar'])
+                ->name('devoluciones.solicitar');
+            Route::post('devoluciones/{devolucion}/aprobar', [DevolucionController::class, 'aprobar'])
+                ->name('devoluciones.aprobar');
+            Route::post('devoluciones/{devolucion}/rechazar', [DevolucionController::class, 'rechazar'])
+                ->name('devoluciones.rechazar');
             Route::get('cotizaciones/{cotizacion}/pdf', [CotizacionController::class, 'pdf'])
                 ->name('cotizaciones.pdf');
             Route::post('cotizaciones/{cotizacion}/convertir', [CotizacionController::class, 'convertir'])
                 ->name('cotizaciones.convertir');
             Route::post('cotizaciones/{cotizacion}/anular', [CotizacionController::class, 'anular'])
                 ->name('cotizaciones.anular');
+
+            // HU-4.3.3: comparativa mensual de ventas.
+            Route::get('reportes/comparativa', [ReporteController::class, 'comparativa'])
+                ->name('reportes.comparativa');
+
+            // HU-4.1: facturación electrónica (emisión simulada).
+            Route::get('facturacion', [FacturaController::class, 'index'])
+                ->name('facturacion.index');
+            Route::post('facturacion', [FacturaController::class, 'store'])
+                ->name('facturacion.store');
+            Route::get('facturacion/{factura}', [FacturaController::class, 'show'])
+                ->name('facturacion.show');
+            Route::post('facturacion/{factura}/anular', [FacturaController::class, 'anular'])
+                ->name('facturacion.anular');
+
+            // HU-4.4: consulta y exportación de auditoría.
+            Route::get('auditoria', [AuditoriaController::class, 'index'])
+                ->name('auditoria.index');
+            Route::get('auditoria/export', [AuditoriaController::class, 'export'])
+                ->name('auditoria.export');
+
+            // HU-3.5: resultados internos de la encuesta anónima.
+            Route::get('encuestas', [\App\Http\Controllers\Admin\EncuestaController::class, 'index'])
+                ->name('encuestas.index');
 
             // HU-6.1: cierre de caja por turno y reporte diario.
             Route::get('caja', [CierreCajaController::class, 'index'])
@@ -186,6 +252,8 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
                 ->name('caja.store');
             Route::get('caja/reporte/{fecha?}', [CierreCajaController::class, 'reporte'])
                 ->name('caja.reporte');
+            Route::get('caja/{cierre}/pdf', [CierreCajaController::class, 'pdf'])
+                ->name('caja.pdf');
 
             // HU-6.2: reportes agregados por período.
             Route::get('reportes/periodo', [ReporteController::class, 'periodo'])

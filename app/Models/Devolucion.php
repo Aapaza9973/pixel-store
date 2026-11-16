@@ -28,10 +28,12 @@ class Devolucion extends Model
 
     protected $fillable = [
         'operacion_id', 'venta_id', 'user_id', 'motivo', 'estado', 'total_devuelto',
+        'aprobada_por', 'aprobada_en', 'motivo_rechazo',
     ];
 
     protected $casts = [
         'total_devuelto' => 'decimal:2',
+        'aprobada_en' => 'datetime',
     ];
 
     public function venta(): BelongsTo
@@ -57,5 +59,15 @@ class Devolucion extends Model
     public function estaAnulada(): bool
     {
         return $this->estado === 'anulada';
+    }
+
+    public function estaPendiente(): bool
+    {
+        return $this->estado === 'pendiente';
+    }
+
+    public function fueRechazada(): bool
+    {
+        return $this->estado === 'rechazada';
     }
 }

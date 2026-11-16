@@ -16,6 +16,7 @@ use App\Models\Ingreso;
 use App\Models\LogAuditoria;
 use App\Models\Pago;
 use App\Models\Producto;
+use App\Models\Punto;
 use App\Models\Venta;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -258,6 +259,25 @@ class VentaService
                     ]);
                 }
 
+                // HU-2.4b: acumulación de puntos del cliente (1 por cada
+                // `puntos.bs_por_punto` bolivianos). La devolución los revierte
+                // en la misma proporción.
+                if (! empty($meta['cliente_id'])) {
+                    $porBs = max(1, (int) config('puntos.bs_por_punto', 10));
+                    $puntosGanados = (int) floor($total / $porBs);
+
+                    if ($puntosGanados > 0) {
+                        Punto::create([
+                            'cliente_id' => $meta['cliente_id'],
+                            'venta_id' => $venta->id,
+                            'user_id' => $meta['vendedor_id'],
+                            'tipo' => 'acumulado',
+                            'puntos' => $puntosGanados,
+                            'concepto' => "Venta #{$venta->id}",
+                        ]);
+                    }
+                }
+
                 LogAuditoria::create([
                     'user_id' => $meta['vendedor_id'],
                     'accion' => 'crear_venta',
@@ -358,6 +378,8 @@ class VentaService
                     'descuento_porcentaje' => 0,
                     'estado' => 'Pendiente',
                     'origen' => 'web',
+                    // 48 caracteres: única credencial del correo de confirmación.
+                    'token_confirmacion' => bin2hex(random_bytes(24)),
                 ]);
 
                 foreach ($items as $item) {

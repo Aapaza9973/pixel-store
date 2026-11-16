@@ -12,8 +12,10 @@ use App\Models\User;
 use App\Models\Venta;
 use App\Services\CierreCajaService;
 use App\Services\ReporteService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use Throwable;
@@ -163,6 +165,30 @@ class CierreCajaController extends Controller
             ->get();
 
         return view('admin.caja.reporte', compact('dia', 'resumen', 'ventas', 'cierres'));
+    }
+
+    /**
+     * Comprobante PDF del cierre (HU-2.5b).
+     *
+     * Un no-Admin solo puede descargar su propio cierre, igual que en el listado.
+     */
+    public function pdf(CierreCaja $cierre, CierreCajaService $caja): Response
+    {
+        $usuario = $this->autorizarCaja();
+
+        abort_unless(
+            $usuario->hasRole('Admin') || (int) $cierre->user_id === (int) $usuario->id,
+            403,
+            'Solo puede descargar sus propios cierres.'
+        );
+
+        $cierre->load(['user:id,name', 'pagos']);
+        $resumen = $caja->calcularDelDia($cierre->fecha->toDateString(), $cierre->user_id);
+
+        $pdf = Pdf::loadView('admin.caja.pdf', compact('cierre', 'resumen'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download('cierre-'.$cierre->fecha->format('Y-m-d').'-'.$cierre->turno.'.pdf');
     }
 
     /**
