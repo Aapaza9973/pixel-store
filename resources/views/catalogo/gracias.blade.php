@@ -1,7 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.public')
+
+@section('robots', 'noindex, nofollow')
 
 @section('title', 'Pedido recibido')
-@section('subtitle', 'Catálogo público')
 
 @section('content')
 @php
@@ -11,7 +12,7 @@
 <div class="mx-auto max-w-3xl space-y-6">
 
     <nav class="flex items-center gap-2 font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
-        <a href="{{ url('/') }}" class="transition hover:text-on-surface">Inicio</a>
+        <a href="{{ route('home') }}" class="transition hover:text-on-surface">Inicio</a>
         <span>/</span>
         <a href="{{ route('catalogo.index') }}" class="transition hover:text-on-surface">Catálogo</a>
         <span>/</span>
@@ -57,10 +58,10 @@
                         <td class="px-4 py-3.5 text-on-surface">{{ $detalle->producto?->nombre ?? 'Producto eliminado' }}</td>
                         <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">{{ $detalle->cantidad }}</td>
                         <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">
-                            Bs {{ number_format((float) $detalle->precio_unitario, 2, ',', '.') }}
+                            {{ \App\Support\Dinero::formatear((float) $detalle->precio_unitario) }}
                         </td>
                         <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">
-                            Bs {{ number_format((float) $detalle->precio_unitario * $detalle->cantidad, 2, ',', '.') }}
+                            {{ \App\Support\Dinero::formatear((float) $detalle->precio_unitario * $detalle->cantidad) }}
                         </td>
                     </tr>
                 @endforeach
@@ -69,7 +70,7 @@
                 <tr>
                     <th colspan="3" class="px-4 py-3.5 text-right font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Total</th>
                     <th class="px-4 py-3.5 text-right font-label-md text-label-md tabular-nums text-on-surface">
-                        Bs {{ number_format((float) $venta->total, 2, ',', '.') }}
+                        {{ \App\Support\Dinero::formatear((float) $venta->total) }}
                     </th>
                 </tr>
             </tfoot>

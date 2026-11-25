@@ -1,10 +1,10 @@
 <section>
     <header>
-        <h2 class="font-display text-lg font-semibold text-white">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface">
             {{ __('Información del perfil') }}
         </h2>
 
-        <p class="mt-1 text-sm text-slate-400">
+        <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">
             {{ __('Actualiza la información de tu cuenta y tu correo electrónico.') }}
         </p>
     </header>
@@ -30,16 +30,16 @@
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
                 <div>
-                    <p class="text-sm mt-2 text-slate-300">
+                    <p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">
                         {{ __('Tu correo electrónico no está verificado.') }}
 
-                        <button form="send-verification" class="underline text-sm text-slate-400 hover:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900">
+                        <button form="send-verification" class="rounded-obsidian text-secondary underline transition hover:text-on-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-container/60">
                             {{ __('Haz clic aquí para reenviar el correo de verificación.') }}
                         </button>
                     </p>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-emerald-400">
+                        <p class="mt-2 font-body-sm text-body-sm text-emerald-400">
                             {{ __('Se envió un nuevo enlace de verificación a tu correo electrónico.') }}
                         </p>
                     @endif
@@ -56,7 +56,7 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-emerald-400"
+                    class="font-body-sm text-body-sm text-emerald-400"
                 >{{ __('Guardado.') }}</p>
             @endif
         </div>

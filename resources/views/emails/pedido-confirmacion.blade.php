@@ -17,7 +17,7 @@
                 <p style="margin:0 0 12px;">Hola {{ $venta->cliente?->nombre ?? 'gracias por tu compra' }},</p>
                 <p style="margin:0 0 12px;">
                     Registramos tu pedido por un total de
-                    <strong style="color:#f8fafc;">Bs {{ number_format((float) $venta->total, 2, ',', '.') }}</strong>.
+                    <strong style="color:#f8fafc;">{{ \App\Support\Dinero::formatear((float) $venta->total) }}</strong>.
                     Reservamos el stock para vos.
                 </p>
                 <p style="margin:0 0 20px;">

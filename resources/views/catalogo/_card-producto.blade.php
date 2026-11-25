@@ -18,7 +18,7 @@
         <div class="space-y-1 p-3">
             <p class="line-clamp-2 font-body-sm text-body-sm text-on-surface">{{ $producto->nombre }}</p>
             <p class="font-label-md text-label-md tabular-nums text-on-surface">
-                Bs {{ number_format((float) $producto->precio_unitario, 2, ',', '.') }}
+                {{ \App\Support\Dinero::formatear((float) $producto->precio_unitario) }}
             </p>
         </div>
     </a>

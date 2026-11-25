@@ -10,7 +10,7 @@
 |:-:|---|---|
 | 01 | [Instalación](01-instalacion.md) | Setup paso a paso, requisitos y troubleshooting |
 | 02 | [Arquitectura](02-arquitectura.md) | Stack, capas, servicios y decisiones técnicas |
-| 03 | [Base de datos](03-base-de-datos.md) | 44 tablas, relaciones, seeders y modelo EAV |
+| 03 | [Base de datos](03-base-de-datos.md) | 56 tablas, relaciones, seeders y modelo EAV |
 
 ---
 
@@ -27,11 +27,15 @@
 | # | Documento | Descripción | Estado |
 |:-:|---|---|:-:|
 | 05 | [Sprint 1 — Inventario](05-sprint-01.md) | Módulo de inventario completo | ✅ Completado |
-| 06 | Sprint 2 — POS y Cotizaciones | Pendiente | ⏳ |
+| 06 | [Sprint 2 — POS y Cotizaciones](10-qa-final-sprint2.md) | Cierre y QA del sprint (POS, caja, reportes) | ✅ Completado |
 | 07 | [Testing](07-testing.md) | Cómo correr y escribir tests | ✅ |
 | 08 | [Despliegue](08-despliegue.md) | Producción, backups, CI/CD | ✅ |
 | 09 | [Roadmap](09-roadmap.md) | Fases 1-6 del proyecto | ✅ |
-| 10 | Manual de usuario | Pendiente | ⏳ |
+| 10 | [Manual de usuario](10-manual-usuario.md) | Guía del POS, catálogo, inventario y caja | ✅ |
+
+> El cierre del Sprint 2 se documentó dentro de `10-qa-final-sprint2.md`; no existe
+> un archivo `06-sprint-02.md`. El manual de usuario es `10-manual-usuario.md` y
+> convive con ese cierre, igual que `09-roadmap.md` y `09-hu-pos.md`.
 
 ---
 

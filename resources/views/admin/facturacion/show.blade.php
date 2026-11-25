@@ -37,7 +37,7 @@
                 </div>
                 <div class="flex justify-between gap-4">
                     <dt class="text-on-surface-variant">Monto</dt>
-                    <dd class="tabular-nums text-on-surface">Bs {{ number_format((float) ($factura->venta?->total ?? 0), 2, '.', ',') }}</dd>
+                    <dd class="tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear((float) ($factura->venta?->total ?? 0)) }}</dd>
                 </div>
                 <div class="flex justify-between gap-4">
                     <dt class="text-on-surface-variant">Emisión</dt>
@@ -76,7 +76,7 @@
                             <td class="py-2 text-on-surface">{{ $detalle->producto?->nombre ?? 'Producto' }}</td>
                             <td class="py-2 text-right tabular-nums text-on-surface-variant">{{ $detalle->cantidad }}</td>
                             <td class="py-2 text-right tabular-nums text-on-surface-variant">
-                                Bs {{ number_format((float) $detalle->precio_unitario, 2, '.', ',') }}
+                                {{ \App\Support\Dinero::formatear((float) $detalle->precio_unitario) }}
                             </td>
                         </tr>
                     @endforeach

@@ -1,7 +1,16 @@
-@extends('layouts.app')
+@extends('layouts.public')
+
+@php
+    $imagenSeo = $producto->imagenesGaleria->firstWhere('es_principal', true)
+        ?? $producto->imagenesGaleria->first();
+
+    $disponibleSeo = (int) $producto->stock > 0;
+@endphp
 
 @section('title', $producto->nombre)
-@section('subtitle', 'Catálogo público')
+@section('description', \Illuminate\Support\Str::limit(trim(strip_tags((string) $producto->descripcion)), 140) ?: 'Ficha técnica, stock y precio de '.$producto->nombre.' en Pixel Store, La Paz.')
+@section('og_type', 'product')
+@section('og_image', $imagenSeo?->url() ?? asset('images/logo/pixel-logo-horizontal.png'))
 
 @section('content')
 @php
@@ -21,7 +30,7 @@
 
     {{-- Migas --}}
     <nav class="flex items-center gap-2 font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
-        <a href="{{ url('/') }}" class="transition hover:text-on-surface">Inicio</a>
+        <a href="{{ route('home') }}" class="transition hover:text-on-surface">Inicio</a>
         <span>/</span>
         <span class="text-on-surface-variant">{{ $producto->categoria?->nombre ?? 'Sin categoría' }}</span>
         <span>/</span>
@@ -100,7 +109,7 @@
             <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
                 <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Precio</p>
                 <p class="mt-1 font-headline-lg text-headline-lg tabular-nums text-on-surface">
-                    Bs {{ number_format((float) $producto->precio_unitario, 2, ',', '.') }}
+                    {{ \App\Support\Dinero::formatear((float) $producto->precio_unitario) }}
                 </p>
                 <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">
                     Stock disponible: {{ (int) $producto->stock }} u.
@@ -149,13 +158,33 @@
                 </p>
             </div>
 
-            {{-- Especificaciones: se completan en HU-2.4 --}}
-            <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
-                <h2 class="font-headline-sm text-headline-sm text-on-surface">Especificaciones técnicas</h2>
-                <p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">
-                    La tabla de especificaciones se publica cuando el catálogo técnico esté completo (HU-2.4).
-                </p>
-            </div>
+            {{-- Especificaciones: atributos EAV cargados por el controlador. --}}
+            @php
+                $especificaciones = $producto->atributos
+                    ->filter(fn ($atributo) => $atributo->atributo !== null
+                        && $atributo->valor !== null
+                        && $atributo->valor !== '')
+                    ->sortBy(fn ($atributo) => [$atributo->atributo->orden, $atributo->atributo->nombre]);
+            @endphp
+
+            @if ($especificaciones->isNotEmpty())
+                <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
+                    <h2 class="font-headline-sm text-headline-sm text-on-surface">Especificaciones técnicas</h2>
+
+                    <dl class="mt-3 divide-y divide-outline-variant/20">
+                        @foreach ($especificaciones as $especificacion)
+                            <div class="flex items-baseline justify-between gap-4 py-2">
+                                <dt class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-outline">
+                                    {{ str_replace('_', ' ', $especificacion->atributo->nombre) }}{{ $especificacion->atributo->unidad ? ' ('.$especificacion->atributo->unidad.')' : '' }}
+                                </dt>
+                                <dd class="text-right font-body-sm text-body-sm text-on-surface">
+                                    {{ $especificacion->valor_legible }}
+                                </dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -184,3 +213,26 @@
     @endif
 </div>
 @endsection
+
+@push('head')
+    <script type="application/ld+json">
+        {!! json_encode(array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            'name' => $producto->nombre,
+            'description' => \Illuminate\Support\Str::limit(trim(strip_tags((string) $producto->descripcion)), 300) ?: null,
+            'sku' => $producto->sku ?: 'PS-'.$producto->id,
+            'image' => $imagenSeo?->url(),
+            'brand' => $producto->marca?->nombre ? ['@type' => 'Brand', 'name' => $producto->marca->nombre] : null,
+            'category' => $producto->categoria?->nombre,
+            'offers' => [
+                '@type' => 'Offer',
+                'url' => route('catalogo.producto', $producto->slug),
+                'priceCurrency' => 'BOB',
+                'price' => number_format((float) $producto->precio_unitario, 2, '.', ''),
+                'availability' => $disponibleSeo ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                'itemCondition' => 'https://schema.org/NewCondition',
+            ],
+        ], static fn ($valor) => $valor !== null), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
+@endpush

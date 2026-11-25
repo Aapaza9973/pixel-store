@@ -2,6 +2,21 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 
+import crearCarrito from './pos';
+
+/**
+ * Formato único de dinero: «Bs 1.234,56».
+ * Espejo de App\Support\Dinero para las vistas que calculan en el cliente.
+ */
+const formatoMoneda = new Intl.NumberFormat('es-BO', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+});
+
+window.formatearBs = (valor) => `Bs ${formatoMoneda.format(Number(valor) || 0)}`;
+
+window.carrito = crearCarrito;
+
 window.Alpine = Alpine;
 
 /**
@@ -207,10 +222,7 @@ Alpine.data('carritoPublico', () => ({
     },
 
     formato(valor) {
-        return 'Bs ' + new Intl.NumberFormat('es-BO', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(aNumero(valor));
+        return window.formatearBs(aNumero(valor));
     },
 }));
 

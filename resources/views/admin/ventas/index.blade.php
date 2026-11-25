@@ -134,7 +134,7 @@
                             </td>
 
                             <td class="px-4 py-3.5 text-right font-label-md text-label-md tabular-nums text-on-surface">
-                                Bs {{ number_format((float) $venta->total, 2, ',', '.') }}
+                                {{ \App\Support\Dinero::formatear((float) $venta->total) }}
                             </td>
 
                             <td class="px-4 py-3.5 text-right">

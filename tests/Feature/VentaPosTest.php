@@ -136,8 +136,9 @@ class VentaPosTest extends TestCase
 
         // PHP no ejecuta Alpine; se pinea el wiring del clamp. La autoridad
         // final sigue siendo el 409 de VentaService (ya testeado).
-        $response->assertSee('avisoStock', false);
-        $response->assertSee('Solo quedan', false);
+        $pos = file_get_contents(resource_path('js/pos.js'));
+        $this->assertStringContainsString('avisoStock', $pos);
+        $this->assertStringContainsString('Solo quedan', $pos);
     }
 
     public function test_pos_guarda_stock_en_la_linea_del_carrito(): void
@@ -148,7 +149,8 @@ class VentaPosTest extends TestCase
 
         // PHP no ejecuta Alpine; se pinea el wiring del clamp. La autoridad
         // final sigue siendo el 409 de VentaService (ya testeado).
-        $response->assertSee('stock: Number(producto.stock', false);
+        $pos = file_get_contents(resource_path('js/pos.js'));
+        $this->assertStringContainsString('stock: Number(producto.stock', $pos);
     }
 
     public function test_pos_envia_referencia_de_pago_al_confirmar(): void
@@ -159,8 +161,9 @@ class VentaPosTest extends TestCase
 
         // PHP no ejecuta JS; esta aserción pinea el contrato del payload para
         // que borrar referencia del map rompa la suite.
-        $response->assertSee('referencia:', false);
-        $response->assertSee("(pago.referencia || '')", false);
+        $pos = file_get_contents(resource_path('js/pos.js'));
+        $this->assertStringContainsString('referencia:', $pos);
+        $this->assertStringContainsString("(pago.referencia || '')", $pos);
     }
 
     public function test_pos_incluye_wiring_del_buscador(): void

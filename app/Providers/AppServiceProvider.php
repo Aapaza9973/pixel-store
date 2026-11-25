@@ -68,7 +68,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Contadores del header/navbar: alertas sin leer y favoritos del
         // visitante (usuario autenticado o cookie anónima).
-        View::composer('layouts.app', function ($view) {
+        View::composer(['layouts.app', 'layouts.public'], function ($view) {
             $view->with('alertasNoLeidasCount', auth()->check()
                 ? AlertaStock::query()->noLeidas()->count()
                 : 0);

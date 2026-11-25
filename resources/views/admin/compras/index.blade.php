@@ -107,7 +107,7 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">
-                                Bs {{ number_format((float) $orden->total, 2, '.', ',') }}
+                                {{ \App\Support\Dinero::formatear((float) $orden->total) }}
                             </td>
                             <td class="px-4 py-3.5 text-right">
                                 <a href="{{ route('admin.compras.show', $orden) }}"

@@ -23,24 +23,25 @@ use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\EncuestaController;
 use App\Http\Controllers\FavoritoController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PagoPedidoController;
 use App\Http\Controllers\PedidoPublicoController;
-use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SitemapController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+// Tienda pública: home, catálogo y sitemap se sirven sin sesión.
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 
-// SPIKE: prototipo de landing publica. NO es la home real.
-// Ver docs/rediseno/00-plan.md. Eliminar antes de produccion.
-Route::get('/preview', [PreviewController::class, 'index'])->name('preview');
+Route::get('/robots.txt', fn () => response(
+    "User-agent: *\nDisallow: /admin\nDisallow: /login\n\nSitemap: ".url('/sitemap.xml')."\n",
+    200,
+    ['Content-Type' => 'text/plain; charset=UTF-8']
+))->name('robots');
 
-// Catálogo público (Sprint 2). Layout público definitivo: Día 2+.
 Route::get('/catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
 Route::get('/producto/{slug}', [CatalogoController::class, 'show'])->name('catalogo.producto');
 
@@ -54,11 +55,6 @@ Route::get('/catalogo/gracias/{venta}', [CheckoutController::class, 'gracias'])
 // Favoritos (2.7.3-2.7.4): sirven para visitantes y usuarios autenticados.
 Route::post('/favoritos/{producto}', [FavoritoController::class, 'toggle'])->name('catalogo.favoritos.toggle');
 Route::get('/favoritos', [FavoritoController::class, 'index'])->name('catalogo.favoritos.index');
-
-// HU-3.5: encuesta anónima (sin cuenta, sin IP, sin usuario).
-Route::get('/encuesta', [EncuestaController::class, 'create'])->name('encuesta.create');
-Route::post('/encuesta', [EncuestaController::class, 'store'])->name('encuesta.store');
-Route::get('/encuesta/gracias', [EncuestaController::class, 'gracias'])->name('encuesta.gracias');
 
 // HU-3.3: enlaces del correo del pedido. El token es la única credencial.
 Route::get('/pedido/{venta}/confirmar/{token}', [PedidoPublicoController::class, 'confirmar'])
@@ -228,10 +224,6 @@ Route::middleware(['auth', 'verified', 'user.active'])->group(function () {
                 ->name('auditoria.index');
             Route::get('auditoria/export', [AuditoriaController::class, 'export'])
                 ->name('auditoria.export');
-
-            // HU-3.5: resultados internos de la encuesta anónima.
-            Route::get('encuestas', [\App\Http\Controllers\Admin\EncuestaController::class, 'index'])
-                ->name('encuestas.index');
 
             // HU-6.1: cierre de caja por turno y reporte diario.
             Route::get('caja', [CierreCajaController::class, 'index'])

@@ -1,7 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.public')
+
+@section('robots', 'noindex, nofollow')
 
 @section('title', 'Pagar pedido')
-@section('subtitle', 'Catálogo público')
 
 @section('content')
 @php
@@ -25,7 +26,7 @@
         <p class="mt-3 font-body-md text-body-md text-on-surface-variant">
             Total a pagar:
             <span class="font-headline-sm text-headline-sm tabular-nums text-on-surface">
-                Bs {{ number_format((float) $venta->total, 2, ',', '.') }}
+                {{ \App\Support\Dinero::formatear((float) $venta->total) }}
             </span>
         </p>
 
@@ -33,7 +34,7 @@
             @foreach ($venta->detalles as $detalle)
                 <li class="flex justify-between gap-4">
                     <span>{{ $detalle->producto?->nombre ?? 'Producto' }} × {{ $detalle->cantidad }}</span>
-                    <span class="tabular-nums">Bs {{ number_format((float) $detalle->precio_unitario * $detalle->cantidad, 2, ',', '.') }}</span>
+                    <span class="tabular-nums">{{ \App\Support\Dinero::formatear((float) $detalle->precio_unitario * $detalle->cantidad) }}</span>
                 </li>
             @endforeach
         </ul>
@@ -42,7 +43,7 @@
             @csrf
             <button type="submit"
                     class="w-full rounded-obsidian-lg bg-primary-container px-4 py-3 font-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90">
-                Pagar Bs {{ number_format((float) $venta->total, 2, ',', '.') }} (simulado)
+                Pagar {{ \App\Support\Dinero::formatear((float) $venta->total) }} (simulado)
             </button>
         </form>
     </div>

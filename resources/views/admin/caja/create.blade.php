@@ -38,19 +38,19 @@
             <div class="rounded-obsidian border border-outline-variant/25 bg-surface-container-low px-3 py-2">
                 <p class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-outline">Total cobrado</p>
                 <p class="mt-1 font-body-md text-body-md tabular-nums text-on-surface">
-                    Bs {{ number_format($resumen['total_ventas'], 2, '.', ',') }}
+                    {{ \App\Support\Dinero::formatear($resumen['total_ventas']) }}
                 </p>
             </div>
             <div class="rounded-obsidian border border-outline-variant/25 bg-surface-container-low px-3 py-2">
                 <p class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-outline">Devoluciones</p>
                 <p class="mt-1 font-body-md text-body-md tabular-nums text-on-surface">
-                    Bs {{ number_format($resumen['total_devoluciones'], 2, '.', ',') }}
+                    {{ \App\Support\Dinero::formatear($resumen['total_devoluciones']) }}
                 </p>
             </div>
             <div class="rounded-obsidian border border-outline-variant/25 bg-surface-container-low px-3 py-2">
                 <p class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-outline">Efectivo esperado</p>
                 <p class="mt-1 font-body-md text-body-md tabular-nums text-secondary">
-                    Bs {{ number_format($resumen['efectivo_esperado'], 2, '.', ',') }}
+                    {{ \App\Support\Dinero::formatear($resumen['efectivo_esperado']) }}
                 </p>
             </div>
         </div>
@@ -137,7 +137,7 @@
                     <div>
                         <p class="font-body-md text-body-md text-on-surface">{{ $metodo }}</p>
                         <p class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-outline">
-                            Sistema: Bs {{ number_format((float) $montoSistema, 2, '.', ',') }}
+                            Sistema: {{ \App\Support\Dinero::formatear((float) $montoSistema) }}
                         </p>
                     </div>
 
@@ -161,12 +161,12 @@
                 <div>
                     <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Diferencia de efectivo</p>
                     <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-                        real − esperado (Bs {{ number_format($resumen['efectivo_esperado'], 2, '.', ',') }})
+                        real − esperado ({{ \App\Support\Dinero::formatear($resumen['efectivo_esperado']) }})
                     </p>
                 </div>
                 <p class="font-headline-sm text-headline-sm tabular-nums"
                    x-bind:class="Math.abs(diferencia) < 0.005 ? 'text-emerald-400' : 'text-error'"
-                   x-text="'Bs ' + diferencia.toFixed(2)">Bs 0.00</p>
+                   x-text="window.formatearBs(diferencia)">Bs 0,00</p>
             </div>
 
             <div>

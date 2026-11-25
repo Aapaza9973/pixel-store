@@ -39,7 +39,7 @@
         <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
             <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Cobrado en el día</p>
             <p class="mt-2 font-headline-md text-headline-md tabular-nums text-on-surface">
-                Bs {{ number_format($resumen['total_ventas'], 2, '.', ',') }}
+                {{ \App\Support\Dinero::formatear($resumen['total_ventas']) }}
             </p>
             <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant/80">
                 {{ count($cierres) }} cierre(s) registrado(s)
@@ -49,17 +49,17 @@
         <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
             <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Efectivo esperado</p>
             <p class="mt-2 font-headline-md text-headline-md tabular-nums text-secondary">
-                Bs {{ number_format($resumen['efectivo_esperado'], 2, '.', ',') }}
+                {{ \App\Support\Dinero::formatear($resumen['efectivo_esperado']) }}
             </p>
             <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant/80">
-                Devoluciones: Bs {{ number_format($resumen['total_devoluciones'], 2, '.', ',') }}
+                Devoluciones: {{ \App\Support\Dinero::formatear($resumen['total_devoluciones']) }}
             </p>
         </div>
 
         <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
             <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Diferencia acumulada</p>
             <p class="mt-2 font-headline-md text-headline-md tabular-nums {{ abs($diferenciaTotal) < 0.005 ? 'text-emerald-400' : 'text-error' }}">
-                Bs {{ number_format($diferenciaTotal, 2, '.', ',') }}
+                {{ \App\Support\Dinero::formatear($diferenciaTotal) }}
             </p>
             <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant/80">
                 efectivo real − esperado
@@ -77,7 +77,7 @@
                 <div class="rounded-obsidian border border-outline-variant/25 bg-surface-container-low px-3 py-2">
                     <p class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-outline">{{ $metodo }}</p>
                     <p class="mt-1 font-body-md text-body-md tabular-nums text-on-surface">
-                        Bs {{ number_format($monto, 2, '.', ',') }}
+                        {{ \App\Support\Dinero::formatear($monto) }}
                     </p>
                 </div>
             @endforeach
@@ -115,17 +115,17 @@
                             </td>
                             <td class="px-4 py-3.5 text-on-surface">{{ $cierre->user?->name ?? '—' }}</td>
                             <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">
-                                Bs {{ number_format((float) $cierre->efectivo_esperado, 2, '.', ',') }}
+                                {{ \App\Support\Dinero::formatear((float) $cierre->efectivo_esperado) }}
                             </td>
                             <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">
-                                Bs {{ number_format((float) $cierre->efectivo_real, 2, '.', ',') }}
+                                {{ \App\Support\Dinero::formatear((float) $cierre->efectivo_real) }}
                             </td>
                             <td class="px-4 py-3.5 text-right">
                                 <span class="inline-flex items-center gap-1.5 rounded-obsidian border px-2 py-1 font-label-sm text-label-sm uppercase tracking-[0.14em] tabular-nums
                                     {{ abs($diferencia) < 0.005
                                         ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
                                         : 'border-error/30 bg-error/10 text-error' }}">
-                                    Bs {{ number_format($diferencia, 2, '.', ',') }}
+                                    {{ \App\Support\Dinero::formatear($diferencia) }}
                                 </span>
                             </td>
                             <td class="px-4 py-3.5 text-on-surface-variant">{{ $cierre->notas ?: '—' }}</td>

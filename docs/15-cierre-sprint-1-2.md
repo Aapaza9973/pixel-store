@@ -1,7 +1,7 @@
 # 15 — Cierre de pendientes Sprint 1 y 2
 
-**Fecha**: 2026-11-16
-**Suite**: 428 tests passing (1.797 assertions) · 205 rutas
+**Fecha**: 2026-11-16 · **Actualizado**: 2026-11-26
+**Suite**: 457 tests passing (1.888 assertions) · 202 rutas
 **Pint**: PASS
 
 ---
@@ -54,8 +54,9 @@
 - Vista 403 migrada de `slate`/`blue` a tokens Obsidian
   (`bg-surface`, `text-on-surface`, `text-outline`). El dashboard ya estaba en
   Obsidian.
-- **Capturas de pantalla** (1.1.18.5): siguen siendo material manual; no se
-  generan desde código.
+- **Capturas de pantalla** (1.1.18.5): cerradas el 2026-11-25 con seis capturas en
+  `docs/capturas/` (ver [`16`](16-validacion-manual-pos.md#capturas)). Siguen siendo
+  material manual: no se generan desde código.
 
 ---
 
@@ -64,7 +65,7 @@
 | Test | Cubre |
 |---|---|
 | `CotizacionEnvioTest` (2) | envío con `Mail::fake`, correo inválido |
-| `DevolucionAprobacionTest` (5) | solicitud sin stock, aprobación con reingreso, rechazo, 403, bandeja |
+| `DevolucionAprobacionTest` (6) | solicitud sin stock, aprobación con reingreso, rechazo, 403, bandeja |
 
 Comandos:
 
@@ -74,4 +75,4 @@ php artisan test
 ./vendor/bin/pint --dirty
 ```
 
-**Resultado**: 428 tests passing (1.797 assertions), 205 rutas, Pint sin cambios.
+**Resultado (actualizado 2026-11-26)**: 457 tests passing (1.888 assertions), 202 rutas, Pint sin cambios.

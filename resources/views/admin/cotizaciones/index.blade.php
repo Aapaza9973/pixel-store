@@ -61,7 +61,7 @@
                         <tr class="border-b border-outline-variant/15 transition hover:bg-primary-container/[0.04] last:border-0">
                             <td class="px-4 py-3.5 font-label-md text-label-md text-on-surface">{{ $cotizacion->numero }}</td>
                             <td class="px-4 py-3.5 text-on-surface">{{ $cotizacion->nombre_cliente }}</td>
-                            <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">Bs {{ number_format($cotizacion->total, 2, '.', ',') }}</td>
+                            <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear($cotizacion->total) }}</td>
                             <td class="px-4 py-3.5 text-center">
                                 @php
                                     $color = match ($cotizacion->estado) {

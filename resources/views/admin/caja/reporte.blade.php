@@ -52,7 +52,7 @@
             <div class="text-right">
                 <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Total cobrado</p>
                 <p class="mt-1 font-headline-md text-headline-md tabular-nums text-on-surface">
-                    Bs {{ number_format($resumen['total_ventas'], 2, '.', ',') }}
+                    {{ \App\Support\Dinero::formatear($resumen['total_ventas']) }}
                 </p>
             </div>
         </div>
@@ -62,15 +62,15 @@
                 <div class="rounded-obsidian border border-outline-variant/25 bg-surface-container-low px-3 py-2">
                     <p class="font-label-sm text-label-sm uppercase tracking-[0.14em] text-outline">{{ $metodo }}</p>
                     <p class="mt-1 font-body-md text-body-md tabular-nums text-on-surface">
-                        Bs {{ number_format($monto, 2, '.', ',') }}
+                        {{ \App\Support\Dinero::formatear($monto) }}
                     </p>
                 </div>
             @endforeach
         </div>
 
         <p class="mt-4 font-body-sm text-body-sm text-on-surface-variant">
-            Devoluciones del día: Bs {{ number_format($resumen['total_devoluciones'], 2, '.', ',') }}
-            · Efectivo esperado: Bs {{ number_format($resumen['efectivo_esperado'], 2, '.', ',') }}
+            Devoluciones del día: {{ \App\Support\Dinero::formatear($resumen['total_devoluciones']) }}
+            · Efectivo esperado: {{ \App\Support\Dinero::formatear($resumen['efectivo_esperado']) }}
         </p>
     </div>
 
@@ -94,20 +94,20 @@
                         {{ abs($diferencia) < 0.005
                             ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
                             : 'border-error/30 bg-error/10 text-error' }}">
-                        Diferencia Bs {{ number_format($diferencia, 2, '.', ',') }}
+                        Diferencia {{ \App\Support\Dinero::formatear($diferencia) }}
                     </span>
                 </div>
 
                 <p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">
-                    Efectivo esperado Bs {{ number_format((float) $cierre->efectivo_esperado, 2, '.', ',') }}
-                    · real Bs {{ number_format((float) $cierre->efectivo_real, 2, '.', ',') }}
+                    Efectivo esperado {{ \App\Support\Dinero::formatear((float) $cierre->efectivo_esperado) }}
+                    · real {{ \App\Support\Dinero::formatear((float) $cierre->efectivo_real) }}
                 </p>
 
                 @if ($cierre->pagos->isNotEmpty())
                     <div class="mt-2 flex flex-wrap gap-2">
                         @foreach ($cierre->pagos as $pago)
                             <span class="rounded-obsidian border border-outline-variant/25 bg-surface-container-low px-2 py-1 font-label-sm text-label-sm text-on-surface-variant">
-                                {{ $pago->metodo }}: Bs {{ number_format((float) $pago->monto_real, 2, '.', ',') }}
+                                {{ $pago->metodo }}: {{ \App\Support\Dinero::formatear((float) $pago->monto_real) }}
                             </span>
                         @endforeach
                     </div>
@@ -158,7 +158,7 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">
-                                Bs {{ number_format((float) $venta->total, 2, '.', ',') }}
+                                {{ \App\Support\Dinero::formatear((float) $venta->total) }}
                             </td>
                         </tr>
                     @empty

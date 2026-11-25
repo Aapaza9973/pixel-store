@@ -198,7 +198,7 @@ completo (eventos, listeners y middleware) está en
 ```bash
 php artisan migrate:fresh --seed   # schema + migraciones + datos demo
 php artisan serve                  # servidor de desarrollo
-php artisan test                   # suite completa (355 tests)
+php artisan test                   # suite completa (457 tests)
 php artisan test --filter=UserManagementTest
 ./vendor/bin/pint --dirty          # formateo de código
 ```
@@ -233,7 +233,7 @@ php artisan test --filter=ProductoTest
 php artisan test --coverage
 ```
 
-**Estado actual**: ✅ **355 tests passing** (1.535 assertions)
+**Estado actual**: ✅ **457 tests passing** (1.888 assertions)
 
 Cobertura por dominio (todos en verde):
 

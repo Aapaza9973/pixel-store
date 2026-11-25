@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Producto extends Model
 {
@@ -19,6 +20,32 @@ class Producto extends Model
         'maneja_numero_serie', 'sku', 'codigo_barras',
         'visible_catalogo', 'ocultar_si_sin_stock', 'imagen_principal', 'imagenes',
     ];
+
+    /**
+     * Todo producto necesita slug: es la URL pública de su ficha.
+     * Se genera al guardar si no vino en el formulario.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Producto $producto): void {
+            if (blank($producto->slug)) {
+                $producto->slug = static::slugUnico((string) $producto->nombre);
+            }
+        });
+    }
+
+    private static function slugUnico(string $nombre): string
+    {
+        $base = Str::slug($nombre) ?: 'producto';
+        $slug = $base;
+        $sufijo = 2;
+
+        while (static::query()->where('slug', $slug)->exists()) {
+            $slug = $base.'-'.$sufijo++;
+        }
+
+        return $slug;
+    }
 
     protected $casts = [
         'precio_unitario' => 'decimal:2',
@@ -95,12 +122,33 @@ class Producto extends Model
         return $query->whereColumn('stock', '<=', 'umbral_alerta');
     }
 
+    /**
+     * Búsqueda por nombre, SKU o código de barras.
+     *
+     * Combina coincidencia exacta (ILIKE) con búsqueda difusa de Postgres:
+     * `unaccent` ignora tildes y `similarity` (pg_trgm) tolera errores de
+     * tipeo. Las extensiones las declara `database/schema/pgsql-schema.sql`.
+     */
     public function scopeBuscar($query, string $termino)
     {
-        return $query->where(function ($q) use ($termino) {
-            $q->where('nombre', 'ILIKE', "%{$termino}%")
-                ->orWhere('sku', 'ILIKE', "%{$termino}%")
-                ->orWhere('codigo_barras', 'ILIKE', "%{$termino}%");
+        $termino = trim($termino);
+
+        if ($termino === '') {
+            return $query;
+        }
+
+        $escapado = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $termino);
+        $like = '%'.$escapado.'%';
+
+        return $query->where(function ($q) use ($like, $termino) {
+            $q->where('nombre', 'ILIKE', $like)
+                ->orWhere('sku', 'ILIKE', $like)
+                ->orWhere('codigo_barras', 'ILIKE', $like)
+                ->orWhereRaw('unaccent(nombre) ILIKE unaccent(?)', [$like])
+                // La difusa se aplica solo al nombre: el SKU es un identificador
+                // exacto. Umbral 0.35 medido: un typo real da 0.5, mientras que
+                // 'AMD Ryzen 9 5900X' contra 'CPU-AMD-5600X' da 0.28.
+                ->orWhereRaw('similarity(lower(unaccent(nombre)), lower(unaccent(?))) >= 0.35', [$termino]);
         });
     }
 

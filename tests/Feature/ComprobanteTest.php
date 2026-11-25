@@ -110,7 +110,7 @@ class ComprobanteTest extends TestCase
         $response->assertSee('#'.str_pad((string) $this->venta->id, 6, '0', STR_PAD_LEFT));
         $response->assertSee('Fernanda Comprobante');
         $response->assertSee('TOTAL');
-        $response->assertSee('990.00');
+        $response->assertSee('990,00');
         $response->assertSee('POS-777');
     }
 

@@ -1,7 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.public')
+
+@section('robots', 'noindex, nofollow')
 
 @section('title', 'Estado del pedido')
-@section('subtitle', 'Catálogo público')
 
 @section('content')
 @php
@@ -30,7 +31,7 @@
             </div>
             <div class="flex justify-between gap-4">
                 <dt class="text-on-surface-variant">Total</dt>
-                <dd class="tabular-nums text-on-surface">Bs {{ number_format((float) $venta->total, 2, ',', '.') }}</dd>
+                <dd class="tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear((float) $venta->total) }}</dd>
             </div>
             <div class="flex justify-between gap-4">
                 <dt class="text-on-surface-variant">Fecha</dt>

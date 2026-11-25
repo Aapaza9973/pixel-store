@@ -9,6 +9,7 @@ use App\Models\OrdenCompra;
 use App\Models\OrdenCompraDetalle;
 use App\Models\OrdenCompraRecepcion;
 use App\Models\OrdenCompraRecepcionItem;
+use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -17,9 +18,9 @@ use Illuminate\Support\Facades\DB;
 /**
  * Órdenes de compra (3.4.6).
  *
- * Crea la cabecera y sus líneas con los totales ya calculados. NO mueve stock
- * ni implementa la recepción (3.4.7, Día 3): la orden nace en 'borrador' y el
- * ajuste de inventario es una operación aparte.
+ * Crea la cabecera y sus líneas con los totales ya calculados. La orden nace en
+ * 'borrador'; la recepción (3.4.7) suma stock y actualiza el costo promedio
+ * ponderado del producto.
  */
 class OrdenCompraService
 {
@@ -90,8 +91,9 @@ class OrdenCompraService
      *
      * @throws DomainException
      */
-    // Falta el paso "enviar orden" (pasar de 'borrador' a 'enviada'); los
-    // tests lo fijan con un update directo. Se implementa en Día 4.
+    // Una orden nace en 'borrador'. El paso a 'enviada' lo ejecuta
+    // OrdenCompraController::emitir() (ruta admin.compras.enviar), que valida
+    // proveedor activo, al menos un ítem y total > 0 antes de cambiarlo.
     public function crear(Proveedor $proveedor, User $user, array $items, array $datos = []): OrdenCompra
     {
         if ($items === []) {
@@ -126,8 +128,9 @@ class OrdenCompraService
     }
 
     /**
-     * Registra una recepción (parcial o total) de la orden y suma el stock de
-     * cada línea recibida (3.4.7).
+     * Registra una recepción (parcial o total) de la orden, suma el stock de
+     * cada línea recibida (3.4.7) y actualiza el costo del producto con el
+     * promedio ponderado de esa línea.
      *
      * Solo se puede recibir una orden ya enviada al proveedor ('enviada') o con
      * recepciones previas ('recibida_parcial'). Un 'borrador' no se pidió, así
@@ -208,6 +211,12 @@ class OrdenCompraService
                     null,
                     $user->id
                 );
+
+                $this->actualizarCostoPromedio(
+                    (int) $linea->producto_id,
+                    $cantidad,
+                    (float) $linea->precio_unitario
+                );
             }
 
             $this->actualizarEstado($orden);
@@ -222,6 +231,42 @@ class OrdenCompraService
     public function recibidoDe(OrdenCompraDetalle $item): int
     {
         return (int) OrdenCompraRecepcionItem::where('orden_compra_item_id', $item->id)->sum('cantidad');
+    }
+
+    /**
+     * Costo promedio ponderado tras una recepción.
+     *
+     * `productos.costo` es el costo con el que `VentaService` congela
+     * `detalle_ventas.precio_costo` para la utilidad neta; reemplazarlo por el
+     * último precio de compra haría saltar el margen en cada reposición, así
+     * que se pondera por unidades recibidas:
+     * `(stock previo × costo actual + recibido × precio de línea) / stock total`.
+     * Sin stock previo, o con costo nulo/0 ("sin costo cargado"), manda el precio
+     * de la línea: promediar contra 0 diluiría el costo real del inventario.
+     */
+    private function actualizarCostoPromedio(int $productoId, int $cantidad, float $precioLinea): void
+    {
+        if ($cantidad < 1 || $precioLinea <= 0) {
+            return;
+        }
+
+        // Se bloquea dentro de la transacción de `recibir`: dos recepciones
+        // simultáneas del mismo producto no pisan el promedio.
+        $producto = Producto::whereKey($productoId)->lockForUpdate()->first();
+
+        if ($producto === null) {
+            return;
+        }
+
+        // El stock ya incluye lo recibido; el costo previo se pondera por el resto.
+        $stockPrevio = (int) $producto->stock - $cantidad;
+        $costoActual = (float) $producto->costo;
+
+        $promedio = $stockPrevio > 0 && $costoActual > 0
+            ? (($stockPrevio * $costoActual) + ($cantidad * $precioLinea)) / ($stockPrevio + $cantidad)
+            : $precioLinea;
+
+        $producto->update(['costo' => round($promedio, 2)]);
     }
 
     /**

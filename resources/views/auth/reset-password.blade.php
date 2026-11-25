@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <h1 class="font-display text-2xl font-bold text-white mb-6">
+    <h1 class="mb-6 font-headline-md text-headline-md text-on-surface">
         {{ __('Restablecer contraseña') }}
     </h1>
 

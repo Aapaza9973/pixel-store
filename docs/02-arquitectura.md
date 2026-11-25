@@ -51,7 +51,7 @@ Visión general del diseño técnico del proyecto.
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              POSTGRESQL 18 (44 tablas + 20 ENUMs)            │
+│              POSTGRESQL 18 (56 tablas + 20 ENUMs)            │
 │         Índices GIN (pg_trgm) · FKs con CASCADE/RESTRICT    │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -120,7 +120,7 @@ pixel-store/
 │   ├── migrations/
 │   │   └── 2026_09_27_000001_add_estructura_fisica_to_ubicaciones_table.php
 │   ├── schema/
-│   │   └── pgsql-schema.sql             # Schema completo (44 tablas)
+│   │   └── pgsql-schema.sql             # Schema completo (47 tablas)
 │   └── seeders/
 │       ├── DatabaseSeeder.php
 │       ├── RoleSeeder.php
@@ -215,19 +215,28 @@ public function hayStockSuficiente(Producto $producto, int $cantidad): bool;
 public function sincronizarStockTotal(Producto $producto): void;
 ```
 
-### Servicios planificados (Sprint 2+)
+### Servicios (estado real, 2026-11-26)
 
 | Servicio | Responsabilidad |
 |---|---|
-| `VentaService` | Creación atómica de ventas (POS + pedidos) |
+| `InventoryService` | Único punto de mutación de stock, movimientos y alertas |
+| `VentaService` | Venta atómica del POS y pedidos web (alta, cobro, anulación) |
 | `CotizacionService` | Ciclo de vida de cotizaciones + PDF |
-| `NumerosSerieService` | Trazabilidad de unidades individuales |
-| `PedidoService` | Pedidos del catálogo público |
-| `PuntosService` | Fidelización |
-| `CajaService` | Cierre de caja diario |
-| `PaymentService` | Pagos en línea (Stripe / PayPal) |
-| `FacturacionService` | Facturación electrónica SIN |
-| `CompatibilidadService` | Motor de compatibilidad de componentes |
+| `OrdenCompraService` | Órdenes de compra, recepción y costo promedio |
+| `DevolucionService` | Solicitud/aprobación, reingreso de stock, series y puntos |
+| `NumeroSerieService` | Trazabilidad y validación de unidades individuales |
+| `CierreCajaService` | Cierre por turno, reporte diario y PDF |
+| `DescuentoService` | Límites de descuento por rol y autorizaciones |
+| `ProductoService` | Consultas de catálogo |
+| `FavoritoService` | Favoritos de usuarios y visitantes anónimos |
+| `ReporteService` | Reportes, utilidad neta y exportaciones |
+| `FacturacionService` | Facturación electrónica en simulación (SIN) |
+| `AuditoriaService` | Registro de eventos de auditoría |
+
+`PedidoService` **no existe**: `VentaService::crearPedidoOnline()` crea la venta
+`Pendiente`. Tampoco hay `PuntosService` (la lógica vive en `VentaService` y
+`DevolucionService`), `PaymentService` (modo simulación en `PagoPedidoController`)
+ni `CompatibilidadService` (Fase 5).
 
 ---
 

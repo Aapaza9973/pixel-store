@@ -4,6 +4,15 @@
 **Rama**: `feature/s2-foundation` (sin merge a `main`; esa decisión queda para el usuario)
 **Alcance**: POS, devoluciones, cierre de caja, reportes, cotizaciones, clientes y números de serie.
 
+> **Validación manual completada (2026-11-25)**: los cinco puntos de la sección
+> «Validación manual pendiente» se recorrieron en navegador; resultados,
+> hallazgos y capturas en `docs/16-validacion-manual-pos.md`.
+>
+> **Actualizado (2026-11-26)**: varias filas que quedaron en ⚠️/❌ el 2026-11-05 se
+> implementaron después —series, devoluciones con aprobación, PDF de cierre de
+> caja, checkout/pedidos online y correo de cotizaciones—. Se marcan con la
+> evidencia actual; los pagos en línea siguen en simulación.
+
 El cierre se apoya en tres capas: los tests por módulo (existentes), un test E2E
 nuevo que recorre el happy path completo y la verificación de comandos de abajo.
 No se agregaron funcionalidades en este cierre.
@@ -15,13 +24,13 @@ No se agregaron funcionalidades en este cierre.
 | HU / RF | Alcance | Estado | Evidencia |
 |---|---|:-:|---|
 | HU-2.1 | Cotizaciones: alta, PDF, validez configurable, estados, conversión a venta y anulación | ✅ | `CotizacionTest` (6), rutas `cotizaciones.{index,create,store,show,pdf,convertir,anular}` |
-| HU-2.1b | Envío automático de cotizaciones por WhatsApp/correo | ⚠️ | No implementado: el PDF se descarga o comparte manualmente |
+| HU-2.1b | Envío de cotizaciones por correo, con WhatsApp como enlace `wa.me` | ✅ | `CotizacionEnvioTest` (2), `App\Mail\CotizacionEnviada`; el envío saliente por WhatsApp requiere cuenta Business (`docs/17`) |
 | HU-2.2 | Números de serie: servicio, vinculación al vender, liberación al devolver y estados | ✅ | `NumeroSerieServiceTest` (5), `DevolucionControllerTest`, `DevolucionServiceTest` |
-| HU-2.2b | CRUD de números de serie y consulta de garantía por SN | ⚠️ | Sin controller ni vistas propias; solo servicio |
+| HU-2.2b | CRUD de números de serie y consulta de garantía por SN | ✅ | `NumeroSerieModuleTest` (6), `admin.series` (index/create/edit/show) y el bloque «Garantía» del detalle |
 | HU-2.4 | Devoluciones: reingreso de stock, liberación de serie, estados parcial/total, idempotencia | ✅ | `DevolucionServiceTest`, `DevolucionControllerTest`, `DevolucionStockTest`, `DevolucionConcurrenciaTest`, `DevolucionSchemaTest` |
-| HU-2.4b | Solicitud/aprobación y reversión proporcional de puntos | ⚠️ | La devolución se registra `procesada`; no hay flujo de aprobación ni puntos |
+| HU-2.4b | Solicitud/aprobación y reversión proporcional de puntos | ✅ | `DevolucionAprobacionTest` (6): solicitud sin mover stock, aprobación con reingreso, rechazo con motivo, 403 y bandeja |
 | HU-2.5 (roadmap) | Cierre de caja: resumen del día, cierre único por vendedor/día, reporte diario | ✅ | `CierreCajaServiceTest`, `CierreCajaControllerTest` (HU-6.1 en código) |
-| HU-2.5b | Exportación PDF del cierre de caja | ⚠️ | No hay ruta/PDF de cierre; sí reporte diario en pantalla |
+| HU-2.5b | Exportación PDF del cierre de caja | ✅ | `CierreCajaPdfTest` (2), ruta `admin.caja.pdf` |
 | HU-2.6 | Reportes: período, vendedor, categoría, métodos de pago, indicadores, PDF y Excel | ✅ | `ReporteServiceTest` (10), `ReportePdfTest` (2), `ReporteController` |
 | HU-5.3 / 5.5 / 5.6 | POS: búsqueda, carrito, selector de número de serie | ✅ | `VentaPosTest` (12), `ValidarStockTest` |
 | HU-5.10 / 5.11 | Descuentos por rol y autorización de administrador | ✅ | `DescuentoServiceTest`, `AutorizarDescuentoTest`, `StoreVentaTest` |
@@ -29,7 +38,9 @@ No se agregaron funcionalidades en este cierre.
 | HU-6.1 | Cierre de caja y reporte diario | ✅ | `CierreCajaControllerTest` |
 | HU-6.2 – 6.5 | Reportes por período/específicos, índices, utilidad y exportaciones | ✅ | `ReporteServiceTest`, `ReportePdfTest` |
 | Clientes | CRUD, historial y puntos | ✅ | `ClienteTest` (10) |
-| RF.3.2 – 3.5 | Carrito/checkout público, pedidos online, pagos en línea y encuesta anónima | ❌ | No existen rutas, controladores ni modelos: siguen en Fase 3 del roadmap |
+| RF.3.2 / 3.3 | Carrito, checkout público y pedidos online | ✅ | `CheckoutTest` (2), `CatalogoController`, `CheckoutController`, `VentaService::crearPedidoOnline` (venta `Pendiente` con reserva de stock) |
+| RF.3.4 | Pagos en línea | ⚠️ | `PagoPedidoController` en modo simulación (`config/pagos.php`); sin pasarela real para Bolivia (`docs/17`) |
+| RF.3.5 | Encuesta anónima | ❌ | Retirada del producto (migración `drop_encuestas_table`, `docs/09` y `docs/13`) |
 | E2E de cierre | Login → venta → comprobante → devolución → caja → reportes → PDF → logout | ✅ | `SprintE2ETest` (1 test, 35 assertions) |
 
 > El backlog del Sprint 2 no está versionado en el repo, así que los códigos HU
@@ -64,12 +75,16 @@ php artisan test --filter=VentaPos
 # Cierre E2E del sprint
 php artisan test --filter=SprintE2E
 
-# Suite completa: 355 tests
+# Suite completa (cifra del cierre): 355 tests
 php artisan test
 
 # Formato
 ./vendor/bin/pint --dirty
 ```
+
+> **Cifras del cierre (2026-11-05)**: los 355 tests y 1.535 assertions de estos
+> comandos son el snapshot de ese día. La suite actual (2026-11-26) está en 457
+> tests / 1.888 assertions y 202 rutas.
 
 **Resultado del cierre**: 355 tests passing (1.535 assertions), 92 del gate,
 12 de `VentaPosTest`, 1 E2E. `pint --dirty` sin cambios pendientes.
@@ -112,6 +127,8 @@ en cada venta ni arriesgar inconsistencias si se corrige un pago.
 ## ⚠️ Limitaciones conocidas
 
 - `Venta100ConcurrenciaTest` levanta 100 procesos PHP reales; el resto de la suite es secuencial (PHPUnit no paraleliza por sí solo). La garantía de no-oversell sigue siendo el `lockForUpdate` más el `CHECK (stock >= 0)`.
-- Sin carrito/pedidos públicos ni pagos en línea (Fase 3).
-- Números de serie sin CRUD ni consulta de garantía por SN.
+- Sin pagos en línea reales: el checkout coordina pago contra entrega y
+  `PagoPedidoController` responde en modo simulación hasta que haya pasarela.
+- Facturación electrónica en simulación: el SIN (CUCU/Libélula) no entregó
+  credenciales (`docs/17`).
 - El E2E cubre el happy path; los caminos de error siguen cubiertos por los tests por módulo.

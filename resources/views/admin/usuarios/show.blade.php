@@ -7,30 +7,31 @@
 <div class="max-w-4xl space-y-6">
 
     {{-- Encabezado con acciones --}}
-    <div class="flex items-center justify-between">
+    <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary-container font-headline-md text-headline-md text-on-primary-container">
                 {{ strtoupper(substr($usuario->name, 0, 1)) }}
             </div>
             <div>
-                <p class="text-xs text-slate-500">ID: {{ $usuario->id }}</p>
+                <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">ID {{ $usuario->id }}</p>
+                <p class="font-headline-sm text-headline-sm text-on-surface">{{ $usuario->name }}</p>
             </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
             @can('view', $usuario)
                 <a href="{{ route('admin.usuarios.historial', $usuario) }}"
-                   class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg transition">
+                   class="inline-flex items-center rounded-obsidian-lg border border-outline-variant/30 bg-surface-container-low px-4 py-2.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
                     Ver historial completo
                 </a>
             @endcan
             @can('editar usuarios')
                 <a href="{{ route('admin.usuarios.edit', $usuario) }}"
-                   class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
+                   class="inline-flex items-center rounded-obsidian-lg bg-primary-container px-4 py-2.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-primary-container/90">
                     Editar
                 </a>
             @endcan
             <a href="{{ route('admin.usuarios.index') }}"
-               class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg transition">
+               class="inline-flex items-center rounded-obsidian-lg border border-outline-variant/30 bg-surface-container-low px-4 py-2.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface-variant transition hover:text-on-surface">
                 Volver
             </a>
         </div>
@@ -38,42 +39,52 @@
 
     {{-- Información personal --}}
     <x-card title="Información personal">
-        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <dl class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-                <dt class="text-slate-500 text-xs uppercase tracking-wider mb-1">Nombre</dt>
-                <dd class="text-white">{{ $usuario->name }}</dd>
+                <dt class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Nombre</dt>
+                <dd class="mt-1 font-body-md text-body-md text-on-surface">{{ $usuario->name }}</dd>
             </div>
             <div>
-                <dt class="text-slate-500 text-xs uppercase tracking-wider mb-1">Email</dt>
-                <dd class="text-white">{{ $usuario->email }}</dd>
+                <dt class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Email</dt>
+                <dd class="mt-1 font-body-md text-body-md text-on-surface">{{ $usuario->email }}</dd>
             </div>
             <div>
-                <dt class="text-slate-500 text-xs uppercase tracking-wider mb-1">Teléfono</dt>
-                <dd class="text-slate-300">{{ $usuario->telefono ?? '—' }}</dd>
+                <dt class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Teléfono</dt>
+                <dd class="mt-1 font-body-md text-body-md text-on-surface-variant">{{ $usuario->telefono ?? '—' }}</dd>
             </div>
             <div>
-                <dt class="text-slate-500 text-xs uppercase tracking-wider mb-1">NIT / CI</dt>
-                <dd class="text-slate-300">{{ $usuario->nit_ci ?? '—' }}</dd>
+                <dt class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">NIT / CI</dt>
+                <dd class="mt-1 font-body-md text-body-md text-on-surface-variant">{{ $usuario->nit_ci ?? '—' }}</dd>
             </div>
             <div>
-                <dt class="text-slate-500 text-xs uppercase tracking-wider mb-1">Estado</dt>
-                <dd class="{{ $usuario->activo ? 'text-emerald-400' : 'text-red-400' }}">
-                    {{ $usuario->activo ? 'Activo' : 'Inactivo' }}
+                <dt class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Estado</dt>
+                <dd class="mt-1">
+                    @if ($usuario->activo)
+                        <span class="inline-flex items-center gap-1.5 rounded-obsidian border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 font-label-sm text-label-sm uppercase tracking-[0.14em] text-emerald-400">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                            Activo
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1.5 rounded-obsidian border border-error/25 bg-error/10 px-2 py-1 font-label-sm text-label-sm uppercase tracking-[0.14em] text-error">
+                            <span class="h-1.5 w-1.5 rounded-full bg-error"></span>
+                            Inactivo
+                        </span>
+                    @endif
                 </dd>
             </div>
             <div>
-                <dt class="text-slate-500 text-xs uppercase tracking-wider mb-1">Registrado</dt>
-                <dd class="text-slate-300">{{ $usuario->created_at->format('d/m/Y H:i') }}</dd>
+                <dt class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Registrado</dt>
+                <dd class="mt-1 font-body-md text-body-md tabular-nums text-on-surface-variant">{{ $usuario->created_at->format('d/m/Y H:i') }}</dd>
             </div>
             <div class="md:col-span-2">
-                <dt class="text-slate-500 text-xs uppercase tracking-wider mb-1">Roles asignados</dt>
-                <dd class="flex flex-wrap gap-1 mt-1">
+                <dt class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Roles asignados</dt>
+                <dd class="mt-1.5 flex flex-wrap gap-1">
                     @forelse ($usuario->roles as $rol)
-                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-md bg-blue-500/10 text-blue-400">
+                        <span class="inline-flex rounded-obsidian border border-secondary/25 bg-secondary/10 px-2 py-0.5 font-label-sm text-label-sm uppercase tracking-[0.14em] text-secondary">
                             {{ $rol->name }}
                         </span>
                     @empty
-                        <span class="text-xs text-slate-500">Sin rol</span>
+                        <span class="font-body-sm text-body-sm text-outline">Sin rol</span>
                     @endforelse
                 </dd>
             </div>
@@ -83,37 +94,34 @@
     {{-- Últimos accesos --}}
     <x-card title="Últimos accesos" subtitle="Últimos 20 eventos de auditoría">
         @if ($ultimosAccesos->isEmpty())
-            <p class="text-sm text-slate-500 text-center py-6">
-                Sin registros de accesos todavía.
-            </p>
+            <p class="py-6 text-center font-body-sm text-body-sm text-outline">Sin registros de accesos todavía.</p>
         @else
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-800 text-sm">
-                    <thead>
-                        <tr class="text-left text-xs uppercase tracking-wider text-slate-500">
-                            <th class="px-3 py-2">Acción</th>
-                            <th class="px-3 py-2">IP</th>
-                            <th class="px-3 py-2">Fecha</th>
+                <table class="min-w-full text-body-md">
+                    <thead class="bg-surface-container-low">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Acción</th>
+                            <th class="px-4 py-3 text-left font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">IP</th>
+                            <th class="px-4 py-3 text-left font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Fecha</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-800">
+                    <tbody class="divide-y divide-outline-variant/15">
                         @foreach ($ultimosAccesos as $acceso)
-                            <tr>
-                                <td class="px-3 py-2">
+                            <tr class="transition hover:bg-primary-container/[0.04]">
+                                <td class="px-4 py-3">
                                     @php
                                         $badge = match ($acceso->accion) {
-                                            'login' => 'bg-emerald-500/10 text-emerald-400',
-                                            'logout' => 'bg-slate-500/10 text-slate-400',
-                                            'login_fallido' => 'bg-red-500/10 text-red-400',
-                                            default => 'bg-slate-500/10 text-slate-400',
+                                            'login' => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400',
+                                            'login_fallido' => 'border-error/25 bg-error/10 text-error',
+                                            default => 'border-outline-variant/30 bg-surface-container-low text-on-surface-variant',
                                         };
                                     @endphp
-                                    <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-md {{ $badge }}">
+                                    <span class="inline-flex rounded-obsidian border px-2 py-0.5 font-label-sm text-label-sm uppercase tracking-[0.14em] {{ $badge }}">
                                         {{ $acceso->accion }}
                                     </span>
                                 </td>
-                                <td class="px-3 py-2 text-slate-400 font-mono text-xs">{{ $acceso->ip ?? '—' }}</td>
-                                <td class="px-3 py-2 text-slate-400 text-xs">
+                                <td class="px-4 py-3 font-mono text-body-sm text-on-surface-variant">{{ $acceso->ip ?? '—' }}</td>
+                                <td class="px-4 py-3 font-body-sm text-body-sm tabular-nums text-on-surface-variant">
                                     {{ $acceso->created_at->format('d/m/Y H:i') }}
                                 </td>
                             </tr>
@@ -126,4 +134,3 @@
 
 </div>
 @endsection
-

@@ -214,8 +214,8 @@
                 <tr>
                     <td>{{ $detalle->producto?->nombre ?? 'Producto eliminado' }}</td>
                     <td class="centro">{{ $detalle->cantidad }}</td>
-                    <td class="num">Bs {{ number_format((float) $detalle->precio_unitario, 2, ',', '.') }}</td>
-                    <td class="num">Bs {{ number_format((float) $detalle->subtotal, 2, ',', '.') }}</td>
+                    <td class="num">{{ \App\Support\Dinero::formatear((float) $detalle->precio_unitario) }}</td>
+                    <td class="num">{{ \App\Support\Dinero::formatear((float) $detalle->subtotal) }}</td>
                 </tr>
             @empty
                 <tr>
@@ -229,15 +229,15 @@
     <table class="totales">
         <tr>
             <td class="label">Subtotal</td>
-            <td class="num">Bs {{ number_format((float) $orden->subtotal, 2, ',', '.') }}</td>
+            <td class="num">{{ \App\Support\Dinero::formatear((float) $orden->subtotal) }}</td>
         </tr>
         <tr>
             <td class="label">Impuestos</td>
-            <td class="num">Bs {{ number_format((float) $orden->impuestos, 2, ',', '.') }}</td>
+            <td class="num">{{ \App\Support\Dinero::formatear((float) $orden->impuestos) }}</td>
         </tr>
         <tr class="total-final">
             <td>Total</td>
-            <td class="num">Bs {{ number_format((float) $orden->total, 2, ',', '.') }}</td>
+            <td class="num">{{ \App\Support\Dinero::formatear((float) $orden->total) }}</td>
         </tr>
     </table>
 

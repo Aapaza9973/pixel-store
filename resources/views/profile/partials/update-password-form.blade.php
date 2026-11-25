@@ -1,10 +1,10 @@
 <section>
     <header>
-        <h2 class="font-display text-lg font-semibold text-white">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface">
             {{ __('Actualizar contraseña') }}
         </h2>
 
-        <p class="mt-1 text-sm text-slate-400">
+        <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">
             {{ __('Asegúrate de que tu cuenta use una contraseña larga y aleatoria para mantener la seguridad.') }}
         </p>
     </header>
@@ -40,7 +40,7 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-emerald-400"
+                    class="font-body-sm text-body-sm text-emerald-400"
                 >{{ __('Guardado.') }}</p>
             @endif
         </div>

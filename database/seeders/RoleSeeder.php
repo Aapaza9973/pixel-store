@@ -33,7 +33,6 @@ class RoleSeeder extends Seeder
             'ver pedidos', 'confirmar pedidos', 'cancelar pedidos',
             'ver usuarios', 'crear usuarios', 'editar usuarios', 'eliminar usuarios',
             'ver respaldos', 'crear respaldos',
-            'ver encuestas',
             'ver facturacion', 'emitir facturacion', 'anular facturacion',
             'ver auditoria',
             'usar compatibilidad',

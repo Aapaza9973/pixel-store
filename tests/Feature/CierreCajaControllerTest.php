@@ -76,7 +76,7 @@ class CierreCajaControllerTest extends TestCase
         $response->assertSee('Cierre de caja');
         $response->assertSee('tarde');
         $response->assertSee($this->cajero->name);
-        $response->assertSee('600.00');
+        $response->assertSee('600,00');
     }
 
     public function test_crear_cierre_guarda_diferencia_y_redirect(): void
@@ -146,7 +146,7 @@ class CierreCajaControllerTest extends TestCase
         $response->assertSee('Reporte diario');
         $response->assertSee('Tarjeta');
         $response->assertSee($this->cajero->name);
-        $response->assertSee('250.00');
+        $response->assertSee('250,00');
     }
 
     public function test_cerrar_turno_duplicado_redirige_con_error(): void

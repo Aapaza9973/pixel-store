@@ -82,7 +82,7 @@
                 </div>
             </div>
             <p class="font-headline-lg text-headline-lg tabular-nums text-emerald-400">
-                Bs {{ number_format($valorInventarioBs, 2) }}
+                {{ \App\Support\Dinero::formatear($valorInventarioBs) }}
             </p>
             <p class="font-body-sm text-body-sm text-on-surface-variant/80">
                 precio × stock

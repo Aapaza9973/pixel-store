@@ -80,7 +80,7 @@
                     <tr class="border-b border-outline-variant/15 last:border-0 hover:bg-primary-container/[0.04]">
                         <td class="px-4 py-3.5 text-on-surface">{{ $fila[$clave] }}</td>
                         <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">{{ $fila['cantidad'] }}</td>
-                        <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">Bs {{ number_format($fila['total'], 2, '.', ',') }}</td>
+                        <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear($fila['total']) }}</td>
                     </tr>
                 @empty
                     <tr>

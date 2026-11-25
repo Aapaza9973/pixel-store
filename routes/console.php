@@ -15,3 +15,10 @@ Schedule::command('inventory:check-alerts')
     ->onFailure(function ($output) {
         Log::error('El comando inventory:check-alerts falló: '.$output);
     });
+
+Schedule::command('pedidos:expirar')
+    ->hourly()
+    ->timezone('America/La_Paz')
+    ->onFailure(function ($output) {
+        Log::error('El comando pedidos:expirar falló: '.$output);
+    });

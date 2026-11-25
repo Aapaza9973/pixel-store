@@ -10,7 +10,7 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 |:-:|---|---|:-:|
 | 1 | Fundación | 4 semanas | ✅ **100%** |
 | 2 | Trazabilidad y cotizaciones | 4 semanas | ✅ **100%** (cerrado 2026-11-05) |
-| 3 | Catálogo público y pedidos | 4 semanas | 🚧 Parcial (catálogo, checkout, pedidos web, encuesta) |
+| 3 | Catálogo público y pedidos | 4 semanas | 🚧 Parcial (catálogo, checkout, pedidos web) |
 | 4 | Facturación y proveedores | 4 semanas | ✅ **100%** (facturación en modo simulación) |
 | 5 | Motor de compatibilidad e IA | 4 semanas | ⏳ Pendiente |
 | 6 | Escalabilidad y multi-sucursal | Futuro | ⏳ Pendiente |
@@ -28,8 +28,8 @@ Plan de desarrollo por fases del proyecto Pixel Store.
 - Dashboard con métricas
 
 ### Entregables
-- ✅ 44 tablas en PostgreSQL
-- ✅ 5 roles + 60 permisos
+- ✅ 47 tablas en PostgreSQL (hoy la base suma 56 con migraciones y Telescope)
+- ✅ 5 roles + 67 permisos
 - ✅ CRUD completo de productos con EAV
 - ✅ `InventoryService` (crítico)
 - ✅ Sistema de alertas
@@ -126,7 +126,7 @@ Cerrado el 2026-11-16:
 - Catálogo público sin autenticación
 - Carrito y checkout sin cuenta
 - Pedidos online con confirmación por correo
-- Encuestas anónimas
+- Encuesta anónima (retirada del alcance el 2026-11-25)
 - Notificaciones WhatsApp/correo
 
 ### Estado real (2026-11-16)
@@ -138,22 +138,24 @@ Implementado y con tests:
 - Token de 48 caracteres para confirmar/cancelar desde el correo (`pedido.confirmar`, `pedido.cancelar`)
 - Correo de confirmación (`App\Mail\PedidoConfirmacion`)
 - Bandeja interna `admin/pedidos-web` con cobro y cancelación
-- Encuesta anónima de 3 preguntas + panel `admin/encuestas`
 
-Pendiente:
-- Pagos en línea (Stripe/PayPal) y webhook firmado: requiere proveedor y claves
-- Filtros por atributos EAV y búsqueda `pg_trgm`
-- Notificaciones por WhatsApp
+Pendiente (depende de terceros):
+- Pagos en línea: ver HU-S3-01/HU-S3-02 del `Backlog Sprint 3.xlsx` (Stripe no abre cuentas de comercio en Bolivia)
+- Notificaciones salientes por WhatsApp: requiere cuenta Business y plantillas aprobadas
+
+Cerrado (2026-11-25):
+- Filtros por atributos EAV y búsqueda difusa `pg_trgm`/`unaccent` en el catálogo (`CatalogoFiltrosTest`)
+- Encuesta anónima: **retirada** con la migración `2026_11_16_000007_drop_encuestas_table`
 
 ### Tareas planificadas
 
 #### 3.1 — Catálogo público
 - [x] Rutas `/catalogo`
 - [x] Filtros avanzados (categoría, marca, precio, disponibilidad)
-- [ ] Filtros por atributos técnicos (EAV)
+- [x] Filtros por atributos técnicos (EAV) — `atributos[id]=valor` en `/catalogo`
 - [x] Ficha de producto con especificaciones
 - [x] Productos similares
-- [ ] Búsqueda con `pg_trgm`
+- [x] Búsqueda con `pg_trgm` + `unaccent` (tolera tildes y errores de tipeo)
 
 #### 3.2 — Carrito y checkout
 - [x] Carrito (localStorage, no sesión)
@@ -173,10 +175,6 @@ Pendiente:
 - [ ] PayPal Orders
 - [ ] Webhook firmado
 - [x] Modo simulación sin claves (`config/pagos.php`, `pedido.pagar`)
-
-#### 3.5 — Encuesta anónima
-- [x] Formulario de 3 preguntas (`/encuesta`, sin IP ni usuario)
-- [x] Resultados internos (`admin/encuestas`)
 
 ### Duración estimada: 4 semanas
 
@@ -200,11 +198,12 @@ Pendiente:
 - [x] Anulación de facturas con motivo
 - [x] Registro en `facturas_electronicas`
 
-#### 4.2 — Proveedores
-- [ ] CRUD de proveedores
-- [ ] Órdenes de compra formales con PDF
-- [ ] Recepción de mercancía
-- [ ] Actualización de stock y costos
+#### 4.2 — Proveedores ✅
+- [x] CRUD de proveedores (`ProveedorController` con `authorizeResource`, `ProveedorPolicy`, `ProveedorTest` y `ProveedorCondicionesTest`)
+- [x] Órdenes de compra formales con PDF (`admin/compras.pdf`, `OrdenCompraPdfTest`)
+- [x] Recepción de mercancía, parcial o total (`OrdenCompraService::recibir`, `OrdenCompraRecepcionTest`)
+- [x] Actualización de stock al recibir (entrada con movimiento `Recepción OC {número}` vía `InventoryService`)
+- [x] Actualización de **costos** al recibir: costo promedio ponderado `(stock previo × costo + recibido × precio de línea) / stock total`; sin stock previo o sin costo, toma el precio de la línea (`OrdenCompraService::actualizarCostoPromedio`, cubierto en `OrdenCompraRecepcionTest`)
 
 #### 4.3 — Reportes avanzados
 - [x] Utilidad neta por producto (dentro de Indicadores)
@@ -299,18 +298,18 @@ Pendiente:
 
 ## 📊 Métricas de progreso
 
-Snapshot real (2026-11-16):
+Snapshot real (2026-11-26):
 
 | Métrica | Valor |
 |---|---|
-| Tests | 428 passing (1.797 assertions) |
+| Tests | 457 passing (1.888 assertions) |
 | Servicios | 13 |
-| Modelos | 37 |
+| Modelos | 36 |
 | Policies | 9 |
-| Controladores Admin | 21 |
-| FormRequests | 20 |
-| Rutas | 205 |
-| Tablas | 48 |
+| Controladores Admin | 20 |
+| FormRequests | 22 |
+| Rutas | 202 |
+| Tablas | 56 |
 
 ---
 
@@ -354,6 +353,6 @@ Ver el código actual:
 
 ## 🏁 Cierre de Sprint 2
 
-**Sprint 2 cerrado el 2026-11-05.** 355 tests passing (354 de módulos + 1 E2E de cierre), 92 del gate y 12 de `VentaPosTest`. Detalle de aceptación, validación manual y decisiones D2/D3 en [10 — QA final Sprint 2](10-qa-final-sprint2.md).
+**Sprint 2 cerrado el 2026-11-05.** 355 tests passing (354 de módulos + 1 E2E de cierre; hoy la suite está en 457), 92 del gate y 12 de `VentaPosTest`. Detalle de aceptación, validación manual y decisiones D2/D3 en [10 — QA final Sprint 2](10-qa-final-sprint2.md).
 
 - [Sprint 2 — retro](12-demo-retro-sprint2.md): guion de demo de 5 minutos y retrospectiva del cierre (369 tests finales, 0 regresiones, 10 commits de cierre).

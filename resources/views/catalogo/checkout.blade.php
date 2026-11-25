@@ -1,7 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.public')
+
+@section('robots', 'noindex, nofollow')
 
 @section('title', 'Finalizar compra')
-@section('subtitle', 'Catálogo público')
 
 @section('content')
 @php
@@ -12,7 +13,7 @@
 <div class="mx-auto max-w-5xl space-y-6">
 
     <nav class="flex items-center gap-2 font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
-        <a href="{{ url('/') }}" class="transition hover:text-on-surface">Inicio</a>
+        <a href="{{ route('home') }}" class="transition hover:text-on-surface">Inicio</a>
         <span>/</span>
         <a href="{{ route('catalogo.index') }}" class="transition hover:text-on-surface">Catálogo</a>
         <span>/</span>

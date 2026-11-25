@@ -71,7 +71,7 @@
                             <td class="px-4 py-3.5 font-label-md text-label-md text-on-surface">{{ $factura->numero_factura }}</td>
                             <td class="px-4 py-3.5 text-on-surface">#{{ str_pad((string) $factura->venta_id, 6, '0', STR_PAD_LEFT) }}</td>
                             <td class="px-4 py-3.5 text-on-surface-variant">{{ $factura->venta?->cliente?->nombre ?? 'Consumidor final' }}</td>
-                            <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">Bs {{ number_format((float) ($factura->venta?->total ?? 0), 2, '.', ',') }}</td>
+                            <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear((float) ($factura->venta?->total ?? 0)) }}</td>
                             <td class="px-4 py-3.5 text-center">
                                 <span class="inline-flex rounded-obsidian border px-2 py-1 font-label-sm text-label-sm uppercase tracking-[0.14em]
                                     {{ $factura->estaAnulada()

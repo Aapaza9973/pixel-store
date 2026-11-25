@@ -24,6 +24,10 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="antialiased bg-surface text-on-surface font-body-md" x-data="carritoPublico()">
+    <a href="#contenido"
+       class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-obsidian-lg focus:bg-primary-container focus:px-4 focus:py-2 focus:font-label-md focus:text-label-md focus:uppercase focus:tracking-[0.14em] focus:text-on-primary-container">
+        Ir al contenido
+    </a>
     <div class="min-h-screen flex">
 
         {{-- SIDEBAR --}}
@@ -42,207 +46,93 @@
             </div>
 
             {{-- Navegación --}}
-            <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-                <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" icon="home">
-                    Dashboard
-                </x-nav-link>
+            <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+                @php
+                    $usuario = auth()->user();
 
-                @can('crear ventas')
-                    @if (Route::has('admin.ventas.create'))
-                        <x-nav-link :href="route('admin.ventas.create')" :active="request()->routeIs('admin.ventas.create')" icon="cash">
-                            Punto de Venta
-                        </x-nav-link>
+                    $puede = static fn (?string $permiso): bool => $permiso === null
+                        ? true
+                        : (bool) $usuario?->can($permiso);
+
+                    $grupos = [
+                        'Operación' => [
+                            ['texto' => 'Dashboard', 'ruta' => 'dashboard', 'activo' => 'dashboard', 'icono' => 'home'],
+                            ['texto' => 'Punto de Venta', 'ruta' => 'admin.ventas.create', 'activo' => 'admin.ventas.create', 'icono' => 'cash', 'permiso' => 'crear ventas'],
+                            ['texto' => 'Ventas', 'ruta' => 'admin.ventas.index', 'activo' => 'admin.ventas.index', 'icono' => 'clipboard', 'permiso' => 'ver ventas'],
+                            ['texto' => 'Pedidos web', 'ruta' => 'admin.pedidos-web.index', 'activo' => 'admin.pedidos-web.*', 'icono' => 'clipboard', 'permiso' => 'ver ventas'],
+                            ['texto' => 'Cotizaciones', 'ruta' => 'admin.cotizaciones.index', 'activo' => 'admin.cotizaciones.*', 'icono' => 'clipboard', 'permiso' => 'ver cotizaciones'],
+                            ['texto' => 'Devoluciones', 'ruta' => 'admin.devoluciones.index', 'activo' => 'admin.devoluciones.*', 'icono' => 'clipboard', 'permiso' => 'ver devoluciones'],
+                            ['texto' => 'Caja', 'ruta' => 'admin.caja.index', 'activo' => 'admin.caja.*', 'icono' => 'cash', 'rol' => ['Admin', 'Cajero']],
+                        ],
+
+                        'Catálogo e inventario' => [
+                            ['texto' => 'Productos', 'ruta' => 'admin.productos.index', 'activo' => 'admin.productos.*', 'icono' => 'cube', 'permiso' => 'ver productos'],
+                            ['texto' => 'Alertas', 'ruta' => 'alertas.index', 'activo' => 'alertas.*', 'icono' => 'bell', 'permiso' => 'ver productos'],
+                            ['texto' => 'Inventario', 'ruta' => 'admin.inventario.index', 'activo' => 'admin.inventario.*', 'icono' => 'archive', 'permiso' => 'ver inventario'],
+                            ['texto' => 'Ubicaciones', 'ruta' => 'admin.ubicaciones.index', 'activo' => 'admin.ubicaciones.*', 'icono' => 'location', 'permiso' => 'ver ubicaciones'],
+                            ['texto' => 'Números de Serie', 'ruta' => 'admin.series.index', 'activo' => 'admin.series.*', 'icono' => 'bookmark', 'permiso' => 'ver numeros-serie'],
+                            ['texto' => 'Catálogo', 'ruta' => 'catalogo.index', 'activo' => 'catalogo.*', 'icono' => 'cube'],
+                            ['texto' => 'Carrito', 'ruta' => 'catalogo.index', 'tipo' => 'carrito'],
+                        ],
+
+                        'Comercial' => [
+                            ['texto' => 'Clientes', 'ruta' => 'admin.clientes.index', 'activo' => 'admin.clientes.*', 'icono' => 'users', 'permiso' => 'ver clientes'],
+                            ['texto' => 'Proveedores', 'ruta' => 'admin.proveedores.index', 'activo' => 'admin.proveedores.*', 'icono' => 'tag', 'permiso' => 'ver proveedores'],
+                            ['texto' => 'Compras', 'ruta' => 'admin.compras.index', 'activo' => 'admin.compras.*', 'icono' => 'cube', 'permiso' => 'ver ordenes-compra'],
+                        ],
+
+                        'Finanzas' => [
+                            ['texto' => 'Facturación', 'ruta' => 'admin.facturacion.index', 'activo' => 'admin.facturacion.*', 'icono' => 'cash', 'permiso' => 'ver facturacion'],
+                            ['texto' => 'Reportes', 'ruta' => 'admin.reportes.periodo', 'activo' => 'admin.reportes.*', 'icono' => 'clipboard', 'permiso' => 'ver reportes'],
+                        ],
+
+                        'Administración' => [
+                            ['texto' => 'Usuarios', 'ruta' => 'admin.usuarios.index', 'activo' => 'admin.usuarios.*', 'icono' => 'users', 'permiso' => 'ver usuarios'],
+                            ['texto' => 'Auditoría', 'ruta' => 'admin.auditoria.index', 'activo' => 'admin.auditoria.*', 'icono' => 'archive', 'permiso' => 'ver auditoria'],
+                        ],
+                    ];
+
+                    $visibles = static function (array $items) use ($puede, $usuario): array {
+                        return array_values(array_filter($items, static function (array $item) use ($puede, $usuario): bool {
+                            return Route::has($item['ruta'])
+                                && $puede($item['permiso'] ?? null)
+                                && (empty($item['rol']) || (bool) $usuario?->hasAnyRole($item['rol']));
+                        }));
+                    };
+                @endphp
+
+                @foreach ($grupos as $titulo => $items)
+                    @php($delGrupo = $visibles($items))
+
+                    @if ($delGrupo !== [])
+                        <p class="px-3 pb-1.5 pt-4 font-label-sm text-label-sm font-semibold uppercase tracking-[0.18em] text-outline">
+                            {{ $titulo }}
+                        </p>
+
+                        @foreach ($delGrupo as $item)
+                            @if (($item['tipo'] ?? null) === 'carrito')
+                                {{-- Carrito público: abre el drawer del layout. --}}
+                                <button type="button" x-on:click="abierto = true"
+                                        x-bind:aria-label="`Carrito: ${totalItems} artículos`"
+                                        class="flex w-full items-center gap-3 rounded-obsidian-lg px-3 py-2 font-body-md text-body-md text-on-surface-variant transition-colors hover:bg-surface-container-low/60 hover:text-on-surface">
+                                    <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                    <span>Carrito</span>
+                                    <span x-show="totalItems > 0" x-cloak x-text="totalItems"
+                                          class="ml-auto min-w-[1.25rem] rounded-full bg-primary-container px-1.5 py-0.5 text-center font-label-sm text-label-sm tabular-nums text-on-primary-container"></span>
+                                </button>
+                            @else
+                                <x-nav-link :href="route($item['ruta'])"
+                                            :active="request()->routeIs($item['activo'])"
+                                            :icon="$item['icono']">
+                                    {{ $item['texto'] }}
+                                </x-nav-link>
+                            @endif
+                        @endforeach
                     @endif
-                @endcan
-
-                @can('ver ventas')
-                    @if (Route::has('admin.ventas.index'))
-                        <x-nav-link :href="route('admin.ventas.index')" :active="request()->routeIs('admin.ventas.index')" icon="clipboard">
-                            Ventas
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @if (Route::has('catalogo.index'))
-                    <x-nav-link :href="route('catalogo.index')" :active="request()->routeIs('catalogo.*')" icon="cube">
-                        Catálogo
-                    </x-nav-link>
-
-                    {{-- Carrito público: abre el drawer del layout. --}}
-                    <button type="button" x-on:click="abierto = true"
-                            x-bind:aria-label="`Carrito: ${totalItems} artículos`"
-                            class="flex w-full items-center gap-3 rounded-obsidian-lg px-3 py-2 font-body-md text-body-md text-on-surface-variant transition-colors hover:bg-surface-container-low/60 hover:text-on-surface">
-                        <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                        <span>Carrito</span>
-                        <span x-show="totalItems > 0" x-cloak x-text="totalItems"
-                              class="ml-auto min-w-[1.25rem] rounded-full bg-primary-container px-1.5 py-0.5 text-center font-label-sm text-label-sm tabular-nums text-on-primary-container"></span>
-                    </button>
-                @endif
-
-                @can('ver productos')
-                    @if (Route::has('alertas.index'))
-                        <x-nav-link :href="route('alertas.index')" :active="request()->routeIs('alertas.*')" icon="bell">
-                            Alertas
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver productos')
-                    @if (Route::has('admin.productos.index'))
-                        <x-nav-link :href="route('admin.productos.index')" :active="request()->routeIs('admin.productos.*')" icon="cube">
-                            Productos
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver ventas')
-                    @if (Route::has('admin.pedidos-web.index'))
-                        <x-nav-link :href="route('admin.pedidos-web.index')" :active="request()->routeIs('admin.pedidos-web.*')" icon="clipboard">
-                            Pedidos web
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver inventario')
-                    @if (Route::has('admin.inventario.index'))
-                        <x-nav-link :href="route('admin.inventario.index')" :active="request()->routeIs('admin.inventario.*')" icon="archive">
-                            Inventario
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver categorias')
-                    @if (Route::has('admin.categorias.index'))
-                        <x-nav-link :href="route('admin.categorias.index')" :active="request()->routeIs('admin.categorias.*')" icon="tag">
-                            Categorías
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-
-                @can('ver clientes')
-                    @if (Route::has('admin.clientes.index'))
-                        <x-nav-link :href="route('admin.clientes.index')" :active="request()->routeIs('admin.clientes.*')" icon="users">
-                            Clientes
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver proveedores')
-                    @if (Route::has('admin.proveedores.index'))
-                        <x-nav-link :href="route('admin.proveedores.index')" :active="request()->routeIs('admin.proveedores.*')" icon="tag">
-                            Proveedores
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver ordenes-compra')
-                    @if (Route::has('admin.compras.index'))
-                        <x-nav-link :href="route('admin.compras.index')" :active="request()->routeIs('admin.compras.*')" icon="cube">
-                            Compras
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver cotizaciones')
-                    @if (Route::has('admin.cotizaciones.index'))
-                        <x-nav-link :href="route('admin.cotizaciones.index')" :active="request()->routeIs('admin.cotizaciones.*')" icon="clipboard">
-                            Cotizaciones
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver devoluciones')
-                    @if (Route::has('admin.devoluciones.index'))
-                        <x-nav-link :href="route('admin.devoluciones.index')" :active="request()->routeIs('admin.devoluciones.*')" icon="clipboard">
-                            Devoluciones
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver numeros-serie')
-                    @if (Route::has('admin.series.index'))
-                        <x-nav-link :href="route('admin.series.index')" :active="request()->routeIs('admin.series.*')" icon="bookmark">
-                            Números de Serie
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver encuestas')
-                    @if (Route::has('admin.encuestas.index'))
-                        <x-nav-link :href="route('admin.encuestas.index')" :active="request()->routeIs('admin.encuestas.*')" icon="adjustments">
-                            Encuestas
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver facturacion')
-                    @if (Route::has('admin.facturacion.index'))
-                        <x-nav-link :href="route('admin.facturacion.index')" :active="request()->routeIs('admin.facturacion.*')" icon="cash">
-                            Facturación
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver auditoria')
-                    @if (Route::has('admin.auditoria.index'))
-                        <x-nav-link :href="route('admin.auditoria.index')" :active="request()->routeIs('admin.auditoria.*')" icon="archive">
-                            Auditoría
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @if (Route::has('admin.caja.index') && auth()->user()?->hasAnyRole(['Admin', 'Cajero']))
-                    <x-nav-link :href="route('admin.caja.index')" :active="request()->routeIs('admin.caja.*')" icon="archive">
-                        Caja
-                    </x-nav-link>
-                @endif
-
-                @can('ver reportes')
-                    @if (Route::has('admin.reportes.periodo'))
-                        <x-nav-link :href="route('admin.reportes.periodo')" :active="request()->routeIs('admin.reportes.*')" icon="clipboard">
-                            Reportes
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver marcas')
-                    <x-nav-link :href="'#'" :active="request()->routeIs('marcas.*')" icon="bookmark">
-                        Marcas
-                    </x-nav-link>
-                @endcan
-
-                @can('ver atributos')
-                    <x-nav-link :href="'#'" :active="request()->routeIs('atributos.*')" icon="adjustments">
-                        Atributos técnicos
-                    </x-nav-link>
-                @endcan
-
-                @can('ver ubicaciones')
-                    @if (Route::has('admin.ubicaciones.index'))
-                        <x-nav-link :href="route('admin.ubicaciones.index')" :active="request()->routeIs('admin.ubicaciones.*')" icon="location">
-                            Ubicaciones
-                        </x-nav-link>
-                    @endif
-                @endcan
-
-                @can('ver usuarios')
-                    <div class="pt-4 pb-2 px-3 font-label-sm text-label-sm font-semibold text-outline uppercase tracking-[0.18em]">
-                        Administración
-                    </div>
-                    <x-nav-link :href="route('admin.usuarios.index')" :active="request()->routeIs('admin.usuarios.*')" icon="users">
-                        Usuarios
-                    </x-nav-link>
-                    @if (Route::has('admin.auditoria.index'))
-                        <x-nav-link :href="route('admin.auditoria.index')" :active="request()->routeIs('admin.auditoria.*')" icon="clipboard">
-                            Auditorías
-                        </x-nav-link>
-                    @endif
-
-                @endcan
+                @endforeach
             </nav>
 
             {{-- User info --}}
@@ -334,7 +224,7 @@
             @endif
 
             {{-- CONTENT --}}
-            <main class="flex-1 overflow-y-auto bg-surface p-6">
+            <main id="contenido" tabindex="-1" class="flex-1 overflow-y-auto bg-surface p-6 focus:outline-none">
                 {{ $slot ?? '' }}
                 @yield('content')
             </main>

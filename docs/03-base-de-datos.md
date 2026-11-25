@@ -11,7 +11,7 @@ Diseño del schema, relaciones y seeders.
 | Motor | PostgreSQL 18.6 |
 | Codificación | UTF8 |
 | Collation | en_US.UTF-8 (o es_BO.UTF-8) |
-| Total de tablas | 44 |
+| Total de tablas | 56 (47 del schema dump + 6 de migraciones + 3 de Telescope) |
 | Tipos ENUM | 20 |
 | Índices de búsqueda | 20+ |
 | Extensiones | `pg_trgm`, `unaccent` |
@@ -24,18 +24,18 @@ Este archivo se carga automáticamente con `php artisan migrate:fresh` (gracias 
 
 ## 🗂️ Grupos de tablas
 
-### 1. Usuarios y roles (5 tablas)
+### 1. Usuarios y roles (6 tablas)
 
 | Tabla | Propósito |
 |---|---|
 | `users` | Usuarios del sistema (con `activo`, `telefono`, `nit_ci`, `pref_*`) |
 | `roles` | 5 roles: Admin, Vendedor, Cajero, Inventario, Cliente |
-| `permissions` | ~60 permisos organizados por módulo |
+| `permissions` | 67 permisos organizados por módulo |
 | `model_has_roles` | Pivote usuario↔rol |
 | `model_has_permissions` | Pivote usuario↔permiso (casos especiales) |
 | `role_has_permissions` | Pivote rol↔permiso |
 
-### 2. Catálogo (6 tablas)
+### 2. Catálogo (8 tablas)
 
 | Tabla | Propósito |
 |---|---|
@@ -46,6 +46,7 @@ Este archivo se carga automáticamente con `php artisan migrate:fresh` (gracias 
 | `atributos_tecnicos` | Catálogo de atributos (socket, tipo_ram, vatios...) |
 | `valores_atributo` | Valores enum predefinidos (AM4, DDR5, LGA1700...) |
 | `producto_atributos` | **EAV**: valores concretos por producto |
+| `producto_imagenes` | Galería de imágenes del producto (principal + thumbnails) |
 
 ### 3. Inventario (5 tablas)
 
@@ -57,7 +58,7 @@ Este archivo se carga automáticamente con `php artisan migrate:fresh` (gracias 
 | `alertas_stock` | Alertas de bajo stock y sin stock |
 | `importaciones` | Historial de cargas CSV |
 
-### 4. Ventas y operaciones (8 tablas)
+### 4. Ventas y operaciones (10 tablas)
 
 | Tabla | Propósito |
 |---|---|
@@ -69,6 +70,8 @@ Este archivo se carga automáticamente con `php artisan migrate:fresh` (gracias 
 | `numeros_serie` | Unidades individuales con trazabilidad |
 | `devoluciones` | Devoluciones y garantías |
 | `cierres_caja` | Cierre de caja diario |
+| `devolucion_detalles` | Líneas de cada devolución |
+| `autorizaciones_descuento` | Autorizaciones de un admin para superar el límite de descuento |
 
 ### 5. Compras (3 tablas)
 
@@ -85,7 +88,7 @@ Este archivo se carga automáticamente con `php artisan migrate:fresh` (gracias 
 | `pedidos` | Pedidos del catálogo online |
 | `pedido_items` | Items del pedido |
 
-### 7. Fidelización y extras (6 tablas)
+### 7. Fidelización y extras (5 tablas)
 
 | Tabla | Propósito |
 |---|---|
@@ -94,9 +97,8 @@ Este archivo se carga automáticamente con `php artisan migrate:fresh` (gracias 
 | `facturas_electronicas` | Facturas con CUF/CUFD |
 | `logs_auditoria` | Auditoría de accesos y cambios |
 | `compatibilidad_reglas` | Reglas del motor de compatibilidad |
-| `encuestas_catalogo` | Encuestas anónimas del catálogo |
 
-### 8. Internas de Laravel (7 tablas)
+### 8. Internas de Laravel (8 tablas)
 
 | Tabla | Propósito |
 |---|---|
@@ -105,6 +107,11 @@ Este archivo se carga automáticamente con `php artisan migrate:fresh` (gracias 
 | `sessions` | Sesiones de usuario |
 | `cache`, `cache_locks` | Cache |
 | `jobs`, `job_batches`, `failed_jobs` | Colas |
+
+> Estos grupos suman **47 tablas** (las del `pgsql-schema.sql`). La base actual
+> tiene **56**: se agregan 6 por migraciones posteriores (`cierre_caja_pagos`,
+> `favoritos`, `ingresos`, `orden_compra_recepcion`,
+> `orden_compra_recepcion_items`, `password_histories`) y 3 de Telescope.
 
 ---
 

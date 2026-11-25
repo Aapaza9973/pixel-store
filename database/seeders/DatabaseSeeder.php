@@ -9,7 +9,7 @@ class DatabaseSeeder extends Seeder
 {
     /**
      * Ejecuta los seeders respetando el orden de dependencias:
-     * permisos → catálogo → atributos → ubicaciones → productos.
+     * permisos → catálogo → atributos → ubicaciones → productos → series.
      */
     public function run(): void
     {
@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             ValorAtributoSeeder::class,
             UbicacionSeeder::class,
             DemoProductoSeeder::class,
+            NumeroSerieSeeder::class,
         ]);
 
         // Genera las alertas de los productos demo que quedaron bajo umbral.

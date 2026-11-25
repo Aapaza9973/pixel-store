@@ -124,9 +124,9 @@
     </tr>
     <tr>
         <td class="label">Cobrado en el día</td>
-        <td>Bs {{ number_format((float) $resumen['total_ventas'], 2, '.', ',') }}</td>
+        <td>{{ \App\Support\Dinero::formatear((float) $resumen['total_ventas']) }}</td>
         <td class="label">Devoluciones</td>
-        <td>Bs {{ number_format((float) $resumen['total_devoluciones'], 2, '.', ',') }}</td>
+        <td>{{ \App\Support\Dinero::formatear((float) $resumen['total_devoluciones']) }}</td>
     </tr>
 </table>
 
@@ -142,14 +142,14 @@
         @foreach ($resumen['por_metodo'] as $metodo => $monto)
             <tr>
                 <td>{{ $metodo }}</td>
-                <td class="der">Bs {{ number_format((float) $monto, 2, '.', ',') }}</td>
+                <td class="der">{{ \App\Support\Dinero::formatear((float) $monto) }}</td>
             </tr>
         @endforeach
 
         @foreach ($cierre->pagos as $pago)
             <tr>
                 <td>{{ $pago->metodo }} (declarado)</td>
-                <td class="der">Bs {{ number_format((float) $pago->monto, 2, '.', ',') }}</td>
+                <td class="der">{{ \App\Support\Dinero::formatear((float) $pago->monto) }}</td>
             </tr>
         @endforeach
     </tbody>
@@ -159,16 +159,16 @@
 <table class="totales">
     <tr>
         <td class="label">Efectivo esperado</td>
-        <td class="der">Bs {{ number_format((float) $cierre->efectivo_esperado, 2, '.', ',') }}</td>
+        <td class="der">{{ \App\Support\Dinero::formatear((float) $cierre->efectivo_esperado) }}</td>
     </tr>
     <tr>
         <td class="label">Efectivo real</td>
-        <td class="der">Bs {{ number_format((float) $cierre->efectivo_real, 2, '.', ',') }}</td>
+        <td class="der">{{ \App\Support\Dinero::formatear((float) $cierre->efectivo_real) }}</td>
     </tr>
     <tr>
         <td class="label destacado">Diferencia</td>
         <td class="der destacado {{ abs($diferencia) < 0.005 ? 'positivo' : 'negativo' }}">
-            Bs {{ number_format($diferencia, 2, '.', ',') }}
+            {{ \App\Support\Dinero::formatear($diferencia) }}
         </td>
     </tr>
 </table>

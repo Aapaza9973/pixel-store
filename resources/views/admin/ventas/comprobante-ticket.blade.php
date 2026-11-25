@@ -108,11 +108,11 @@
                                     <span class="block text-[10px] text-neutral-500">SN {{ $detalle->numeroSerie->numero_serie }}</span>
                                 @endif
                                 <span class="block text-[10px] text-neutral-500">
-                                    {{ $detalle->cantidad }} × Bs {{ number_format((float) $detalle->precio_unitario, 2, '.', ',') }}
+                                    {{ $detalle->cantidad }} × {{ \App\Support\Dinero::formatear((float) $detalle->precio_unitario) }}
                                 </span>
                             </td>
                             <td class="py-1 text-right tabular-nums">
-                                Bs {{ number_format($detalle->subtotal(), 2, '.', ',') }}
+                                {{ \App\Support\Dinero::formatear($detalle->subtotal()) }}
                             </td>
                         </tr>
                     @endforeach
@@ -124,7 +124,7 @@
             <dl class="space-y-1 text-[11px]">
                 <div class="flex items-center justify-between">
                     <dt class="text-neutral-500">Subtotal</dt>
-                    <dd class="tabular-nums">Bs {{ number_format((float) $venta->total + (float) $venta->descuento, 2, '.', ',') }}</dd>
+                    <dd class="tabular-nums">{{ \App\Support\Dinero::formatear((float) $venta->total + (float) $venta->descuento) }}</dd>
                 </div>
 
                 @if ((float) $venta->descuento > 0)
@@ -132,13 +132,13 @@
                         <dt class="text-neutral-500">
                             Descuento ({{ rtrim(rtrim(number_format((float) $venta->descuento_porcentaje, 2, '.', ''), '0'), '.') }} %)
                         </dt>
-                        <dd class="tabular-nums">− Bs {{ number_format((float) $venta->descuento, 2, '.', ',') }}</dd>
+                        <dd class="tabular-nums">− {{ \App\Support\Dinero::formatear((float) $venta->descuento) }}</dd>
                     </div>
                 @endif
 
                 <div class="flex items-center justify-between border-t border-neutral-300 pt-1.5">
                     <dt class="text-sm font-bold">TOTAL</dt>
-                    <dd class="text-sm font-bold tabular-nums">Bs {{ number_format((float) $venta->total, 2, '.', ',') }}</dd>
+                    <dd class="text-sm font-bold tabular-nums">{{ \App\Support\Dinero::formatear((float) $venta->total) }}</dd>
                 </div>
             </dl>
 
@@ -155,7 +155,7 @@
                                     · {{ $pago->referencia }}
                                 @endif
                             </span>
-                            <span class="tabular-nums">Bs {{ number_format((float) $pago->monto, 2, '.', ',') }}</span>
+                            <span class="tabular-nums">{{ \App\Support\Dinero::formatear((float) $pago->monto) }}</span>
                         </li>
                     @endforeach
                 </ul>

@@ -52,17 +52,17 @@
                 <tr>
                     <td>{{ $item->nombre }}</td>
                     <td class="num">{{ $item->cantidad }}</td>
-                    <td class="num">Bs {{ number_format($item->precio_unitario, 2) }}</td>
-                    <td class="num">Bs {{ number_format($item->subtotal(), 2) }}</td>
+                    <td class="num">{{ \App\Support\Dinero::formatear($item->precio_unitario) }}</td>
+                    <td class="num">{{ \App\Support\Dinero::formatear($item->subtotal()) }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
     <div class="totales">
-        <div><span>Subtotal</span><span>Bs {{ number_format($cotizacion->subtotal, 2) }}</span></div>
-        <div><span>Descuento</span><span>Bs {{ number_format($cotizacion->descuento, 2) }}</span></div>
-        <div class="total"><span>Total</span><span>Bs {{ number_format($cotizacion->total, 2) }}</span></div>
+        <div><span>Subtotal</span><span>{{ \App\Support\Dinero::formatear($cotizacion->subtotal) }}</span></div>
+        <div><span>Descuento</span><span>{{ \App\Support\Dinero::formatear($cotizacion->descuento) }}</span></div>
+        <div class="total"><span>Total</span><span>{{ \App\Support\Dinero::formatear($cotizacion->total) }}</span></div>
     </div>
 
     @if ($cotizacion->notas)

@@ -22,7 +22,7 @@
         </div>
         <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
             <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Total</p>
-            <p class="mt-2 font-headline-md text-headline-md tabular-nums text-on-surface">Bs {{ number_format($totalGeneral, 2, '.', ',') }}</p>
+            <p class="mt-2 font-headline-md text-headline-md tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear($totalGeneral) }}</p>
         </div>
     </div>
 
@@ -49,7 +49,7 @@
                         <tr class="border-b border-outline-variant/15 transition hover:bg-primary-container/[0.04] last:border-0">
                             <td class="px-4 py-3.5 text-on-surface">{{ $fila['periodo'] }}</td>
                             <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">{{ $fila['cantidad_ventas'] }}</td>
-                            <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">Bs {{ number_format($total, 2, '.', ',') }}</td>
+                            <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear($total) }}</td>
                             <td class="px-4 py-3.5 text-right tabular-nums">
                                 @if ($variacion === null)
                                     <span class="text-outline">—</span>

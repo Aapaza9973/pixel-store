@@ -76,12 +76,14 @@ Implementar el **módulo de inventario completo**, incluyendo:
 
 - **1.1.2.4** (`idx_users_email`): **OMITIDO** por redundancia con el índice UNIQUE
   `users_email_key`. Ver [03 — Base de datos](03-base-de-datos.md).
-- **1.1.18.5** (capturas de pantalla): pendientes de captura manual. Tras el
-  rediseño Obsidian de la Etapa 1, el material vigente vive en
-  [Entrega — Etapa 1](rediseno/entrega-etapa-1.md) y en
-  `rediseno/screenshots/`. Pendientes: login (Obsidian, desktop + mobile),
-  galería de componentes, dashboard y vista 403 (aún en `slate`/`blue` — se
-  migrará en la Etapa 2).
+- **1.1.18.5** (capturas de pantalla): **CERRADO (2026-11-25)**. Las seis capturas
+  vigentes están en `docs/capturas/` — POS en cobro mixto, comprobante de 80 mm,
+  comprobante A4, dashboard, catálogo con filtro EAV (`socket = AM4`) y ficha con
+  especificaciones técnicas. El recorrido y su evidencia están en
+  [16 — Validación manual del POS](16-validacion-manual-pos.md#capturas).
+  La vista 403 ya usa tokens Obsidian, así que la captura pendiente de
+  `slate`/`blue` dejó de aplicar; `rediseno/screenshots/` queda como material
+  histórico de la Etapa 1.
 
 #### Cobertura de criterios de aceptación
 

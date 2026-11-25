@@ -98,7 +98,7 @@
                             </td>
 
                             <td class="px-4 py-3.5 text-right font-label-md text-label-md tabular-nums text-on-surface">
-                                Bs {{ number_format((float) $pedido->total, 2, ',', '.') }}
+                                {{ \App\Support\Dinero::formatear((float) $pedido->total) }}
                                 <p class="font-label-sm text-label-sm text-outline">{{ $unidades }} u.</p>
                             </td>
 

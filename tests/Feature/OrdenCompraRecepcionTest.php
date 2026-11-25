@@ -12,8 +12,10 @@ use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Models\User;
 use App\Services\OrdenCompraService;
+use App\Services\VentaService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class OrdenCompraRecepcionTest extends TestCase
@@ -95,6 +97,31 @@ class OrdenCompraRecepcionTest extends TestCase
         }
 
         return $lineas;
+    }
+
+    /**
+     * Deuda del Sprint 2 (`docs/12`, acción #3): la recepción existía en el
+     * servicio pero no se probaba por la ruta que usa el modal del detalle.
+     */
+    public function test_recepcion_desde_la_ui_suma_stock_y_marca_recibida_total(): void
+    {
+        $orden = $this->ordenEnviada();
+        $lineas = $this->lineasPorProducto($orden);
+
+        $this->actingAs($this->inventario)
+            ->post(route('admin.compras.recibir', $orden), [
+                'items' => [
+                    ['orden_compra_item_id' => $lineas[$this->teclado->id], 'cantidad' => 2],
+                    ['orden_compra_item_id' => $lineas[$this->mouse->id], 'cantidad' => 1],
+                    ['orden_compra_item_id' => $lineas[$this->mouse->id], 'cantidad' => 0],
+                ],
+            ])
+            ->assertRedirect(route('admin.compras.show', $orden))
+            ->assertSessionHas('success');
+
+        $this->assertSame('recibida_total', $orden->refresh()->estado);
+        $this->assertSame(2, $this->teclado->refresh()->stock);
+        $this->assertSame(1, $this->mouse->refresh()->stock);
     }
 
     public function test_recibir_todo_marca_recibida_total_y_suma_stock(): void
@@ -182,5 +209,96 @@ class OrdenCompraRecepcionTest extends TestCase
             'cantidad' => 1,
         ]);
         $this->assertSame(2, OrdenCompraRecepcionItem::where('recepcion_id', $recepcion->id)->count());
+    }
+
+    public function test_recepcion_actualiza_el_costo_con_promedio_ponderado(): void
+    {
+        $this->teclado->update(['stock' => 2, 'costo' => 100]);
+
+        $orden = $this->ordenEnviada();
+        $lineas = $this->lineasPorProducto($orden);
+
+        $this->servicio->recibir($orden, $this->inventario, [
+            ['orden_compra_item_id' => $lineas[$this->teclado->id], 'cantidad' => 2],
+        ]);
+
+        // (2 × 100 + 2 × 150,50) / 4 = 125,25
+        $this->assertEqualsWithDelta(125.25, (float) $this->teclado->refresh()->costo, 0.001);
+        $this->assertSame(4, (int) $this->teclado->stock);
+    }
+
+    public function test_recepcion_parcial_pondera_solo_las_unidades_recibidas(): void
+    {
+        $this->teclado->update(['stock' => 2, 'costo' => 100]);
+
+        $orden = $this->ordenEnviada();
+        $lineas = $this->lineasPorProducto($orden);
+
+        $this->servicio->recibir($orden, $this->inventario, [
+            ['orden_compra_item_id' => $lineas[$this->teclado->id], 'cantidad' => 1],
+        ]);
+
+        // (2 × 100 + 1 × 150,50) / 3 = 116,8333… → 116,83
+        $this->assertEqualsWithDelta(116.83, (float) $this->teclado->refresh()->costo, 0.001);
+        $this->assertSame(3, (int) $this->teclado->stock);
+    }
+
+    public function test_recepcion_sin_stock_previo_toma_el_precio_de_la_linea(): void
+    {
+        $orden = $this->ordenEnviada();
+        $lineas = $this->lineasPorProducto($orden);
+
+        $this->servicio->recibir($orden, $this->inventario, [
+            ['orden_compra_item_id' => $lineas[$this->teclado->id], 'cantidad' => 2],
+            ['orden_compra_item_id' => $lineas[$this->mouse->id], 'cantidad' => 1],
+        ]);
+
+        $this->assertEqualsWithDelta(150.50, (float) $this->teclado->refresh()->costo, 0.001);
+        $this->assertEqualsWithDelta(99.99, (float) $this->mouse->refresh()->costo, 0.001);
+    }
+
+    public function test_recepcion_con_costo_cero_toma_el_precio_de_la_linea(): void
+    {
+        // `costo = 0` significa "sin costo cargado": no debe diluir el promedio.
+        $this->teclado->update(['stock' => 2, 'costo' => 0]);
+
+        $orden = $this->ordenEnviada();
+        $lineas = $this->lineasPorProducto($orden);
+
+        $this->servicio->recibir($orden, $this->inventario, [
+            ['orden_compra_item_id' => $lineas[$this->teclado->id], 'cantidad' => 2],
+        ]);
+
+        $this->assertEqualsWithDelta(150.50, (float) $this->teclado->refresh()->costo, 0.001);
+    }
+
+    public function test_recepcion_no_reescribe_el_costo_de_una_venta_anterior(): void
+    {
+        $this->teclado->update(['stock' => 4, 'costo' => 100]);
+
+        $venta = app(VentaService::class)->confirmar(
+            [['producto_id' => $this->teclado->id, 'cantidad' => 1]],
+            [['metodo' => 'Efectivo', 'monto' => 200]],
+            [
+                'vendedor_id' => $this->inventario->id,
+                'operacion_id' => (string) Str::uuid(),
+            ]
+        );
+
+        $lineaVendida = $venta->detalles()->firstOrFail();
+        $this->assertEqualsWithDelta(100.0, (float) $lineaVendida->precio_costo, 0.001);
+
+        $orden = $this->ordenEnviada();
+        $lineas = $this->lineasPorProducto($orden);
+
+        $this->servicio->recibir($orden, $this->inventario, [
+            ['orden_compra_item_id' => $lineas[$this->teclado->id], 'cantidad' => 2],
+        ]);
+
+        // Stock previo 3 (4 − 1 vendida) a Bs 100 + 2 a Bs 150,50 → 120,20.
+        $this->assertEqualsWithDelta(120.20, (float) $this->teclado->refresh()->costo, 0.001);
+
+        // La utilidad de una venta pasada no se recalcula: usa el costo congelado.
+        $this->assertEqualsWithDelta(100.0, (float) $lineaVendida->refresh()->precio_costo, 0.001);
     }
 }

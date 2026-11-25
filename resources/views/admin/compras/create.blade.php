@@ -200,7 +200,7 @@
                 },
 
                 money(valor) {
-                    return 'Bs ' + this.redondear(valor).toFixed(2);
+                    return window.formatearBs(this.redondear(valor));
                 },
 
                 agregar() {

@@ -50,7 +50,7 @@
                                 <span class="block font-body-sm text-body-sm text-outline">{{ $devolucion->venta?->cliente?->nombre ?? '—' }}</span>
                             </td>
                             <td class="px-4 py-3.5 text-on-surface-variant">{{ $devolucion->motivo }}</td>
-                            <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">Bs {{ number_format((float) $devolucion->total_devuelto, 2, '.', ',') }}</td>
+                            <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear((float) $devolucion->total_devuelto) }}</td>
                             <td class="px-4 py-3.5 text-center">
                                 @php
                                     $color = match ($devolucion->estado) {

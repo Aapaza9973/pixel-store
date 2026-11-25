@@ -2,7 +2,7 @@
 
 **Fecha**: 2026-11-16
 **Estado**: ✅ cerrado en modo simulación · ⏳ integraciones externas pendientes
-**Suite**: 421 tests passing (1.778 assertions) · 200 rutas
+**Suite (2026-11-26)**: 457 tests passing (1.888 assertions) · 202 rutas
 
 ---
 
@@ -51,10 +51,15 @@ cobro falso presentado como real. La pantalla avisa "Modo simulación".
 
 ## ⏳ Pendiente (requiere terceros)
 
-1. **Stripe / PayPal**: SDK, claves, webhook firmado y conciliación.
+1. **Pasarela de pago**: la decisión es de **G9** (QR Simple, transferencia con
+   comprobante o merchant of record). Stripe no habilita cuentas de comercio en
+   Bolivia; hoy `config/pagos.php` sigue en simulación.
 2. **SIN (CUCU / Libélula)**: firma digital, CUFD, envío y código de recepción;
    el esquema ya tiene las columnas (`cufd`, `respuesta_sin`, `codigo_recepcion`).
 3. **PDF fiscal**: hoy el detalle muestra el XML; el PDF con formato legal lo
    emite el proveedor.
-4. **Filtros EAV** y búsqueda `pg_trgm` del catálogo (Fase 3).
-5. **WhatsApp**: notificaciones salientes (Fase 3).
+4. **WhatsApp saliente**: requiere cuenta Business y plantillas aprobadas; hoy la
+   cotización se comparte con un enlace `wa.me` y el aviso del pedido va por correo.
+
+Cerrado después de este corte: **filtros EAV** (`atributos[id]=valor`) y búsqueda
+`pg_trgm` + `unaccent` del catálogo (`CatalogoFiltrosTest`).

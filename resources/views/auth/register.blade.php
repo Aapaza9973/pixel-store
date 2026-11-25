@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <h1 class="font-display text-2xl font-bold text-white mb-6">
+    <h1 class="mb-6 font-headline-md text-headline-md text-on-surface">
         {{ __('Crear cuenta') }}
     </h1>
 
@@ -44,7 +44,7 @@
         </div>
 
         <div class="flex items-center justify-end mt-4">
-            <a class="text-sm text-blue-400 hover:text-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900" href="{{ route('login') }}">
+            <a class="rounded-obsidian font-body-md text-body-md text-secondary transition hover:text-on-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-container/60" href="{{ route('login') }}">
                 {{ __('¿Ya tienes cuenta?') }}
             </a>
 

@@ -1,7 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.public')
 
 @section('title', 'Catálogo')
-@section('subtitle', 'Catálogo público')
 
 @section('content')
 @php
@@ -12,6 +11,7 @@
         || filled($filtros['marca_id'] ?? null)
         || filled($filtros['precio_min'] ?? null)
         || filled($filtros['precio_max'] ?? null)
+        || ! empty($atributosAplicados)
         || $ordenActual !== 'novedades';
 
     $inputClass = 'w-full rounded-obsidian border border-outline-variant/40 bg-surface-container-low px-3 py-2 font-body-sm text-body-sm text-on-surface transition focus:border-primary-container focus:outline-none focus:ring-2 focus:ring-primary-container/25';
@@ -22,7 +22,7 @@
 
     {{-- Migas --}}
     <nav class="flex items-center gap-2 font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
-        <a href="{{ url('/') }}" class="transition hover:text-on-surface">Inicio</a>
+        <a href="{{ route('home') }}" class="transition hover:text-on-surface">Inicio</a>
         <span>/</span>
         <span class="text-on-surface">Catálogo</span>
     </nav>
@@ -126,6 +126,45 @@
                         </div>
                     </div>
                 </div>
+
+                @if ($atributosFiltro->isNotEmpty())
+                    <div class="space-y-3 border-t border-outline-variant/30 pt-3">
+                        <p class="{{ $labelClass }}">Características</p>
+
+                        @foreach ($atributosFiltro as $atributo)
+                            @php
+                                $seleccionado = (string) ($atributosAplicados[$atributo->id] ?? '');
+                            @endphp
+
+                            <div>
+                                <label for="atributo-{{ $atributo->id }}"
+                                       class="{{ $atributo->valoresPredefinidos->isNotEmpty() ? 'sr-only' : $labelClass }}">
+                                    {{ $atributo->nombre }}{{ $atributo->unidad ? ' ('.$atributo->unidad.')' : '' }}
+                                </label>
+
+                                @if ($atributo->valoresPredefinidos->isNotEmpty())
+                                    <select id="atributo-{{ $atributo->id }}"
+                                            name="atributos[{{ $atributo->id }}]"
+                                            class="{{ $inputClass }}">
+                                        <option value="">{{ $atributo->nombre }}: todos</option>
+                                        @foreach ($atributo->valoresPredefinidos as $valorPredefinido)
+                                            <option value="{{ $valorPredefinido->valor }}"
+                                                @selected($seleccionado === (string) $valorPredefinido->valor)>
+                                                {{ $valorPredefinido->valor }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @else
+                                    <input id="atributo-{{ $atributo->id }}"
+                                           name="atributos[{{ $atributo->id }}]"
+                                           type="text"
+                                           value="{{ $seleccionado }}"
+                                           class="{{ $inputClass }} mt-1.5">
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
 
                 <button type="submit"
                         class="w-full rounded-obsidian-lg bg-primary-container px-4 py-2.5 font-body-md text-body-md font-medium text-on-primary-container transition hover:bg-primary-container/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-container/60">

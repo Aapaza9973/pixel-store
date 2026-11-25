@@ -75,7 +75,7 @@ class ComprobanteFormatosTest extends TestCase
         $response->assertOk();
         $response->assertSee('size: 80mm auto', false);
         $response->assertSee('#'.str_pad((string) $this->venta->id, 6, '0', STR_PAD_LEFT));
-        $response->assertSee('600.00');
+        $response->assertSee('600,00');
     }
 
     public function test_comprobante_a4_usa_hoja_a4(): void
@@ -89,7 +89,7 @@ class ComprobanteFormatosTest extends TestCase
         $response->assertOk();
         $response->assertSee('size: A4', false);
         $response->assertSee('PIXEL STORE');
-        $response->assertSee('600.00');
+        $response->assertSee('600,00');
         // El formato A4 no debe renderizar el ticket térmico.
         $response->assertDontSee('size: 80mm auto', false);
     }

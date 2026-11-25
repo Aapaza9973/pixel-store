@@ -40,15 +40,15 @@
                             <tr>
                                 <td style="padding:8px 0;border-bottom:1px solid #1f2937;color:#e2e8f0;">{{ $item->nombre }}</td>
                                 <td style="padding:8px 0;border-bottom:1px solid #1f2937;text-align:right;color:#cbd5e1;">{{ $item->cantidad }}</td>
-                                <td style="padding:8px 0;border-bottom:1px solid #1f2937;text-align:right;color:#cbd5e1;">Bs {{ number_format((float) $item->precio_unitario, 2, ',', '.') }}</td>
-                                <td style="padding:8px 0;border-bottom:1px solid #1f2937;text-align:right;color:#e2e8f0;">Bs {{ number_format($item->subtotal(), 2, ',', '.') }}</td>
+                                <td style="padding:8px 0;border-bottom:1px solid #1f2937;text-align:right;color:#cbd5e1;">{{ \App\Support\Dinero::formatear((float) $item->precio_unitario) }}</td>
+                                <td style="padding:8px 0;border-bottom:1px solid #1f2937;text-align:right;color:#e2e8f0;">{{ \App\Support\Dinero::formatear($item->subtotal()) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                     <tfoot>
                         <tr>
                             <td colspan="3" style="padding:12px 0 0;text-align:right;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;">Total</td>
-                            <td style="padding:12px 0 0;text-align:right;font-size:18px;font-weight:bold;color:#f8fafc;">Bs {{ number_format((float) $cotizacion->total, 2, ',', '.') }}</td>
+                            <td style="padding:12px 0 0;text-align:right;font-size:18px;font-weight:bold;color:#f8fafc;">{{ \App\Support\Dinero::formatear((float) $cotizacion->total) }}</td>
                         </tr>
                     </tfoot>
                 </table>

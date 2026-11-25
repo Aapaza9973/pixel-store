@@ -33,13 +33,15 @@ los contradice, la decisión se descarta.
 | **Icono (isotipo)** | `public/images/logo/pixel-icon-sm.png` | Favicon, sidebar, 403/404/500 |
 | **Icono grande** | `public/images/logo/pixel-icon.png` | Variante alta resolución |
 | **Logo horizontal** | `public/images/logo/pixel-logo-horizontal.png` | og:image, fondos CLAROS |
+| **Logo blanco** | `public/images/logo/pixel-logo-white.png` | Fondos OSCUROS (emblema azul + wordmark blanco) |
 | **Logo compacto** | `public/images/logo/pixel-logo-compacto.png` | Variante compacta |
 | **Favicon** | `public/images/logo/favicon.png` | Fallback |
 
-⚠️ **Gap conocido**: NO existe logo para fondos oscuros (`pixel-logo-white.png`
-no está en el repo). El logo horizontal tiene píxeles oscuros (luminancia media
-75) → baja contraste sobre `slate-950`. **Tratamiento actual**: icono + wordmark
-en Space Grotesk (patrón del sidebar). **Deuda**: ver `TECH_DEBT.md`.
+✅ **Resuelto (2026-11-25)**: `pixel-logo-white.png` ya existe (2218 × 892, fondo
+transparente, emblema azul intacto y wordmark blanco con antialias). El logo
+horizontal sigue teniendo píxeles oscuros (luminancia media 75) → **no usarlo
+sobre `slate-950`**: ahí va el blanco. Se genera desde el horizontal con
+`.tools/logo_blanco.php` si cambia el original.
 
 **Reglas no negociables**:
 - ✅ El **icono** aparece SIEMPRE en el `<head>` como `favicon`: `<link rel="icon" href="{{ asset('images/logo/pixel-icon-sm.png') }}">`

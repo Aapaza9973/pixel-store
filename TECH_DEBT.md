@@ -122,7 +122,9 @@ prioridad y sprint objetivo.
 ---
 
 ### Facturación y pagos en modo simulación
-- [ ] Integrar CUCU / Libélula (SIN) y Stripe / PayPal con credenciales reales.
+- [ ] Integrar CUCU / Libélula (SIN) y la pasarela que defina **G9** (QR Simple,
+      transferencia con comprobante o merchant of record). Stripe no habilita
+      cuentas de comercio en Bolivia.
 - **Situación**: `FacturacionService` y `PagoPedidoController` funcionan en modo
   simulación (`config/pagos.php`), con el esquema definitivo y tests.
 - **Riesgo**: una factura emitida en simulación **no tiene validez tributaria**;
@@ -146,14 +148,17 @@ prioridad y sprint objetivo.
 - **Cerrado (2026-11-16)**: la ruta ya tiene el middleware y vive dentro del
       grupo `admin` + `user.has.role`.
 
-**Actual**: cualquier usuario autenticado puede invocarla si conoce la URL.
-**Riesgo**: bajo (no hay UI, requiere conocer la URL exacta, el service valida stock).
+**Riesgo residual**: bajo y ya mitigado; la ruta exige `can:editar productos`
+desde el cierre.
 
-### Assets — Falta logo para fondos oscuros
-- [ ] Encargar/generar `pixel-logo-white.png` (isotipo + wordmark blanco)
+### Assets — Logo para fondos oscuros
+- [x] Generar `pixel-logo-white.png` (isotipo + wordmark blanco)
+- **Cerrado (2026-11-25)**: `public/images/logo/pixel-logo-white.png`
+  (2218 × 892, fondo transparente) generado desde el logo horizontal con
+  `.tools/logo_blanco.php`; el emblema azul se conserva y el wordmark pasa a
+  blanco respetando el antialias. Verificado sobre `#0a0e14`.
 - El único logo completo (`pixel-logo-horizontal.png`) tiene píxeles oscuros
-  → bajo contraste sobre `slate-950`
-- Tratamiento actual: icono + wordmark manual en Space Grotesk
+  → bajo contraste sobre fondos oscuros
 - **Detectado**: spike /preview (validación frontend-design)
 - **Cuándo arreglarlo**: antes de producción del catálogo público
 
@@ -163,6 +168,7 @@ prioridad y sprint objetivo.
 
 - Cada ítem debe tener: **descripción clara** + **cuándo arreglarlo**
 - Se revisa al inicio de cada sprint
-- Los ítems completados se mueven a `CHANGELOG.md` con el commit que los cerró
+- Los ítems completados se marcan `[x]` acá con su fecha o commit; el repo
+  todavía no tiene `CHANGELOG.md`
 
 

@@ -112,4 +112,51 @@ class OrdenCompraUiTest extends TestCase
             'cantidad' => 2,
         ]);
     }
+
+    /**
+     * Deuda del Sprint 2 (`docs/12`, acción #3): el paso "enviar orden" existía
+     * en el backend pero no era alcanzable desde la UI. Este test fija el botón
+     * del detalle y el cambio de estado `borrador` → `enviada`.
+     */
+    public function test_admin_envia_la_orden_al_proveedor_desde_el_detalle(): void
+    {
+        $orden = app(OrdenCompraService::class)->crear(
+            $this->proveedor,
+            $this->admin,
+            [
+                ['producto_id' => $this->monitor->id, 'cantidad' => 1, 'precio_unitario' => 900],
+            ]
+        );
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.compras.show', $orden))
+            ->assertOk()
+            ->assertSee('Enviar Orden');
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.compras.enviar', $orden))
+            ->assertRedirect(route('admin.compras.show', $orden))
+            ->assertSessionHas('success');
+
+        $this->assertSame('enviada', $orden->fresh()->estado);
+    }
+
+    public function test_no_se_puede_enviar_una_orden_ya_enviada(): void
+    {
+        $orden = app(OrdenCompraService::class)->crear(
+            $this->proveedor,
+            $this->admin,
+            [
+                ['producto_id' => $this->teclado->id, 'cantidad' => 1, 'precio_unitario' => 1200],
+            ]
+        );
+
+        $orden->update(['estado' => 'enviada']);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.compras.enviar', $orden))
+            ->assertSessionHas('error');
+
+        $this->assertSame('enviada', $orden->fresh()->estado);
+    }
 }

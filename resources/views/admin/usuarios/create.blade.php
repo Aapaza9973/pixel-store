@@ -9,129 +9,89 @@
         @csrf
 
         {{-- Datos personales --}}
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
-            <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-                Datos personales
-            </h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {{-- Nombre --}}
+        <x-card title="Datos personales">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                    <label for="name" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Nombre completo <span class="text-red-400">*</span>
-                        <x-help-tooltip text="Nombre completo de la persona." />
-                    </label>
-                    <input type="text" name="name" id="name" value="{{ old('name') }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('name') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    <x-input-label for="name" value="Nombre completo" />
+                    <x-help-tooltip text="Nombre completo de la persona." />
+                    <x-text-input id="name" name="name" type="text" :value="old('name')" class="mt-1.5 block w-full" />
+                    <x-input-error :messages="$errors->get('name')" />
                 </div>
 
-                {{-- Email --}}
                 <div>
-                    <label for="email" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Correo electrónico <span class="text-red-400">*</span>
-                        <x-help-tooltip text="Email único. Se usará para iniciar sesión." />
-                    </label>
-                    <input type="email" name="email" id="email" value="{{ old('email') }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('email') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    <x-input-label for="email" value="Correo electrónico" />
+                    <x-help-tooltip text="Email único. Se usará para iniciar sesión." />
+                    <x-text-input id="email" name="email" type="email" :value="old('email')" class="mt-1.5 block w-full" />
+                    <x-input-error :messages="$errors->get('email')" />
                 </div>
 
-                {{-- Teléfono --}}
                 <div>
-                    <label for="telefono" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Teléfono
-                        <x-help-tooltip text="Número de contacto (opcional)." />
-                    </label>
-                    <input type="text" name="telefono" id="telefono" value="{{ old('telefono') }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('telefono') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    <x-input-label for="telefono" value="Teléfono" />
+                    <x-help-tooltip text="Número de contacto (opcional)." />
+                    <x-text-input id="telefono" name="telefono" type="text" :value="old('telefono')" class="mt-1.5 block w-full" />
+                    <x-input-error :messages="$errors->get('telefono')" />
                 </div>
 
-                {{-- NIT/CI --}}
                 <div>
-                    <label for="nit_ci" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        NIT / CI
-                        <x-help-tooltip text="NIT o cédula de identidad (opcional)." />
-                    </label>
-                    <input type="text" name="nit_ci" id="nit_ci" value="{{ old('nit_ci') }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('nit_ci') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    <x-input-label for="nit_ci" value="NIT / CI" />
+                    <x-help-tooltip text="NIT o cédula de identidad (opcional)." />
+                    <x-text-input id="nit_ci" name="nit_ci" type="text" :value="old('nit_ci')" class="mt-1.5 block w-full" />
+                    <x-input-error :messages="$errors->get('nit_ci')" />
                 </div>
             </div>
-        </div>
+        </x-card>
 
         {{-- Contraseña --}}
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
-            <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-                Contraseña
-            </h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <x-card title="Contraseña" subtitle="Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 símbolo.">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                    <label for="password" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Contraseña <span class="text-red-400">*</span>
-                        <x-help-tooltip text="Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 símbolo." />
-                    </label>
-                    <input type="password" name="password" id="password"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    <p class="mt-1 text-xs text-slate-500">Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 símbolo.</p>
-                    @error('password') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    <x-input-label for="password" value="Contraseña" />
+                    <x-text-input id="password" name="password" type="password" class="mt-1.5 block w-full" />
+                    <x-input-error :messages="$errors->get('password')" />
                 </div>
 
                 <div>
-                    <label for="password_confirmation" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Confirmar contraseña <span class="text-red-400">*</span>
-                        <x-help-tooltip text="Repita la misma contraseña." />
-                    </label>
-                    <input type="password" name="password_confirmation" id="password_confirmation"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                    <x-input-label for="password_confirmation" value="Confirmar contraseña" />
+                    <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1.5 block w-full" />
                 </div>
             </div>
-        </div>
+        </x-card>
 
         {{-- Roles --}}
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
-            <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-                Roles <span class="text-red-400">*</span>
-                <x-help-tooltip text="Uno o más roles. Definen los permisos del usuario." />
-            </h3>
+        <x-card title="Roles">
+            <x-help-tooltip text="Uno o más roles. Definen los permisos del usuario." />
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
                 @foreach ($roles as $rol)
-                    <label class="flex items-center gap-3 p-3 bg-slate-800/50 hover:bg-slate-800 rounded-lg cursor-pointer border border-slate-700 transition">
+                    <label class="flex cursor-pointer items-center gap-3 rounded-obsidian border border-outline-variant/30 bg-surface-container-low/50 p-3 transition hover:border-primary-container/40">
                         <input type="checkbox" name="roles[]" value="{{ $rol->name }}"
                                {{ in_array($rol->name, old('roles', []), true) ? 'checked' : '' }}
-                               class="rounded border-slate-600 text-blue-600 focus:ring-blue-500">
-                        <span class="text-sm text-slate-300 font-medium">{{ $rol->name }}</span>
+                               class="rounded border-outline-variant/40 bg-surface-container-low text-primary-container focus:ring-primary-container/40">
+                        <span class="font-body-md text-body-md text-on-surface">{{ $rol->name }}</span>
                     </label>
                 @endforeach
             </div>
-            @error('roles') <p class="text-xs text-red-400">{{ $message }}</p> @enderror
-            @error('roles.*') <p class="text-xs text-red-400">{{ $message }}</p> @enderror
-        </div>
+
+            <x-input-error :messages="$errors->get('roles')" />
+            <x-input-error :messages="$errors->get('roles.*')" />
+        </x-card>
 
         {{-- Estado --}}
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
-            <label class="inline-flex items-center gap-3 cursor-pointer">
+        <x-card>
+            <label class="inline-flex cursor-pointer items-center gap-3">
                 <input type="checkbox" name="activo" value="1" {{ old('activo', true) ? 'checked' : '' }}
-                       class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500">
-                <span class="text-sm text-slate-300">Cuenta activa</span>
+                       class="rounded border-outline-variant/40 bg-surface-container-low text-primary-container focus:ring-primary-container/40">
+                <span class="font-body-md text-body-md text-on-surface-variant">Cuenta activa</span>
             </label>
-        </div>
+        </x-card>
 
         {{-- Botones --}}
         <div class="flex items-center gap-3">
-            <button type="submit"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
-                Guardar usuario
-            </button>
-            <a href="{{ route('admin.usuarios.index') }}"
-               class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg transition">
+            <x-primary-button>Guardar usuario</x-primary-button>
+            <x-secondary-button type="button" onclick="window.location='{{ route('admin.usuarios.index') }}'">
                 Cancelar
-            </a>
+            </x-secondary-button>
         </div>
     </form>
 </div>
 @endsection
-

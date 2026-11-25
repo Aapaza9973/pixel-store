@@ -33,7 +33,7 @@
         <x-card class="text-center">
             <div class="flex justify-center pb-2">
                 {{-- Escudo (SVG inline, sin dependencias externas) --}}
-                <svg class="w-24 h-24 text-amber-500" fill="none" stroke="currentColor"
+                <svg class="w-24 h-24 text-amber-400" fill="none" stroke="currentColor"
                      stroke-width="1.5" viewBox="0 0 24 24" role="img" aria-label="Acceso denegado">
                     <path stroke-linecap="round" stroke-linejoin="round"
                           d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
@@ -44,13 +44,13 @@
 
             <div class="space-y-2">
                 <p class="font-label-sm text-label-sm tracking-[0.18em] text-on-surface-variant uppercase">Error 403</p>
-                <h1 class="text-3xl font-bold text-white">Acceso denegado</h1>
+                <h1 class="font-headline-md text-headline-md text-on-surface">Acceso denegado</h1>
                 <p class="text-on-surface-variant">{{ $mensaje }}</p>
             </div>
 
             <div class="pt-4">
                 <a href="{{ $urlVolver }}"
-                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition">
+                   class="inline-flex items-center gap-2 rounded-obsidian-lg bg-primary-container px-5 py-2.5 font-label-md text-label-md uppercase tracking-[0.14em] text-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_20px_rgba(37,99,235,0.35)] transition hover:bg-primary-container/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-container/60">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                     </svg>

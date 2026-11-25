@@ -114,10 +114,12 @@ tests/Feature/
 - **`skills/hu-development.md`** — Skill completa para desarrollar Historias de Usuario (HU) de principio a fin. Aplica a cualquier sprint.
 - **`skills/crud-module.md`** — Skill específica para CRUDs (incluida en el skill de HU).
 - **`skills/frontend-design.md`** — Identidad de marca y criterio visual. Aplicar en toda vista Blade nueva o rediseñada (panel interno y catálogo público).
+- **`skills/frontend-storefront.md`** — Criterio de frontend adaptado al stack real (Laravel + Blade + Alpine + Tailwind 3): primitivas `<x-*>` obligatorias, tipografía y números, formularios, accesibilidad y rendimiento. Es la traducción de una skill React/Vite al proyecto; incluye lo que se descartó y por qué.
 
 **Reglas**:
 1. Al empezar cualquier HU o tarea de sprint, LEE PRIMERO `hu-development.md`.
 2. Antes de escribir o modificar **cualquier vista Blade**, LEE `frontend-design.md`.
 3. Para CRUDs nuevos, LEE también `crud-module.md`.
+4. Antes de crear o tocar **componentes compartidos, formularios, tablas o accesibilidad**, LEE `frontend-storefront.md`.
 
 

@@ -4,13 +4,16 @@
 @section('subtitle', 'Panel de control de inventario')
 
 @section('content')
-<div class="space-y-6" x-data='inventarioPoll(@js([
-    "productosTotales" => $productosTotales,
-    "stockBajo" => $productosStockBajo,
-    "agotados" => $productosAgotados,
-    "valorInventario" => $valorInventarioBs,
-    "url" => route("admin.inventario.kpis"),
-]))'>
+{{-- El JSON se arma a mano: `@js()` dentro de un atributo citado rompía
+     la expresión de Alpine y dejaba los cuatro KPIs vacíos y sin polling. --}}
+<div class="space-y-6"
+     x-data="inventarioPoll({
+         productosTotales: {{ (int) $productosTotales }},
+         stockBajo: {{ (int) $productosStockBajo }},
+         agotados: {{ (int) $productosAgotados }},
+         valorInventario: {{ (float) $valorInventarioBs }},
+         url: '{{ route('admin.inventario.kpis') }}'
+     })">
 
     {{-- ===================== KPIs ===================== --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -88,7 +91,7 @@
                 </div>
             </div>
             <p class="font-headline-lg text-headline-lg tabular-nums text-emerald-400" x-text="formatoBs(valorInventario)">
-                Bs {{ number_format($valorInventarioBs, 2) }}
+                {{ \App\Support\Dinero::formatear($valorInventarioBs) }}
             </p>
             <p class="font-body-sm text-body-sm text-on-surface-variant/80">
                 precio × stock
@@ -267,10 +270,7 @@
                     },
 
                     formatoBs(n) {
-                        return 'Bs ' + Number(n).toLocaleString('es-BO', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                        });
+                        return window.formatearBs(n);
                     },
 
                     async refrescar() {

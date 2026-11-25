@@ -136,10 +136,10 @@
                                 {{ $linea['pendiente'] }}
                             </td>
                             <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">
-                                Bs {{ number_format((float) $linea['detalle']->precio_unitario, 2, '.', ',') }}
+                                {{ \App\Support\Dinero::formatear((float) $linea['detalle']->precio_unitario) }}
                             </td>
                             <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">
-                                Bs {{ number_format((float) $linea['detalle']->subtotal, 2, '.', ',') }}
+                                {{ \App\Support\Dinero::formatear((float) $linea['detalle']->subtotal) }}
                             </td>
                         </tr>
                     @empty
@@ -157,15 +157,15 @@
             <dl class="w-full max-w-xs space-y-2 font-body-md text-body-md">
                 <div class="flex items-center justify-between gap-4">
                     <dt class="text-on-surface-variant">Subtotal</dt>
-                    <dd class="tabular-nums text-on-surface">Bs {{ number_format((float) $orden->subtotal, 2, '.', ',') }}</dd>
+                    <dd class="tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear((float) $orden->subtotal) }}</dd>
                 </div>
                 <div class="flex items-center justify-between gap-4">
                     <dt class="text-on-surface-variant">Impuestos</dt>
-                    <dd class="tabular-nums text-on-surface">Bs {{ number_format((float) $orden->impuestos, 2, '.', ',') }}</dd>
+                    <dd class="tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear((float) $orden->impuestos) }}</dd>
                 </div>
                 <div class="flex items-center justify-between gap-4 border-t border-outline-variant/20 pt-2">
                     <dt class="font-label-md text-label-md uppercase tracking-[0.14em] text-on-surface">Total</dt>
-                    <dd class="font-headline-sm text-headline-sm tabular-nums text-on-surface">Bs {{ number_format((float) $orden->total, 2, '.', ',') }}</dd>
+                    <dd class="font-headline-sm text-headline-sm tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear((float) $orden->total) }}</dd>
                 </div>
             </dl>
         </div>

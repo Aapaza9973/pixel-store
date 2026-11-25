@@ -59,7 +59,7 @@
         <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
             <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">Total cobrado</p>
             <p class="mt-2 font-headline-md text-headline-md tabular-nums text-on-surface">
-                Bs {{ number_format($totalVentas, 2, '.', ',') }}
+                {{ \App\Support\Dinero::formatear($totalVentas) }}
             </p>
         </div>
         <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-5 backdrop-blur-xl">
@@ -82,7 +82,7 @@
                 </p>
             </div>
             <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
-                máximo Bs {{ number_format((float) $maximo, 2, '.', ',') }}
+                máximo {{ \App\Support\Dinero::formatear((float) $maximo) }}
             </p>
         </div>
 
@@ -105,7 +105,7 @@
                           width="{{ round($anchoBarra, 2) }}"
                           height="{{ round($altura, 2) }}"
                           rx="2" fill="#2563eb" fill-opacity="0.7">
-                        <title>{{ $fila['periodo'] }} · Bs {{ number_format($fila['total_ventas'], 2, '.', ',') }}</title>
+                        <title>{{ $fila['periodo'] }} · {{ \App\Support\Dinero::formatear($fila['total_ventas']) }}</title>
                     </rect>
                 @endforeach
             </svg>
@@ -151,7 +151,7 @@
                             <td class="px-4 py-3.5 font-label-md text-label-md text-on-surface">{{ $fila['periodo'] }}</td>
                             <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">{{ $fila['cantidad_ventas'] }}</td>
                             <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">
-                                Bs {{ number_format($fila['total_ventas'], 2, '.', ',') }}
+                                {{ \App\Support\Dinero::formatear($fila['total_ventas']) }}
                             </td>
                         </tr>
                     @empty
@@ -168,7 +168,7 @@
                             <td class="px-4 py-3.5 font-label-md text-label-md uppercase tracking-[0.14em] text-outline">Totales</td>
                             <td class="px-4 py-3.5 text-right font-label-md text-label-md tabular-nums text-on-surface">{{ $cantidadVentas }}</td>
                             <td class="px-4 py-3.5 text-right font-label-md text-label-md tabular-nums text-on-surface">
-                                Bs {{ number_format($totalVentas, 2, '.', ',') }}
+                                {{ \App\Support\Dinero::formatear($totalVentas) }}
                             </td>
                         </tr>
                     </tfoot>

@@ -1,9 +1,9 @@
 <x-guest-layout>
-    <h1 class="font-display text-2xl font-bold text-white mb-3">
+    <h1 class="mb-3 font-headline-md text-headline-md text-on-surface">
         {{ __('Confirmar contraseña') }}
     </h1>
 
-    <div class="mb-6 text-sm text-slate-400">
+    <div class="mb-6 font-body-md text-body-md text-on-surface-variant">
         {{ __('Esta es un área segura de la aplicación. Confirma tu contraseña antes de continuar.') }}
     </div>
 

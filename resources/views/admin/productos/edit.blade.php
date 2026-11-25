@@ -15,45 +15,45 @@
         @method('PUT')
 
         {{-- Datos generales --}}
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
-            <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Información básica</h3>
+        <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-6 space-y-5">
+            <h3 class="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">Información básica</h3>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="md:col-span-2">
-                    <label for="nombre" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Nombre <span class="text-red-400">*</span>
+                    <label for="nombre" class="block text-sm font-medium text-on-surface-variant mb-1.5">
+                        Nombre <span class="text-error">*</span>
                     </label>
                     <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $producto->nombre) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('nombre') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                           class="w-full px-3 py-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 focus:outline-none">
+                    @error('nombre') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label for="sku" class="block text-sm font-medium text-slate-300 mb-1.5">SKU</label>
+                    <label for="sku" class="block text-sm font-medium text-on-surface-variant mb-1.5">SKU</label>
                     <input type="text" name="sku" id="sku" value="{{ old('sku', $producto->sku) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('sku') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                           class="w-full px-3 py-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 focus:outline-none">
+                    @error('sku') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label for="categoria_id" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Categoría <span class="text-red-400">*</span>
+                    <label for="categoria_id" class="block text-sm font-medium text-on-surface-variant mb-1.5">
+                        Categoría <span class="text-error">*</span>
                     </label>
                     <select name="categoria_id" id="categoria_id" x-model="categoriaSeleccionada"
-                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                            class="w-full px-3 py-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 focus:outline-none">
                         @foreach ($categorias as $cat)
                             <option value="{{ $cat->id }}" {{ old('categoria_id', $producto->categoria_id) == $cat->id ? 'selected' : '' }}>
                                 {{ $cat->nombre }}
                             </option>
                         @endforeach
                     </select>
-                    @error('categoria_id') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    @error('categoria_id') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label for="marca_id" class="block text-sm font-medium text-slate-300 mb-1.5">Marca</label>
+                    <label for="marca_id" class="block text-sm font-medium text-on-surface-variant mb-1.5">Marca</label>
                     <select name="marca_id" id="marca_id"
-                            class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                            class="w-full px-3 py-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 focus:outline-none">
                         <option value="">Sin marca</option>
                         @foreach ($marcas as $marca)
                             <option value="{{ $marca->id }}" {{ old('marca_id', $producto->marca_id) == $marca->id ? 'selected' : '' }}>
@@ -61,86 +61,86 @@
                             </option>
                         @endforeach
                     </select>
-                    @error('marca_id') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    @error('marca_id') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label for="codigo_barras" class="block text-sm font-medium text-slate-300 mb-1.5">Código de barras</label>
+                    <label for="codigo_barras" class="block text-sm font-medium text-on-surface-variant mb-1.5">Código de barras</label>
                     <input type="text" name="codigo_barras" id="codigo_barras" value="{{ old('codigo_barras', $producto->codigo_barras) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                           class="w-full px-3 py-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 focus:outline-none">
                 </div>
             </div>
 
             <div>
-                <label for="descripcion" class="block text-sm font-medium text-slate-300 mb-1.5">Descripción</label>
+                <label for="descripcion" class="block text-sm font-medium text-on-surface-variant mb-1.5">Descripción</label>
                 <textarea name="descripcion" id="descripcion" rows="3"
-                          class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">{{ old('descripcion', $producto->descripcion) }}</textarea>
+                          class="w-full px-3 py-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 focus:outline-none">{{ old('descripcion', $producto->descripcion) }}</textarea>
             </div>
 
             <div class="space-y-3">
-                <label for="imagen" class="block text-sm font-medium text-slate-300">Imagen principal</label>
+                <label for="imagen" class="block text-sm font-medium text-on-surface-variant">Imagen principal</label>
 
                 @if ($producto->imagen_principal)
                     <div class="flex items-center gap-3">
                         <img src="{{ asset('storage/'.$producto->imagen_principal) }}"
                              alt="{{ $producto->nombre }}"
-                             class="w-20 h-20 object-cover rounded-lg border border-slate-800">
-                        <span class="text-xs text-slate-500">Imagen actual</span>
+                             class="w-20 h-20 object-cover rounded-obsidian-lg border border-outline-variant/15">
+                        <span class="text-xs text-outline">Imagen actual</span>
                     </div>
                 @endif
 
                 <input type="file" name="imagen" id="imagen" accept="image/*"
-                       class="w-full text-sm text-slate-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700">
-                @error('imagen') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                       class="w-full text-sm text-on-surface-variant file:mr-3 file:py-2 file:px-3 file:rounded-obsidian-lg file:border-0 file:bg-surface-container-low file:text-on-surface hover:file:bg-surface-container">
+                @error('imagen') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
             </div>
         </div>
 
         {{-- Precios y stock --}}
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
-            <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Precios y stock</h3>
+        <div class="rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-6 space-y-5">
+            <h3 class="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">Precios y stock</h3>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                    <label for="precio_unitario" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Precio <span class="text-red-400">*</span>
+                    <label for="precio_unitario" class="block text-sm font-medium text-on-surface-variant mb-1.5">
+                        Precio <span class="text-error">*</span>
                     </label>
                     <input type="number" step="0.01" name="precio_unitario" id="precio_unitario" value="{{ old('precio_unitario', $producto->precio_unitario) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('precio_unitario') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                           class="w-full px-3 py-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 focus:outline-none">
+                    @error('precio_unitario') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label for="costo" class="block text-sm font-medium text-slate-300 mb-1.5">Costo</label>
+                    <label for="costo" class="block text-sm font-medium text-on-surface-variant mb-1.5">Costo</label>
                     <input type="number" step="0.01" name="costo" id="costo" value="{{ old('costo', $producto->costo) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('costo') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                           class="w-full px-3 py-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 focus:outline-none">
+                    @error('costo') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label for="stock" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Stock <span class="text-red-400">*</span>
+                    <label for="stock" class="block text-sm font-medium text-on-surface-variant mb-1.5">
+                        Stock <span class="text-error">*</span>
                     </label>
                     <input type="number" name="stock" id="stock" value="{{ old('stock', $producto->stock) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('stock') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                           class="w-full px-3 py-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 focus:outline-none">
+                    @error('stock') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label for="umbral_alerta" class="block text-sm font-medium text-slate-300 mb-1.5">
-                        Umbral alerta <span class="text-red-400">*</span>
+                    <label for="umbral_alerta" class="block text-sm font-medium text-on-surface-variant mb-1.5">
+                        Umbral alerta <span class="text-error">*</span>
                     </label>
                     <input type="number" name="umbral_alerta" id="umbral_alerta" value="{{ old('umbral_alerta', $producto->umbral_alerta) }}"
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('umbral_alerta') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                           class="w-full px-3 py-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 focus:outline-none">
+                    @error('umbral_alerta') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
                 </div>
             </div>
 
             <div>
-                <label for="ubicacion_id" class="block text-sm font-medium text-slate-300 mb-1.5">
+                <label for="ubicacion_id" class="block text-sm font-medium text-on-surface-variant mb-1.5">
                     Ubicación para el ajuste de stock
                 </label>
                 <select name="ubicacion_id" id="ubicacion_id"
-                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        class="w-full px-3 py-2 rounded-obsidian border border-outline-variant/30 bg-surface-container-low text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 focus:outline-none">
                     <option value="">Usar ubicación primaria (Tienda)</option>
                     @foreach (['tienda' => 'Tienda', 'deposito' => 'Depósito'] as $tipo => $etiqueta)
                         @php $grupo = $ubicaciones->where('tipo', $tipo); @endphp
@@ -155,29 +155,29 @@
                         @endif
                     @endforeach
                 </select>
-                @error('ubicacion_id') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                @error('ubicacion_id') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
             </div>
 
             <div class="flex items-center gap-6">
                 <label class="inline-flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" name="maneja_numero_serie" value="1" {{ old('maneja_numero_serie', $producto->maneja_numero_serie) ? 'checked' : '' }}
-                           class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500">
-                    <span class="text-sm text-slate-300">Maneja número de serie</span>
+                           class="rounded bg-surface-container-low border-outline-variant/30 text-primary-container focus:ring-primary-container/40">
+                    <span class="text-sm text-on-surface-variant">Maneja número de serie</span>
                 </label>
 
                 <label class="inline-flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" name="visible_catalogo" value="1" {{ old('visible_catalogo', $producto->visible_catalogo) ? 'checked' : '' }}
-                           class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500">
-                    <span class="text-sm text-slate-300">Visible en catálogo</span>
+                           class="rounded bg-surface-container-low border-outline-variant/30 text-primary-container focus:ring-primary-container/40">
+                    <span class="text-sm text-on-surface-variant">Visible en catálogo</span>
                 </label>
 
                 <div x-data="{ oculto: {{ old('ocultar_si_sin_stock', $producto->ocultar_si_sin_stock) ? 'true' : 'false' }} }" class="flex flex-col">
                     <label class="inline-flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" name="ocultar_si_sin_stock" value="1" x-model="oculto"
-                               class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500">
-                        <span class="text-sm text-slate-300">Ocultar si no hay stock</span>
+                               class="rounded bg-surface-container-low border-outline-variant/30 text-primary-container focus:ring-primary-container/40">
+                        <span class="text-sm text-on-surface-variant">Ocultar si no hay stock</span>
                     </label>
-                    <span x-show="oculto" x-cloak class="text-xs text-slate-500">Se ocultará del catálogo cuando el stock llegue a 0.</span>
+                    <span x-show="oculto" x-cloak class="text-xs text-outline">Se ocultará del catálogo cuando el stock llegue a 0.</span>
                 </div>
             </div>
         </div>
@@ -187,18 +187,18 @@
         {{-- Botones --}}
         <div class="flex items-center gap-3">
             <button type="submit"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
+                    class="px-4 py-2 bg-primary-container hover:bg-primary-container/90 text-on-primary-container text-sm font-medium rounded-obsidian-lg transition">
                 Actualizar producto
             </button>
             <a href="{{ route('admin.productos.index') }}"
-               class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg transition">
+               class="px-4 py-2 border border-outline-variant/30 bg-surface-container-low text-on-surface-variant text-sm font-medium rounded-obsidian-lg transition">
                 Cancelar
             </a>
         </div>
     </form>
 
     {{-- Sprint 2: galería de imágenes (formulario aparte del CRUD de producto). --}}
-    <div class="mt-6 bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5"
+    <div class="mt-6 rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-6 space-y-5"
          x-data="{
              previews: [],
              previsualizar(event) {
@@ -206,22 +206,22 @@
              }
          }">
         <div class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+            <h3 class="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">
                 Imágenes del producto
             </h3>
-            <span class="text-xs text-slate-500">{{ $producto->imagenesGaleria->count() }} imagen(es)</span>
+            <span class="text-xs text-outline">{{ $producto->imagenesGaleria->count() }} imagen(es)</span>
         </div>
 
         @if ($producto->imagenesGaleria->isNotEmpty())
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 @foreach ($producto->imagenesGaleria as $imagen)
-                    <div class="relative group rounded-lg overflow-hidden border border-slate-800 bg-slate-800">
+                    <div class="relative group rounded-obsidian-lg overflow-hidden border border-outline-variant/15 bg-surface-container-low">
                         <img src="{{ asset('storage/'.$imagen->path) }}"
                              alt="{{ $imagen->alt ?? $producto->nombre }}"
                              class="aspect-square w-full object-cover">
 
                         @if ($imagen->es_principal)
-                            <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-blue-600 text-white">
+                            <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-primary-container text-on-surface">
                                 Principal
                             </span>
                         @endif
@@ -233,7 +233,7 @@
                             @csrf
                             @method('DELETE')
                             <button type="submit"
-                                    class="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-slate-900/90 text-red-400 hover:text-red-300 transition">
+                                    class="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded bg-surface-container-lowest/90 text-error hover:text-error/80 transition">
                                 Quitar
                             </button>
                         </form>
@@ -241,7 +241,7 @@
                 @endforeach
             </div>
         @else
-            <p class="text-sm text-slate-500">Todavía no hay imágenes cargadas.</p>
+            <p class="text-sm text-outline">Todavía no hay imágenes cargadas.</p>
         @endif
 
         <form method="POST" action="{{ route('admin.productos.imagenes.store', $producto) }}"
@@ -249,27 +249,27 @@
             @csrf
 
             <div>
-                <label for="imagenes" class="block text-sm font-medium text-slate-300 mb-1.5">
-                    Subir imágenes <span class="text-slate-500 text-xs">(hasta 5, máx. 4 MB c/u)</span>
+                <label for="imagenes" class="block text-sm font-medium text-on-surface-variant mb-1.5">
+                    Subir imágenes <span class="text-outline text-xs">(hasta 5, máx. 4 MB c/u)</span>
                 </label>
                 <input type="file" name="imagenes[]" id="imagenes" multiple accept="image/*"
                        x-on:change="previsualizar($event)"
-                       class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-sm focus:border-blue-500 focus:outline-none">
-                @error('imagenes') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
-                @error('imagenes.*') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                       class="w-full px-3 py-2 border border-outline-variant/30 bg-surface-container-low rounded-obsidian-lg text-on-surface-variant text-sm focus:border-primary-container focus:outline-none">
+                @error('imagenes') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
+                @error('imagenes.*') <p class="mt-1 text-xs text-error">{{ $message }}</p> @enderror
             </div>
 
             <template x-if="previews.length > 0">
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                     <template x-for="(src, index) in previews" :key="index">
                         <img :src="src" alt="Previsualización"
-                             class="aspect-square w-full rounded-lg object-cover border border-slate-700">
+                             class="aspect-square w-full rounded-obsidian-lg object-cover border border-outline-variant/30">
                     </template>
                 </div>
             </template>
 
             <button type="submit"
-                    class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition">
+                    class="px-4 py-2 border border-outline-variant/30 bg-surface-container-low text-on-surface text-sm font-medium rounded-obsidian-lg transition">
                 Subir imágenes
             </button>
         </form>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,20 +10,26 @@
     <link rel="icon" type="image/png" href="{{ asset('images/logo/pixel-icon-sm.png') }}">
 
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=space-grotesk:400,500,600,700|chakra-petch:400,500,600,700" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=space-grotesk:400,500,600,700|geist:400,500,600" rel="stylesheet" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-sans text-slate-200 antialiased bg-slate-950">
-    <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <div class="w-full sm:max-w-md mt-6 px-6 py-8 bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden rounded-xl">
+<body class="min-h-screen bg-surface font-body-md text-on-surface antialiased">
+    <div class="flex min-h-screen flex-col items-center justify-center gap-6 px-4 py-10">
+        <a href="{{ route('login') }}" class="flex items-center gap-3">
+            <img src="{{ asset('images/logo/pixel-icon-sm.png') }}"
+                 alt="Pixel Store"
+                 class="h-10 w-10 rounded">
+            <span class="font-headline-sm text-headline-sm tracking-tight text-on-surface">PIXEL STORE</span>
+        </a>
+
+        <div class="w-full max-w-md rounded-obsidian-xl border border-outline-variant/30 bg-surface-container-lowest/60 p-6 backdrop-blur-xl sm:p-8">
             {{ $slot }}
         </div>
 
-        <p class="mt-6 text-xs text-slate-600">
+        <p class="font-label-sm text-label-sm uppercase tracking-[0.18em] text-outline">
             &copy; {{ date('Y') }} Pixel Store · La Paz, Bolivia
         </p>
     </div>
 </body>
 </html>
-

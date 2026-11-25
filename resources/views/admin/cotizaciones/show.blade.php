@@ -112,23 +112,23 @@
                     <tr class="border-b border-outline-variant/15 last:border-0">
                         <td class="px-4 py-3.5 text-on-surface">{{ $item->nombre }}</td>
                         <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">{{ $item->cantidad }}</td>
-                        <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">Bs {{ number_format($item->precio_unitario, 2, '.', ',') }}</td>
-                        <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">Bs {{ number_format($item->subtotal(), 2, '.', ',') }}</td>
+                        <td class="px-4 py-3.5 text-right tabular-nums text-on-surface-variant">{{ \App\Support\Dinero::formatear($item->precio_unitario) }}</td>
+                        <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear($item->subtotal()) }}</td>
                     </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr class="bg-surface-container-low">
                     <td colspan="3" class="px-4 py-3.5 text-right font-label-md text-label-md uppercase tracking-[0.14em] text-outline">Subtotal</td>
-                    <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">Bs {{ number_format($cotizacion->subtotal, 2, '.', ',') }}</td>
+                    <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear($cotizacion->subtotal) }}</td>
                 </tr>
                 <tr class="bg-surface-container-low">
                     <td colspan="3" class="px-4 py-3.5 text-right font-label-md text-label-md uppercase tracking-[0.14em] text-outline">Descuento</td>
-                    <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">Bs {{ number_format($cotizacion->descuento, 2, '.', ',') }}</td>
+                    <td class="px-4 py-3.5 text-right tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear($cotizacion->descuento) }}</td>
                 </tr>
                 <tr class="bg-surface-container-low">
                     <td colspan="3" class="px-4 py-3.5 text-right font-label-md text-label-md uppercase tracking-[0.14em] text-outline">Total</td>
-                    <td class="px-4 py-3.5 text-right font-headline-sm text-headline-sm tabular-nums text-on-surface">Bs {{ number_format($cotizacion->total, 2, '.', ',') }}</td>
+                    <td class="px-4 py-3.5 text-right font-headline-sm text-headline-sm tabular-nums text-on-surface">{{ \App\Support\Dinero::formatear($cotizacion->total) }}</td>
                 </tr>
             </tfoot>
         </table>
