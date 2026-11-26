@@ -32,6 +32,7 @@
 | 08 | [Despliegue](08-despliegue.md) | Producción, backups, CI/CD | ✅ |
 | 09 | [Roadmap](09-roadmap.md) | Fases 1-6 del proyecto | ✅ |
 | 10 | [Manual de usuario](10-manual-usuario.md) | Guía del POS, catálogo, inventario y caja | ✅ |
+| 18 | [Plan de cierre Sprint 3](18-plan-sprint-3.md) | T41–T49, gates G9–G16 y cut-off de G9 | 📋 Planificado |
 
 > El cierre del Sprint 2 se documentó dentro de `10-qa-final-sprint2.md`; no existe
 > un archivo `06-sprint-02.md`. El manual de usuario es `10-manual-usuario.md` y

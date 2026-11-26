@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "taskless": "node taskless-check.mjs"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.2",

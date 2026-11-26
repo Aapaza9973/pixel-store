@@ -1,0 +1,43 @@
+name: taskless
+
+# Reglas estáticas de Taskless (.taskless/rules/) sobre el código del repo.
+# No necesita secretos: las reglas sg se ejecutan sin login.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/cache@v4
+        with:
+          path: .taskless/.cache
+          key: taskless-${{ runner.os }}-${{ hashFiles('.taskless/bin/cli.lock.json') }}
+
+      - name: Taskless check
+        # Diff scan en pull requests, full scan en main.
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            FILES=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+            if [ -z "$FILES" ]; then
+              echo "No changed files."
+              exit 0
+            fi
+            node .taskless/bin/cli.mjs check $FILES
+          else
+            node .taskless/bin/cli.mjs check
+          fi
